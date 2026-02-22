@@ -619,6 +619,12 @@ html, body {
     <label class="dbg-toggle"><input type="checkbox" id="tog-sheen" checked><div class="dbg-toggle-track"></div></label>
   </div>
 
+  <div class="dbg-section">交互行为</div>
+  <div class="dbg-row">
+    <span class="dbg-label">无限循环 Cycle</span>
+    <label class="dbg-toggle"><input type="checkbox" id="tog-cycle"><div class="dbg-toggle-track"></div></label>
+  </div>
+
   <div class="dbg-section">实时数据</div>
   <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
   <div class="dbg-row"><span class="dbg-label">当前 frac</span><span class="dbg-val" id="dbg-frac">0.000</span></div>
@@ -654,6 +660,7 @@ const CFG = {
   showFPS:      false,
   showTexture:  true,
   showSheen:    true,
+  cycle:        false, // 无限循环
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -709,12 +716,23 @@ let debugOpen    = false;
 let logoClickCnt = 0;
 let logoClickTs  = 0;
 
+/* 辅助：将任意整数/浮点数 wrap 到 [0, N) */
+function wrapN(v) { return ((v % N) + N) % N; }
+
 function render(frac) {
   fracLive = frac;
 
+  // cycle 模式下，frac 可超出 [0,N-1]，用 modulo 折算视觉位置
+  const fracW = CFG.cycle ? wrapN(frac) : frac;
+
   cardEls.forEach((el, i) => {
-    const offset = i - frac;
-    const absO   = Math.abs(offset);
+    let offset = i - fracW;
+    if (CFG.cycle) {
+      // 取最短圆弧方向（wrap 到 [-N/2, N/2]）
+      if (offset >  N / 2) offset -= N;
+      if (offset < -N / 2) offset += N;
+    }
+    const absO = Math.abs(offset);
 
     const x     = offset * CFG.STEP;
     const y     = absO   * CFG.Y_STEP;
@@ -735,7 +753,9 @@ function render(frac) {
     }
   });
 
-  const ci = Math.max(0, Math.min(N - 1, Math.round(frac)));
+  const ci = CFG.cycle
+    ? Math.round(wrapN(frac))
+    : Math.max(0, Math.min(N - 1, Math.round(frac)));
   dotEls.forEach((d, i) => {
     const shouldOn = (i === ci);
     if (shouldOn !== d.classList.contains('on')) d.classList.toggle('on', shouldOn);
@@ -765,12 +785,21 @@ function scheduleRender(frac) {
 let current = 0;
 
 function snapTo(idx) {
-  idx = Math.max(0, Math.min(N - 1, idx));
-  current = idx;
+  if (CFG.cycle) {
+    // cycle：保留 idx 原值让动画沿正确方向滑动，current 折算回 [0,N-1]
+    current = Math.round(wrapN(idx));
+  } else {
+    idx     = Math.max(0, Math.min(N - 1, idx));
+    current = idx;
+  }
   cardEls.forEach(el => {
     el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
   });
-  render(current);
+  render(idx);
+  // cycle：动画结束后把 fracLive 归一化，避免长期漂移
+  if (CFG.cycle) {
+    setTimeout(() => { fracLive = current; }, CFG.SNAP_DUR + 60);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -792,7 +821,8 @@ function onDragStart(x) {
 function onDragMove(x) {
   if (!dragging) return;
   const dx   = x - startX;
-  const frac = Math.max(0, Math.min(N - 1, startFrac - dx / CFG.DRAG_PX));
+  const raw  = startFrac - dx / CFG.DRAG_PX;
+  const frac = CFG.cycle ? raw : Math.max(0, Math.min(N - 1, raw));
   scheduleRender(frac);
 }
 
@@ -808,15 +838,19 @@ function onDragEnd(x) {
     const stageRect   = stage.getBoundingClientRect();
     const clickX      = x - stageRect.left - stageRect.width / 2;
     const clickedCard = Math.round(current + (-clickX / CFG.STEP));
-    snapTo(Math.max(0, Math.min(N - 1, clickedCard)));
+    const target      = CFG.cycle
+      ? clickedCard
+      : Math.max(0, Math.min(N - 1, clickedCard));
+    snapTo(target);
     return;
   }
 
   let target;
   if (Math.abs(dx) < 36) {
-    target = current;
+    target = current; // 回弹
   } else {
-    target = Math.max(0, Math.min(N - 1, Math.round(fracLive)));
+    target = Math.round(fracLive);
+    if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
   }
   snapTo(target);
 }
@@ -921,6 +955,12 @@ document.getElementById('tog-sheen').addEventListener('change', e => {
     const hl = el.querySelector('.card-highlight');
     if (hl) hl.style.opacity = CFG.showSheen ? '1' : '0';
   });
+});
+
+document.getElementById('tog-cycle').addEventListener('change', e => {
+  CFG.cycle = e.target.checked;
+  // 切换时把 fracLive / current 归一化到 [0, N-1]，避免状态混乱
+  snapTo(current);
 });
 
 document.getElementById('dbg-close-btn').addEventListener('click', () => {
