@@ -314,7 +314,31 @@ html, body {
 .fi       { width:100%; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:13px; padding:13px 15px; color:var(--text); font-family:inherit; font-size:15px; outline:none; transition:border-color .2s; }
 .fi:focus { border-color:var(--accent); }
 .fi::placeholder { color:rgba(240,240,245,.28); }
+.fi.err   { border-color:var(--red); animation: shake .3s ease; }
+@keyframes shake {
+  0%,100% { transform:translateX(0); }
+  25%      { transform:translateX(-6px); }
+  75%      { transform:translateX(6px); }
+}
+/* 图标选择器 */
+.icon-picker { display:flex; gap:8px; flex-wrap:wrap; }
+.ip-btn {
+  width:42px; height:42px; border-radius:11px;
+  border:1.5px solid var(--border); background:rgba(255,255,255,.06);
+  font-size:20px; cursor:pointer; transition:border-color .15s, background .15s;
+}
+.ip-btn.on { border-color:var(--accent); background:rgba(126,232,194,.14); }
+/* 人数选择器 */
+.people-picker { display:flex; gap:8px; }
+.pp-btn {
+  flex:1; padding:9px 0; border-radius:11px;
+  border:1.5px solid var(--border); background:rgba(255,255,255,.06);
+  color:var(--dim); font-family:inherit; font-size:13px; cursor:pointer;
+  transition:border-color .15s, background .15s, color .15s;
+}
+.pp-btn.on { border-color:var(--accent); background:rgba(126,232,194,.14); color:var(--accent); font-weight:500; }
 .sb       { width:100%; padding:15px; background:linear-gradient(135deg,var(--accent),#4fd4ae); border:none; border-radius:14px; color:#0d0d14; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; margin-top:6px; }
+.sb:active { opacity:.85; }
 
 /* ══════════════════════════════════════════
    调试控制台（Debug Panel）
@@ -341,7 +365,10 @@ html, body {
 #debug-panel.open { transform: translateY(0); }
 
 .dbg-handle { width:32px; height:3px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 16px; }
-.dbg-title  { color:var(--accent); font-size:13px; font-weight:600; margin-bottom:16px; letter-spacing:.05em; }
+.dbg-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.dbg-title  { color:var(--accent); font-size:13px; font-weight:600; letter-spacing:.05em; }
+.dbg-close  { background:none; border:none; color:rgba(240,240,245,0.5); font-size:18px; cursor:pointer; padding:2px 6px; line-height:1; border-radius:6px; transition:color .15s; }
+.dbg-close:hover { color:var(--text); }
 
 /* 每一行调试项 */
 .dbg-row {
@@ -438,10 +465,33 @@ html, body {
   <div class="sheet">
     <div class="sh"></div>
     <div class="sh-title">新建账单</div>
-    <div class="fg"><div class="fl">账单名称</div><input class="fi" type="text" placeholder="例：超市采购"></div>
-    <div class="fg"><div class="fl">总金额</div><input class="fi" type="number" placeholder="¥ 0.00"></div>
-    <div class="fg"><div class="fl">垫付人</div><input class="fi" type="text" placeholder="谁先付的？"></div>
-    <button class="sb">创建账单</button>
+    <div class="fg">
+      <div class="fl">类型</div>
+      <div class="icon-picker" id="icon-picker">
+        <button class="ip-btn on" data-icon="🧾">🧾</button>
+        <button class="ip-btn" data-icon="🛒">🛒</button>
+        <button class="ip-btn" data-icon="🍜">🍜</button>
+        <button class="ip-btn" data-icon="⚡">⚡</button>
+        <button class="ip-btn" data-icon="☕">☕</button>
+        <button class="ip-btn" data-icon="🏸">🏸</button>
+        <button class="ip-btn" data-icon="🎮">🎮</button>
+        <button class="ip-btn" data-icon="🚗">🚗</button>
+      </div>
+    </div>
+    <div class="fg"><div class="fl">账单名称</div><input class="fi" id="inp-title" type="text" placeholder="例：超市采购"></div>
+    <div class="fg"><div class="fl">总金额（元）</div><input class="fi" id="inp-amount" type="number" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="fg">
+      <div class="fl">分账人数</div>
+      <div class="people-picker" id="people-picker">
+        <button class="pp-btn" data-n="2">2人</button>
+        <button class="pp-btn" data-n="3">3人</button>
+        <button class="pp-btn on" data-n="4">4人</button>
+        <button class="pp-btn" data-n="5">5人</button>
+        <button class="pp-btn" data-n="6">6人</button>
+      </div>
+    </div>
+    <div class="fg"><div class="fl">垫付人</div><input class="fi" id="inp-payer" type="text" placeholder="谁先付的？"></div>
+    <button class="sb" id="createBtn">创建账单</button>
   </div>
 </div>
 
@@ -451,7 +501,10 @@ html, body {
 ════════════════════════════════════════ -->
 <div id="debug-panel">
   <div class="dbg-handle"></div>
-  <div class="dbg-title">🛠 调试控制台</div>
+  <div class="dbg-header">
+    <div class="dbg-title">🛠 调试控制台</div>
+    <button class="dbg-close" id="dbg-close-btn">✕</button>
+  </div>
 
   <div class="dbg-section">动画参数</div>
 
@@ -560,7 +613,7 @@ const bills = [
   { icon:'☕', title:'星巴克',   desc:'Starbucks · 下午茶',  amount:'¥ 136', per:'¥ 34',  date:'1月29日', payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(90deg,#7eb8e8,#4fadd4)' },
 ];
 
-const N = bills.length;
+let N = bills.length;
 
 /* ══════════════════════════════════════════════════════════════
    【动画参数对象 CFG】
@@ -582,15 +635,15 @@ const CFG = {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   DOM 构建：账单卡片
+   DOM 构建：账单卡片 / 指示点
 ══════════════════════════════════════════════════════════════ */
 const stage  = document.getElementById('stage');
 const dotsEl = document.getElementById('dots');
 
-const cardEls = bills.map((b, i) => {
+function createCard(b, i) {
   const el = document.createElement('div');
   el.className = 'bill-card';
-  el.dataset.idx = i; // 存卡片序号，单击时用
+  el.dataset.idx = i;
   el.innerHTML = `
     <div class="card-sheen"></div>
     <div class="card-color-bar" style="background:${b.color}"></div>
@@ -611,17 +664,17 @@ const cardEls = bills.map((b, i) => {
     </div>`;
   stage.appendChild(el);
   return el;
-});
+}
 
-/* ══════════════════════════════════════════════════════════════
-   DOM 构建：指示点
-══════════════════════════════════════════════════════════════ */
-const dotEls = bills.map(() => {
+function createDot() {
   const d = document.createElement('div');
   d.className = 'dot';
   dotsEl.appendChild(d);
   return d;
-});
+}
+
+const cardEls = bills.map((b, i) => createCard(b, i));
+const dotEls  = bills.map(() => createDot());
 
 /* ══════════════════════════════════════════════════════════════
    【核心渲染函数 render(frac)】
@@ -633,6 +686,11 @@ const dotEls = bills.map(() => {
    - snapTo() 直接调用（松手 snap、单击选卡）
 ══════════════════════════════════════════════════════════════ */
 let fracLive = 0; // 当前实际渲染的 frac（供调试面板读取）
+
+// 调试面板状态（需在 render() 调用前声明，避免 let TDZ 报错）
+let debugOpen    = false;
+let logoClickCnt = 0;
+let logoClickTs  = 0;
 
 function render(frac) {
   fracLive = frac;
@@ -789,16 +847,16 @@ function onDragEnd(x) {
   }
 
   /* 【磁力 Snap】
-     松手时，根据拖动方向和距离，snap 到最近的整数卡片。
-     不允许停在两张卡片中间。
-     规则：
-     - 拖动超过 36px 且方向一致 → 切到下一张
-     - 否则 → 回弹到起始张
-     这样即使只拖一点点，也会磁力吸回去，不会卡在中间。
+     松手时 snap 到 fracLive 最近的整数卡片，支持跨多张。
+     拖得少（< 36px）则回弹到起始张，避免误触切卡。
   */
-  let target = current; // 默认回弹
-  if      (dx < -36 && current < N - 1) target = current + 1;
-  else if (dx >  36 && current > 0)     target = current - 1;
+  let target;
+  if (Math.abs(dx) < 36) {
+    target = current; // 幅度太小，磁力回弹
+  } else {
+    target = Math.round(fracLive); // 停在离当前位置最近的卡
+    target = Math.max(0, Math.min(N - 1, target));
+  }
 
   snapTo(target);
 }
@@ -880,10 +938,6 @@ function stopFPS() {
    三击 logo → 显示/隐藏面板
    面板内所有滑块/开关都实时更新 CFG 对象，然后触发 render()
 ══════════════════════════════════════════════════════════════ */
-let debugOpen    = false;
-let logoClickCnt = 0;
-let logoClickTs  = 0;
-
 document.getElementById('logo').addEventListener('click', () => {
   const now = Date.now();
   // 连续点击时间窗口：600ms 内
@@ -965,11 +1019,107 @@ document.getElementById('tog-sheen').addEventListener('change', e => {
   });
 });
 
+document.getElementById('dbg-close-btn').addEventListener('click', () => {
+  debugOpen = false;
+  document.getElementById('debug-panel').classList.remove('open');
+});
+
 /* ══════════════════════════════════════════════════════════════
-   Modal
+   Modal — 图标 / 人数选择器交互
 ══════════════════════════════════════════════════════════════ */
 const overlay = document.getElementById('overlay');
-document.getElementById('addBtn').onclick = () => overlay.classList.add('on');
+
+document.getElementById('icon-picker').addEventListener('click', e => {
+  const btn = e.target.closest('.ip-btn');
+  if (!btn) return;
+  document.querySelectorAll('.ip-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+});
+
+document.getElementById('people-picker').addEventListener('click', e => {
+  const btn = e.target.closest('.pp-btn');
+  if (!btn) return;
+  document.querySelectorAll('.pp-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+});
+
+/* ══════════════════════════════════════════════════════════════
+   addBill：读取表单 → 构建账单对象 → 创建卡片 → 跳转
+══════════════════════════════════════════════════════════════ */
+const BILL_COLORS = [
+  'linear-gradient(90deg,#7ee8c2,#4fd4ae)',
+  'linear-gradient(90deg,#f7c59f,#ff8f6b)',
+  'linear-gradient(90deg,#c5a8ff,#9f7eff)',
+  'linear-gradient(90deg,#ff7b7b,#ff5252)',
+  'linear-gradient(90deg,#7eb8e8,#4fadd4)',
+  'linear-gradient(90deg,#f7e27e,#f5c842)',
+];
+const MEMBER_POOL = ['A','L','W','M','E','F'];
+
+function fmtDate(d) {
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+function fmtMoney(n) {
+  return `¥ ${Number.isInteger(n) ? n : n.toFixed(2)}`;
+}
+
+function addBill() {
+  const inpTitle  = document.getElementById('inp-title');
+  const inpAmount = document.getElementById('inp-amount');
+  const inpPayer  = document.getElementById('inp-payer');
+
+  const title  = inpTitle.value.trim();
+  const amount = parseFloat(inpAmount.value);
+  const payer  = inpPayer.value.trim();
+
+  // 校验：缺填项抖动提示
+  let valid = true;
+  [inpTitle, inpAmount, inpPayer].forEach(el => el.classList.remove('err'));
+  if (!title)           { inpTitle.classList.add('err');  valid = false; }
+  if (!amount || amount <= 0) { inpAmount.classList.add('err'); valid = false; }
+  if (!payer)           { inpPayer.classList.add('err');  valid = false; }
+  if (!valid) return;
+
+  const icon    = document.querySelector('.ip-btn.on').dataset.icon;
+  const nPeople = parseInt(document.querySelector('.pp-btn.on').dataset.n);
+  const per     = amount / nPeople;
+  const members = MEMBER_POOL.slice(0, nPeople);
+  const color   = BILL_COLORS[bills.length % BILL_COLORS.length];
+
+  const bill = {
+    icon,
+    title,
+    desc: `${payer} · ${nPeople}人均摊`,
+    amount:  fmtMoney(amount),
+    per:     fmtMoney(per),
+    date:    fmtDate(new Date()),
+    payer:   payer + ' 垫付',
+    settled: false,
+    members,
+    color,
+  };
+
+  bills.push(bill);
+  const idx = bills.length - 1;
+  N = bills.length;
+
+  cardEls.push(createCard(bill, idx));
+  dotEls.push(createDot());
+
+  // 关闭面板、重置表单
+  overlay.classList.remove('on');
+  inpTitle.value  = '';
+  inpAmount.value = '';
+  inpPayer.value  = '';
+  document.querySelectorAll('.ip-btn').forEach((b, i) => b.classList.toggle('on', i === 0));
+  document.querySelectorAll('.pp-btn').forEach((b)    => b.classList.toggle('on', b.dataset.n === '4'));
+
+  // 跳转到新卡片
+  snapTo(idx);
+}
+
+document.getElementById('addBtn').onclick    = () => overlay.classList.add('on');
+document.getElementById('createBtn').onclick = addBill;
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('on'); });
 </script>
 </body>
