@@ -610,6 +610,16 @@ html, body {
     <input class="dbg-slider" id="sl-popdur" type="range" min="100" max="600" value="280">
     <span class="dbg-val" id="vl-popdur">280ms</span>
   </div>
+  <div class="dbg-row">
+    <span class="dbg-label">惯性持续时长</span>
+    <input class="dbg-slider" id="sl-inertdur" type="range" min="500" max="5000" value="2000">
+    <span class="dbg-val" id="vl-inertdur">2.0s</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">惯性速度比例</span>
+    <input class="dbg-slider" id="sl-inertratio" type="range" min="10" max="200" value="60">
+    <span class="dbg-val" id="vl-inertratio">0.60</span>
+  </div>
 
   <div class="dbg-section">曲线函数 (指数)</div>
 
@@ -696,6 +706,8 @@ const CFG = {
   POP_SCALE:    1.08,  // 选中弹跳放大倍数
   POP_DUR:      280,   // 选中弹跳时长 ms
   popMode:      'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
+  INERTIA_DUR:  2000,  // 惯性滑行持续时间 ms
+  INERTIA_RATIO: 0.6,  // 惯性速度比例（乘以滑动速度）
   showShadow:   true,
   showFPS:      false,
   showTexture:  true,
@@ -905,16 +917,23 @@ let startX         = 0;
 let startFrac      = 0;
 let touchStartTime = 0;
 let touchStartX    = 0;
+let lastMoveX      = 0;
+let lastMoveTime   = 0;
+let inertiaRafId   = null;
 
 function onDragStart(x) {
+  // 取消进行中的惯性动画
+  if (inertiaRafId) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null; }
   dragging = true; startX = x; touchStartX = x;
-  startFrac = current; touchStartTime = Date.now();
+  lastMoveX = x; lastMoveTime = Date.now();
+  startFrac = fracLive; touchStartTime = Date.now();
   stage.classList.add('dragging');
   cardEls.forEach(el => { el.style.transition = 'none'; });
 }
 
 function onDragMove(x) {
   if (!dragging) return;
+  lastMoveX = x; lastMoveTime = Date.now();
   const dx   = x - startX;
   const raw  = startFrac - dx / CFG.DRAG_PX;
   const frac = CFG.cycle ? raw : Math.max(0, Math.min(N - 1, raw));
@@ -929,6 +948,7 @@ function onDragEnd(x) {
   const dx       = x - startX;
   const duration = Date.now() - touchStartTime;
 
+  // 点击检测
   if (Math.abs(dx) < 8 && duration < 250) {
     const stageRect   = stage.getBoundingClientRect();
     const clickX      = x - stageRect.left - stageRect.width / 2;
@@ -940,10 +960,49 @@ function onDragEnd(x) {
     return;
   }
 
-  // 始终吸附到最近的整数卡片
-  let target = Math.round(fracLive);
-  if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
-  snapTo(target);
+  // 计算松手时的瞬时速度（frac 单位 / ms）
+  const recentDt = Math.max(1, Date.now() - lastMoveTime + 1);
+  const recentDx = x - lastMoveX;
+  const velocity = -(recentDx / CFG.DRAG_PX) / (recentDt / 1000); // frac/s
+
+  // 惯性滑行：用 RAF 逐帧减速
+  const inertiaStart   = performance.now();
+  const startVelocity  = velocity * CFG.INERTIA_RATIO;
+  const inertiaDur     = CFG.INERTIA_DUR;
+  const inertiaStartF  = fracLive;
+
+  function inertiaStep(now) {
+    const elapsed = now - inertiaStart;
+    const t       = Math.min(1, elapsed / inertiaDur);
+    // ease-out 减速：v(t) = v0 * (1-t)^2 → 位移 = v0 * dur * (t - t²/2 + t³/3) ... 简化用积分
+    // 简单用 easeOut: displacement = v0 * dur/1000 * (t - t²/2) * 2 归一化
+    const easeT = t * (2 - t); // ease-out quadratic: 0→0, 1→1
+    const displacement = startVelocity * (inertiaDur / 1000) * easeT * 0.5;
+    let frac = inertiaStartF + displacement;
+    if (!CFG.cycle) frac = Math.max(0, Math.min(N - 1, frac));
+
+    cardEls.forEach(el => { el.style.transition = 'none'; });
+    render(frac);
+
+    if (t < 1) {
+      inertiaRafId = requestAnimationFrame(inertiaStep);
+    } else {
+      inertiaRafId = null;
+      // 惯性结束 → snap 到最近整数卡片
+      let target = Math.round(frac);
+      if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
+      snapTo(target);
+    }
+  }
+
+  // 如果速度太小直接 snap
+  if (Math.abs(startVelocity) < 0.3) {
+    let target = Math.round(fracLive);
+    if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
+    snapTo(target);
+  } else {
+    inertiaRafId = requestAnimationFrame(inertiaStep);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1026,6 +1085,17 @@ bindSlider('sl-opacity',  'vl-opacity',  'OPACITY_STEP', '/级', 0.01);
 bindSlider('sl-dur',      'vl-dur',      'SNAP_DUR',     'ms');
 bindSlider('sl-pop',      'vl-pop',      'POP_SCALE',    '',   0.01);
 bindSlider('sl-popdur',   'vl-popdur',   'POP_DUR',      'ms');
+// 惯性时长：滑块值就是 ms，显示为秒
+(function() {
+  const sl = document.getElementById('sl-inertdur');
+  const vl = document.getElementById('vl-inertdur');
+  sl.addEventListener('input', () => {
+    CFG.INERTIA_DUR = parseFloat(sl.value);
+    vl.textContent = (CFG.INERTIA_DUR / 1000).toFixed(1) + 's';
+    render(fracLive);
+  });
+})();
+bindSlider('sl-inertratio','vl-inertratio','INERTIA_RATIO','',  0.01);
 
 bindSlider('sl-cx',       'vl-cx',       'curveX',        null, 0.10);  // 3~30 → 0.3~3.0
 bindSlider('sl-cs',       'vl-cs',       'curveScale',    null, 0.10);
