@@ -34,7 +34,7 @@ const CFG = {
   POP_SCALE: 1.08,  // 选中弹跳放大倍数
   POP_DUR: 280,   // 选中弹跳时长 ms
   popMode: 'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
-  INERTIA_DUR: 2000,  // 惯性滑行持续时间 ms
+  INERTIA_DUR: 300,  // 惯性滑行持续时间 ms
   INERTIA_RATIO: 0.6,  // 惯性速度比例（乘以滑动速度）
   showShadow: true,
   showFPS: false,
