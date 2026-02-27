@@ -873,7 +873,7 @@ function onDragEnd(x) {
   if (Math.abs(dx) < 8 && duration < 250) {
     const stageRect   = stage.getBoundingClientRect();
     const clickX      = x - stageRect.left - stageRect.width / 2;
-    const clickedCard = Math.round(current + (-clickX / CFG.STEP));
+    const clickedCard = Math.round(current + (clickX / CFG.STEP));
     const target      = CFG.cycle
       ? clickedCard
       : Math.max(0, Math.min(N - 1, clickedCard));
