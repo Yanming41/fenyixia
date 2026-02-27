@@ -691,15 +691,48 @@ function addBill() {
   const idx = bills.length - 1;
   N = bills.length;
 
-  cardEls.push(createCard(bill, idx));
+  const newCard = createCard(bill, idx);
+  cardEls.push(newCard);
   dotEls.push(createDot());
+
+  // Start new card completely invisible at center
+  newCard.style.transform = 'translateX(0) translateY(0) scale(0)';
+  newCard.style.opacity = '0';
+  newCard.style.zIndex = '60';
 
   overlay.classList.remove('on');
   inpTitle.value = ''; inpAmount.value = ''; inpPayer.value = '';
   document.querySelectorAll('.ip-btn').forEach((b, i) => b.classList.toggle('on', i === 0));
   document.querySelectorAll('.pp-btn').forEach(b => b.classList.toggle('on', b.dataset.n === '4'));
 
-  snapTo(idx);
+  // First snap other cards to make room, then animate new card
+  cardEls.forEach((el, i) => {
+    if (i !== idx) {
+      el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+    }
+  });
+  render(idx);
+
+  // After other cards settle, play new card pop-in
+  setTimeout(() => {
+    // Add glow ring
+    const glow = document.createElement('div');
+    glow.className = 'new-card-glow';
+    stage.appendChild(glow);
+    setTimeout(() => glow.remove(), 750);
+
+    // Trigger pop-in animation
+    newCard.style.opacity = '';
+    newCard.classList.add('anim-new-card');
+
+    // After animation, clean up and set final state
+    setTimeout(() => {
+      newCard.classList.remove('anim-new-card');
+      current = idx;
+      fracLive = idx;
+      snapTo(idx);
+    }, 550);
+  }, CFG.SNAP_DUR * 0.6);
 }
 
 document.getElementById('addBtn').onclick = () => overlay.classList.add('on');
