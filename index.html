@@ -17,7 +17,16 @@
   <div class="header">
     <div class="nav-row">
       <div class="h-title" id="logo">分一下</div>
-      <div class="av">🙂</div>
+      <div class="nav-right">
+        <button class="clip-btn" id="clip-btn" title="按月份归档">
+          <div class="clip-icon">
+            <div class="clip-handle-l"></div>
+            <div class="clip-handle-r"></div>
+            <div class="clip-body"></div>
+          </div>
+        </button>
+        <div class="av">🙂</div>
+      </div>
     </div>
     <div class="large-title-row">
       <div class="h-large">账单记录</div>
@@ -34,9 +43,13 @@
 
   <!-- 账单轮播 -->
   <div class="carousel-section">
-    <div class="section-label">最近账单</div>
+    <div class="section-label-row">
+      <button class="back-btn" id="back-btn">← 返回</button>
+      <div class="section-label" id="section-label">最近账单</div>
+    </div>
     <div class="stage" id="stage"></div>
-    <div class="dots"  id="dots"></div>
+    <div class="month-stage" id="month-stage"></div>
+    <div class="dots" id="dots"></div>
   </div>
 
   <!-- iOS Tab Bar -->

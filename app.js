@@ -7,6 +7,15 @@ const bills = [
   { icon:'🏸', title:'羽毛球馆', desc:'UofT 体育馆 · 2h',   amount:'¥ 192', per:'¥ 48',  date:'2月15日', payer:'Abby 垫付',  settled:false, members:['A','M','L','W'], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
   { icon:'⚡', title:'月度水电', desc:'物业 · 1月账单',      amount:'¥ 712', per:'¥ 178', date:'2月1日',  payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
   { icon:'☕', title:'星巴克',   desc:'Starbucks · 下午茶',  amount:'¥ 136', per:'¥ 34',  date:'1月29日', payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#007AFF,#5AC8FA)' },
+  { icon:'🎮', title:'Switch游戏',desc:'eShop · 双人成行',  amount:'¥ 198', per:'¥ 50',  date:'1月15日', payer:'Lin 垫付',   settled:true,  members:['L','A','W','M'], color:'linear-gradient(135deg,#FF2D55,#AF52DE)' },
+  { icon:'🛒', title:'日用囤货', desc:'京东 · 纸巾洗衣液',  amount:'¥ 156', per:'¥ 39',  date:'12月28日',payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon:'🍜', title:'火锅聚餐', desc:'海底捞 · 4人套餐',   amount:'¥ 488', per:'¥ 122', date:'12月24日',payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon:'🎮', title:'KTV',      desc:'好乐迪 · 平安夜',    amount:'¥ 320', per:'¥ 80',  date:'12月24日',payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#5E5CE6,#007AFF)' },
+  { icon:'⚡', title:'月度水电', desc:'物业 · 12月账单',     amount:'¥ 684', per:'¥ 171', date:'12月1日', payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { icon:'🏸', title:'羽毛球馆', desc:'UofT 体育馆 · 3h',   amount:'¥ 288', per:'¥ 72',  date:'11月20日',payer:'Lin 垫付',   settled:true,  members:['L','A','M','W'], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { icon:'🛒', title:'超市采购', desc:'沃尔玛 · 零食饮料',   amount:'¥ 214', per:'¥ 54',  date:'11月12日',payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon:'🚗', title:'打车费',   desc:'滴滴 · 机场接人',    amount:'¥ 186', per:'¥ 47',  date:'10月30日',payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon:'🍜', title:'烧烤',     desc:'路边摊 · 宵夜',      amount:'¥ 176', per:'¥ 44',  date:'10月18日',payer:'Lin 垫付',   settled:true,  members:['L','W','A','M'], color:'linear-gradient(135deg,#FF6B00,#FF3B30)' },
 ];
 
 let N = bills.length;
@@ -697,3 +706,380 @@ document.getElementById('addBtn').onclick    = () => overlay.classList.add('on')
 document.getElementById('cancelBtn').onclick = () => overlay.classList.remove('on');
 document.getElementById('createBtn').onclick = addBill;
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('on'); });
+
+/* ══════════════════════════════════════════════════════════════
+   燕尾夹 — 月份视图系统
+══════════════════════════════════════════════════════════════ */
+
+// --- View Mode State ---
+let viewMode = 'all'; // 'all' | 'months' | 'month-detail'
+let currentMonthKey = null; // e.g. '2月'
+let monthPileEls = [];
+let monthDotEls  = [];
+let monthKeys    = []; // sorted month keys
+let monthGroups  = {}; // { '2月': [bill, ...], ... }
+let monthN       = 0;
+
+// DOM refs
+const monthStage    = document.getElementById('month-stage');
+const clipBtn       = document.getElementById('clip-btn');
+const backBtn       = document.getElementById('back-btn');
+const sectionLabel  = document.getElementById('section-label');
+
+// --- Group bills by month ---
+function groupBillsByMonth() {
+  monthGroups = {};
+  bills.forEach(b => {
+    // Extract month from date like '2月19日', '12月28日'
+    const m = b.date.match(/(\d+月)/);
+    if (m) {
+      const key = m[1];
+      if (!monthGroups[key]) monthGroups[key] = [];
+      monthGroups[key].push(b);
+    }
+  });
+  // Sort months descending (most recent first)
+  const monthOrder = ['12月','11月','10月','9月','8月','7月','6月','5月','4月','3月','2月','1月'];
+  monthKeys = Object.keys(monthGroups).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+  monthN = monthKeys.length;
+}
+
+// --- Create month pile element ---
+function createMonthPile(key, billsInMonth, idx) {
+  const el = document.createElement('div');
+  el.className = 'month-pile';
+  el.dataset.idx = idx;
+  el.dataset.month = key;
+
+  // Calculate total
+  const total = billsInMonth.reduce((sum, b) => {
+    const num = parseFloat(b.amount.replace(/[¥,\s]/g, ''));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
+
+  // Unique icons
+  const icons = [...new Set(billsInMonth.map(b => b.icon))].slice(0, 5);
+
+  el.innerHTML = `
+    <div class="pile-clip">
+      <div class="pile-clip-handle-l"></div>
+      <div class="pile-clip-handle-r"></div>
+      <div class="pile-clip-body"></div>
+    </div>
+    <div class="pile-card">
+      <div class="pile-month-label">${key}</div>
+      <div class="pile-year">所有账单</div>
+      <div class="pile-divider"></div>
+      <div class="pile-count">${billsInMonth.length} 笔账单</div>
+      <div class="pile-total">¥ ${total.toLocaleString('zh-CN', { minimumFractionDigits: 0 })}</div>
+      <div class="pile-icons">${icons.map(i => `<span>${i}</span>`).join('')}</div>
+    </div>`;
+
+  monthStage.appendChild(el);
+  return el;
+}
+
+// --- Month pile carousel engine (mirrors card carousel) ---
+let mFracLive = 0;
+let mCurrent  = 0;
+let mDragging     = false;
+let mStartX       = 0;
+let mStartFrac    = 0;
+let mTouchStartTime = 0;
+let mTouchStartX    = 0;
+let mInertiaRafId   = null;
+let mMoveHistory    = [];
+let mRafId    = null;
+let mPendFrac = 0;
+
+function renderMonths(frac) {
+  mFracLive = frac;
+  monthPileEls.forEach((el, i) => {
+    const offset = i - frac;
+    const absO = Math.abs(offset);
+    const sign = Math.sign(offset);
+
+    const cX = Math.pow(absO, CFG.curveX);
+    const cS = Math.pow(absO, CFG.curveScale);
+    const cY = Math.pow(absO, CFG.curveY);
+    const cO = Math.pow(absO, CFG.curveOpacity);
+
+    const x     = sign * cX * CFG.STEP;
+    const y     = cY * CFG.Y_STEP;
+    const scale = Math.max(CFG.MIN_SCALE, 1 - cS * CFG.SCALE_STEP);
+    const op    = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
+
+    el.style.transform = `translateX(${x}px) translateY(${y}px) scale(${scale})`;
+    el.style.opacity   = op;
+    el.style.zIndex    = Math.round(50 - absO * 10);
+
+    el.classList.remove('shadow-active', 'shadow-side');
+    if (absO < 0.5) el.classList.add('shadow-active');
+    else if (absO < 1.6) el.classList.add('shadow-side');
+  });
+
+  const ci = Math.max(0, Math.min(monthN - 1, Math.round(frac)));
+  monthDotEls.forEach((d, i) => {
+    const on = (i === ci);
+    if (on !== d.classList.contains('on')) d.classList.toggle('on', on);
+  });
+}
+
+function scheduleRenderMonths(frac) {
+  mPendFrac = frac;
+  if (mRafId) return;
+  mRafId = requestAnimationFrame(() => { mRafId = null; renderMonths(mPendFrac); });
+}
+
+function snapToMonth(idx) {
+  idx = Math.max(0, Math.min(monthN - 1, idx));
+  mCurrent = idx;
+  monthPileEls.forEach(el => {
+    el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+  });
+  renderMonths(idx);
+  setTimeout(() => { mFracLive = mCurrent; }, CFG.SNAP_DUR + 60);
+}
+
+// Drag handlers for month piles
+function onMonthDragStart(x) {
+  if (mInertiaRafId) { cancelAnimationFrame(mInertiaRafId); mInertiaRafId = null; }
+  mDragging = true; mStartX = x; mTouchStartX = x;
+  mStartFrac = mFracLive; mTouchStartTime = Date.now();
+  mMoveHistory = [{ x, t: Date.now() }];
+  monthStage.classList.add('dragging');
+  monthPileEls.forEach(el => { el.style.transition = 'none'; });
+}
+
+function onMonthDragMove(x) {
+  if (!mDragging) return;
+  const now = Date.now();
+  mMoveHistory.push({ x, t: now });
+  while (mMoveHistory.length > 2 && now - mMoveHistory[0].t > VELOCITY_WINDOW) mMoveHistory.shift();
+  const dx   = x - mStartX;
+  const frac = Math.max(0, Math.min(monthN - 1, mStartFrac - dx / CFG.DRAG_PX));
+  scheduleRenderMonths(frac);
+}
+
+function onMonthDragEnd(x) {
+  if (!mDragging) return;
+  mDragging = false;
+  monthStage.classList.remove('dragging');
+
+  const dx = x - mStartX;
+  const duration = Date.now() - mTouchStartTime;
+
+  // Click detection on pile
+  if (Math.abs(dx) < 8 && duration < 250) {
+    const rect = monthStage.getBoundingClientRect();
+    const clickX = x - rect.left - rect.width / 2;
+    const clicked = Math.round(mCurrent + (clickX / CFG.STEP));
+    const target = Math.max(0, Math.min(monthN - 1, clicked));
+
+    // If tapping the center pile, enter that month's detail
+    if (target === mCurrent) {
+      enterMonthDetail(monthKeys[mCurrent]);
+    } else {
+      snapToMonth(target);
+    }
+    return;
+  }
+
+  mMoveHistory.push({ x, t: Date.now() });
+  const oldest = mMoveHistory[0];
+  const newest = mMoveHistory[mMoveHistory.length - 1];
+  const dt = Math.max(1, newest.t - oldest.t);
+  const dxRecent = newest.x - oldest.x;
+  const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000);
+
+  const inertiaStart   = performance.now();
+  const startVelocity  = velocity * CFG.INERTIA_RATIO;
+  const inertiaDur     = CFG.INERTIA_DUR;
+  const inertiaStartF  = mFracLive;
+
+  function inertiaStep(now) {
+    const elapsed = now - inertiaStart;
+    const t = Math.min(1, elapsed / inertiaDur);
+    const easeT = t * (2 - t);
+    const displacement = startVelocity * (inertiaDur / 1000) * easeT * 0.5;
+    let frac = Math.max(0, Math.min(monthN - 1, inertiaStartF + displacement));
+    monthPileEls.forEach(el => { el.style.transition = 'none'; });
+    renderMonths(frac);
+    if (t < 1) {
+      mInertiaRafId = requestAnimationFrame(inertiaStep);
+    } else {
+      mInertiaRafId = null;
+      snapToMonth(Math.round(frac));
+    }
+  }
+
+  if (Math.abs(startVelocity) < 0.3) {
+    snapToMonth(Math.round(mFracLive));
+  } else {
+    mInertiaRafId = requestAnimationFrame(inertiaStep);
+  }
+}
+
+// Month stage event listeners
+monthStage.addEventListener('mousedown', e => { if (viewMode === 'months') { onMonthDragStart(e.clientX); e.preventDefault(); } });
+document.addEventListener('mousemove', e => { if (mDragging) onMonthDragMove(e.clientX); });
+document.addEventListener('mouseup',   e => { if (mDragging) onMonthDragEnd(e.clientX); });
+
+monthStage.addEventListener('touchstart', e => { if (viewMode === 'months') onMonthDragStart(e.touches[0].clientX); }, { passive: true });
+monthStage.addEventListener('touchmove', e => {
+  if (!mDragging) return;
+  e.preventDefault();
+  onMonthDragMove(e.touches[0].clientX);
+}, { passive: false });
+monthStage.addEventListener('touchend', e => { if (mDragging) onMonthDragEnd(e.changedTouches[0].clientX); });
+
+// --- View Mode Switching ---
+function buildMonthPiles() {
+  groupBillsByMonth();
+  // Clear old piles
+  monthStage.innerHTML = '';
+  monthPileEls = [];
+  // Clear old month dots
+  dotsEl.innerHTML = '';
+  // Build piles
+  monthKeys.forEach((key, i) => {
+    monthPileEls.push(createMonthPile(key, monthGroups[key], i));
+  });
+  // Build dots for months
+  monthDotEls = monthKeys.map(() => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dotsEl.appendChild(d);
+    return d;
+  });
+}
+
+function enterMonthsView() {
+  viewMode = 'months';
+  clipBtn.classList.add('active');
+
+  // Build month piles
+  buildMonthPiles();
+
+  // Hide card stage, show month stage
+  stage.classList.add('hidden');
+  monthStage.classList.add('visible');
+
+  // Update label
+  sectionLabel.textContent = '月份账单';
+  backBtn.style.display = 'none';
+
+  // Reset and render
+  mCurrent = 0;
+  mFracLive = 0;
+  snapToMonth(0);
+}
+
+function enterMonthDetail(monthKey) {
+  viewMode = 'month-detail';
+  currentMonthKey = monthKey;
+
+  const monthBills = monthGroups[monthKey];
+
+  // Hide month stage, show card stage
+  monthStage.classList.remove('visible');
+  stage.classList.remove('hidden');
+
+  // Rebuild card stage with only this month's bills
+  stage.innerHTML = '';
+  dotsEl.innerHTML = '';
+
+  // Temporarily replace cardEls and N
+  cardEls.length = 0;
+  dotEls.length = 0;
+  N = monthBills.length;
+
+  monthBills.forEach((b, i) => {
+    cardEls.push(createCard(b, i));
+    dotEls.push(createDot());
+  });
+
+  // Update label
+  sectionLabel.textContent = `${monthKey}的账单`;
+  backBtn.style.display = 'inline-block';
+
+  current = 0;
+  fracLive = 0;
+  snapTo(0);
+}
+
+function exitToAllView() {
+  viewMode = 'all';
+  clipBtn.classList.remove('active');
+  currentMonthKey = null;
+
+  // Restore card stage with all bills
+  monthStage.classList.remove('visible');
+  stage.classList.remove('hidden');
+  stage.innerHTML = '';
+  dotsEl.innerHTML = '';
+
+  cardEls.length = 0;
+  dotEls.length = 0;
+  N = bills.length;
+
+  bills.forEach((b, i) => {
+    cardEls.push(createCard(b, i));
+    dotEls.push(createDot());
+  });
+
+  sectionLabel.textContent = '最近账单';
+  backBtn.style.display = 'none';
+
+  current = 0;
+  fracLive = 0;
+  snapTo(0);
+}
+
+function exitToMonthsView() {
+  // From month-detail back to months view
+  viewMode = 'months';
+
+  // Hide card stage, show month stage
+  stage.classList.add('hidden');
+  monthStage.classList.add('visible');
+
+  sectionLabel.textContent = '月份账单';
+  backBtn.style.display = 'none';
+
+  // Find index of the month we were viewing
+  const idx = monthKeys.indexOf(currentMonthKey);
+  if (idx >= 0) {
+    mCurrent = idx;
+    mFracLive = idx;
+    snapToMonth(idx);
+  }
+
+  // Rebuild dots for months
+  dotsEl.innerHTML = '';
+  monthDotEls = monthKeys.map(() => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dotsEl.appendChild(d);
+    return d;
+  });
+  renderMonths(mFracLive);
+}
+
+// --- Event: Clip button toggle ---
+clipBtn.addEventListener('click', () => {
+  if (viewMode === 'all') {
+    enterMonthsView();
+  } else if (viewMode === 'months') {
+    exitToAllView();
+  } else if (viewMode === 'month-detail') {
+    exitToAllView();
+  }
+});
+
+// --- Event: Back button ---
+backBtn.addEventListener('click', () => {
+  if (viewMode === 'month-detail') {
+    exitToMonthsView();
+  }
+});
