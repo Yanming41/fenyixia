@@ -54,12 +54,13 @@ function createCard(b, i) {
     <div class="card-highlight"></div>
     <div class="card-noise"></div>
     <div class="card-inner">
-      <div class="card-top">
-        <div class="card-icon-box">${b.icon}</div>
-        <div class="card-date-label">${b.date}</div>
+      <div class="card-header">
+        <div class="card-title">${b.title}</div>
+        <div class="card-date">${b.date}</div>
       </div>
+      <div class="card-divider"></div>
+      <div class="card-emoji">${b.icon}</div>
       <div class="card-amount-section">
-        <div class="card-label-title">${b.title}</div>
         <div class="card-amount-num">${b.amount}</div>
         <div class="card-per-line">每人均摊 <em>${b.per}</em></div>
       </div>
