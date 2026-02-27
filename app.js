@@ -2,20 +2,20 @@
    数据
 ══════════════════════════════════════════════════════════════ */
 const bills = [
-  { icon:'🛒', title:'超市采购', desc:'月嫂超市 · 生活用品', amount:'¥ 268', per:'¥ 67',  date:'2月19日', payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon:'🍜', title:'晚饭外卖', desc:'美团 · 沙县小吃',     amount:'¥ 112', per:'¥ 28',  date:'2月17日', payer:'Lin 垫付',   settled:false, members:['L','W','A','M'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon:'🏸', title:'羽毛球馆', desc:'UofT 体育馆 · 2h',   amount:'¥ 192', per:'¥ 48',  date:'2月15日', payer:'Abby 垫付',  settled:false, members:['A','M','L','W'], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
-  { icon:'⚡', title:'月度水电', desc:'物业 · 1月账单',      amount:'¥ 712', per:'¥ 178', date:'2月1日',  payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
-  { icon:'☕', title:'星巴克',   desc:'Starbucks · 下午茶',  amount:'¥ 136', per:'¥ 34',  date:'1月29日', payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#007AFF,#5AC8FA)' },
-  { icon:'🎮', title:'Switch游戏',desc:'eShop · 双人成行',  amount:'¥ 198', per:'¥ 50',  date:'1月15日', payer:'Lin 垫付',   settled:true,  members:['L','A','W','M'], color:'linear-gradient(135deg,#FF2D55,#AF52DE)' },
-  { icon:'🛒', title:'日用囤货', desc:'京东 · 纸巾洗衣液',  amount:'¥ 156', per:'¥ 39',  date:'12月28日',payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon:'🍜', title:'火锅聚餐', desc:'海底捞 · 4人套餐',   amount:'¥ 488', per:'¥ 122', date:'12月24日',payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon:'🎮', title:'KTV',      desc:'好乐迪 · 平安夜',    amount:'¥ 320', per:'¥ 80',  date:'12月24日',payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#5E5CE6,#007AFF)' },
-  { icon:'⚡', title:'月度水电', desc:'物业 · 12月账单',     amount:'¥ 684', per:'¥ 171', date:'12月1日', payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
-  { icon:'🏸', title:'羽毛球馆', desc:'UofT 体育馆 · 3h',   amount:'¥ 288', per:'¥ 72',  date:'11月20日',payer:'Lin 垫付',   settled:true,  members:['L','A','M','W'], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
-  { icon:'🛒', title:'超市采购', desc:'沃尔玛 · 零食饮料',   amount:'¥ 214', per:'¥ 54',  date:'11月12日',payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon:'🚗', title:'打车费',   desc:'滴滴 · 机场接人',    amount:'¥ 186', per:'¥ 47',  date:'10月30日',payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon:'🍜', title:'烧烤',     desc:'路边摊 · 宵夜',      amount:'¥ 176', per:'¥ 44',  date:'10月18日',payer:'Lin 垫付',   settled:true,  members:['L','W','A','M'], color:'linear-gradient(135deg,#FF6B00,#FF3B30)' },
+  { icon: '🛒', title: '超市采购', desc: '月嫂超市 · 生活用品', amount: '¥ 268', per: '¥ 67', date: '2月19日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon: '🍜', title: '晚饭外卖', desc: '美团 · 沙县小吃', amount: '¥ 112', per: '¥ 28', date: '2月17日', payer: 'Lin 垫付', settled: false, members: ['L', 'W', 'A', 'M'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon: '🏸', title: '羽毛球馆', desc: 'UofT 体育馆 · 2h', amount: '¥ 192', per: '¥ 48', date: '2月15日', payer: 'Abby 垫付', settled: false, members: ['A', 'M', 'L', 'W'], color: 'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { icon: '⚡', title: '月度水电', desc: '物业 · 1月账单', amount: '¥ 712', per: '¥ 178', date: '2月1日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { icon: '☕', title: '星巴克', desc: 'Starbucks · 下午茶', amount: '¥ 136', per: '¥ 34', date: '1月29日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#007AFF,#5AC8FA)' },
+  { icon: '🎮', title: 'Switch游戏', desc: 'eShop · 双人成行', amount: '¥ 198', per: '¥ 50', date: '1月15日', payer: 'Lin 垫付', settled: true, members: ['L', 'A', 'W', 'M'], color: 'linear-gradient(135deg,#FF2D55,#AF52DE)' },
+  { icon: '🛒', title: '日用囤货', desc: '京东 · 纸巾洗衣液', amount: '¥ 156', per: '¥ 39', date: '12月28日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon: '🍜', title: '火锅聚餐', desc: '海底捞 · 4人套餐', amount: '¥ 488', per: '¥ 122', date: '12月24日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon: '🎮', title: 'KTV', desc: '好乐迪 · 平安夜', amount: '¥ 320', per: '¥ 80', date: '12月24日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#5E5CE6,#007AFF)' },
+  { icon: '⚡', title: '月度水电', desc: '物业 · 12月账单', amount: '¥ 684', per: '¥ 171', date: '12月1日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { icon: '🏸', title: '羽毛球馆', desc: 'UofT 体育馆 · 3h', amount: '¥ 288', per: '¥ 72', date: '11月20日', payer: 'Lin 垫付', settled: true, members: ['L', 'A', 'M', 'W'], color: 'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { icon: '🛒', title: '超市采购', desc: '沃尔玛 · 零食饮料', amount: '¥ 214', per: '¥ 54', date: '11月12日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon: '🚗', title: '打车费', desc: '滴滴 · 机场接人', amount: '¥ 186', per: '¥ 47', date: '10月30日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon: '🍜', title: '烧烤', desc: '路边摊 · 宵夜', amount: '¥ 176', per: '¥ 44', date: '10月18日', payer: 'Lin 垫付', settled: true, members: ['L', 'W', 'A', 'M'], color: 'linear-gradient(135deg,#FF6B00,#FF3B30)' },
 ];
 
 let N = bills.length;
@@ -24,34 +24,34 @@ let N = bills.length;
    动画参数
 ══════════════════════════════════════════════════════════════ */
 const CFG = {
-  STEP:        148,
-  DRAG_PX:      72,
-  SCALE_STEP:   0.13,
-  MIN_SCALE:    0.60,
-  Y_STEP:       14,
+  STEP: 148,
+  DRAG_PX: 72,
+  SCALE_STEP: 0.13,
+  MIN_SCALE: 0.60,
+  Y_STEP: 14,
   OPACITY_STEP: 0.26,
-  SNAP_DUR:     420,
-  POP_SCALE:    1.08,  // 选中弹跳放大倍数
-  POP_DUR:      280,   // 选中弹跳时长 ms
-  popMode:      'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
-  INERTIA_DUR:  2000,  // 惯性滑行持续时间 ms
+  SNAP_DUR: 420,
+  POP_SCALE: 1.08,  // 选中弹跳放大倍数
+  POP_DUR: 280,   // 选中弹跳时长 ms
+  popMode: 'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
+  INERTIA_DUR: 2000,  // 惯性滑行持续时间 ms
   INERTIA_RATIO: 0.6,  // 惯性速度比例（乘以滑动速度）
-  showShadow:   true,
-  showFPS:      false,
-  showTexture:  true,
-  showSheen:    true,
-  cycle:        false, // 无限循环
+  showShadow: true,
+  showFPS: false,
+  showTexture: true,
+  showSheen: true,
+  cycle: false, // 无限循环
   // 曲线指数：1.0 = 线性, >1 = 中心缓慢/边缘加速, <1 = 中心快/边缘缓
-  curveX:       0.8,   // 位移曲线
-  curveScale:   2.4,   // 缩放曲线
-  curveY:       1.7,   // 下沉曲线
+  curveX: 0.8,   // 位移曲线
+  curveScale: 2.4,   // 缩放曲线
+  curveY: 1.7,   // 下沉曲线
   curveOpacity: 1.7,   // 透明度曲线
 };
 
 /* ══════════════════════════════════════════════════════════════
    DOM 构建：卡片 / 指示点
 ══════════════════════════════════════════════════════════════ */
-const stage  = document.getElementById('stage');
+const stage = document.getElementById('stage');
 const dotsEl = document.getElementById('dots');
 
 function createCard(b, i) {
@@ -90,18 +90,18 @@ function createDot() {
 }
 
 const cardEls = bills.map((b, i) => createCard(b, i));
-const dotEls  = bills.map(() => createDot());
+const dotEls = bills.map(() => createDot());
 
 /* ══════════════════════════════════════════════════════════════
    滑动音效引擎
 ══════════════════════════════════════════════════════════════ */
 const SFX = {
-  enabled:  true,
-  volume:   0.6,
-  sounds:   [],       // AudioBuffer[]
-  current:  0,        // 当前选中的音效索引
-  names:    [],       // 文件名列表
-  lastInt:  0,        // 上一次经过的整数位置（用于检测跨越）
+  enabled: true,
+  volume: 0.6,
+  sounds: [],       // AudioBuffer[]
+  current: 0,        // 当前选中的音效索引
+  names: [],       // 文件名列表
+  lastInt: 0,        // 上一次经过的整数位置（用于检测跨越）
 };
 
 let audioCtx = null;
@@ -114,7 +114,7 @@ function playSfx() {
   if (!SFX.enabled || SFX.sounds.length === 0) return;
   const ctx = getAudioCtx();
   if (ctx.state === 'suspended') ctx.resume();
-  const src  = ctx.createBufferSource();
+  const src = ctx.createBufferSource();
   const gain = ctx.createGain();
   src.buffer = SFX.sounds[SFX.current % SFX.sounds.length];
   gain.gain.value = SFX.volume;
@@ -133,9 +133,9 @@ function checkSfxTrigger(frac) {
 
 // 加载音频文件（File 对象）
 async function loadSoundFile(file) {
-  const ctx    = getAudioCtx();
-  const buf    = await file.arrayBuffer();
-  const audio  = await ctx.decodeAudioData(buf);
+  const ctx = getAudioCtx();
+  const buf = await file.arrayBuffer();
+  const audio = await ctx.decodeAudioData(buf);
   SFX.sounds.push(audio);
   SFX.names.push(file.name.replace(/\.[^.]+$/, ''));
   // 默认选最新加的
@@ -154,9 +154,9 @@ function updateSoundLabel() {
 
 // 加载内置音效
 async function loadBuiltinSound(url, name) {
-  const ctx  = getAudioCtx();
+  const ctx = getAudioCtx();
   const resp = await fetch(url);
-  const buf  = await resp.arrayBuffer();
+  const buf = await resp.arrayBuffer();
   const audio = await ctx.decodeAudioData(buf);
   SFX.sounds.push(audio);
   SFX.names.push(name);
@@ -176,9 +176,9 @@ const BUILTIN_SOUNDS = [
 let fracLive = 0;
 
 // 调试面板状态（需在 render() 调用前声明）
-let debugOpen    = false;
+let debugOpen = false;
 let logoClickCnt = 0;
-let logoClickTs  = 0;
+let logoClickTs = 0;
 
 /* 辅助：将任意整数/浮点数 wrap 到 [0, N) */
 function wrapN(v) { return ((v % N) + N) % N; }
@@ -196,7 +196,7 @@ function render(frac) {
     let offset = i - fracW;
     if (CFG.cycle) {
       // 取最短圆弧方向（wrap 到 [-N/2, N/2]）
-      if (offset >  N / 2) offset -= N;
+      if (offset > N / 2) offset -= N;
       if (offset < -N / 2) offset += N;
     }
     const absO = Math.abs(offset);
@@ -209,14 +209,14 @@ function render(frac) {
     const cY = Math.pow(absO, CFG.curveY);
     const cO = Math.pow(absO, CFG.curveOpacity);
 
-    const x     = sign * cX * CFG.STEP;
-    const y     = cY * CFG.Y_STEP;
+    const x = sign * cX * CFG.STEP;
+    const y = cY * CFG.Y_STEP;
     const scale = Math.max(CFG.MIN_SCALE, 1 - cS * CFG.SCALE_STEP);
-    const op    = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
+    const op = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
 
     el.style.transform = `translateX(${x}px) translateY(${y}px) scale(${scale})`;
-    el.style.opacity   = op;
-    el.style.zIndex    = Math.round(50 - absO * 10);
+    el.style.opacity = op;
+    el.style.zIndex = Math.round(50 - absO * 10);
 
     el.classList.remove('shadow-active', 'shadow-side', 'no-shadow');
     if (!CFG.showShadow) {
@@ -238,14 +238,14 @@ function render(frac) {
 
   if (debugOpen) {
     document.getElementById('dbg-frac').textContent = frac.toFixed(3);
-    document.getElementById('dbg-cur').textContent  = current;
+    document.getElementById('dbg-cur').textContent = current;
   }
 }
 
 /* ══════════════════════════════════════════════════════════════
    RAF 节流
 ══════════════════════════════════════════════════════════════ */
-let rafId    = null;
+let rafId = null;
 let pendFrac = 0;
 
 function scheduleRender(frac) {
@@ -267,7 +267,7 @@ function snapTo(idx) {
   if (CFG.cycle) {
     current = Math.round(wrapN(idx));
   } else {
-    idx     = Math.max(0, Math.min(N - 1, idx));
+    idx = Math.max(0, Math.min(N - 1, idx));
     current = idx;
   }
   cardEls.forEach(el => {
@@ -284,9 +284,9 @@ function snapTo(idx) {
   if (current !== oldCurrent) {
     if (CFG.popMode === 'all') {
       // 模式 A：整行滑过目标再回弹（模拟惯性过冲）
-      const dir    = current > oldCurrent ? 1 : -1;
+      const dir = current > oldCurrent ? 1 : -1;
       const overshoot = (CFG.POP_SCALE - 1);  // 复用 POP_SCALE 控制过冲幅度
-      const overIdx   = idx + dir * overshoot;
+      const overIdx = idx + dir * overshoot;
 
       // 先滑到过冲位置
       render(overIdx);
@@ -304,11 +304,11 @@ function snapTo(idx) {
       if (targetEl) {
         popTimer1 = setTimeout(() => {
           targetEl.style.transition = `transform ${CFG.POP_DUR / 2}ms cubic-bezier(.25,.46,.45,.94)`;
-          targetEl.style.transform  = `translateX(0px) translateY(0px) scale(${CFG.POP_SCALE})`;
+          targetEl.style.transform = `translateX(0px) translateY(0px) scale(${CFG.POP_SCALE})`;
 
           popTimer2 = setTimeout(() => {
             targetEl.style.transition = `transform ${CFG.POP_DUR / 2}ms cubic-bezier(.25,.46,.45,.94)`;
-            targetEl.style.transform  = `translateX(0px) translateY(0px) scale(1)`;
+            targetEl.style.transform = `translateX(0px) translateY(0px) scale(1)`;
           }, CFG.POP_DUR / 2);
         }, CFG.SNAP_DUR);
       }
@@ -323,12 +323,12 @@ function snapTo(idx) {
 /* ══════════════════════════════════════════════════════════════
    拖动手势
 ══════════════════════════════════════════════════════════════ */
-let dragging       = false;
-let startX         = 0;
-let startFrac      = 0;
+let dragging = false;
+let startX = 0;
+let startFrac = 0;
 let touchStartTime = 0;
-let touchStartX    = 0;
-let inertiaRafId   = null;
+let touchStartX = 0;
+let inertiaRafId = null;
 
 // 保留最近若干采样点，用于计算松手速度
 const VELOCITY_WINDOW = 80; // 只看最近 80ms 内的采样
@@ -351,8 +351,8 @@ function onDragMove(x) {
   while (moveHistory.length > 2 && now - moveHistory[0].t > VELOCITY_WINDOW) {
     moveHistory.shift();
   }
-  const dx   = x - startX;
-  const raw  = startFrac - dx / CFG.DRAG_PX;
+  const dx = x - startX;
+  const raw = startFrac - dx / CFG.DRAG_PX;
   const frac = CFG.cycle ? raw : Math.max(0, Math.min(N - 1, raw));
   scheduleRender(frac);
 }
@@ -362,15 +362,15 @@ function onDragEnd(x) {
   dragging = false;
   stage.classList.remove('dragging');
 
-  const dx       = x - startX;
+  const dx = x - startX;
   const duration = Date.now() - touchStartTime;
 
   // 点击检测
   if (Math.abs(dx) < 8 && duration < 250) {
-    const stageRect   = stage.getBoundingClientRect();
-    const clickX      = x - stageRect.left - stageRect.width / 2;
+    const stageRect = stage.getBoundingClientRect();
+    const clickX = x - stageRect.left - stageRect.width / 2;
     const clickedCard = Math.round(current + (clickX / CFG.STEP));
-    const target      = CFG.cycle
+    const target = CFG.cycle
       ? clickedCard
       : Math.max(0, Math.min(N - 1, clickedCard));
     snapTo(target);
@@ -388,14 +388,14 @@ function onDragEnd(x) {
   const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000); // frac/s
 
   // 惯性滑行：用 RAF 逐帧减速
-  const inertiaStart   = performance.now();
-  const startVelocity  = velocity * CFG.INERTIA_RATIO;
-  const inertiaDur     = CFG.INERTIA_DUR;
-  const inertiaStartF  = fracLive;
+  const inertiaStart = performance.now();
+  const startVelocity = velocity * CFG.INERTIA_RATIO;
+  const inertiaDur = CFG.INERTIA_DUR;
+  const inertiaStartF = fracLive;
 
   function inertiaStep(now) {
     const elapsed = now - inertiaStart;
-    const t       = Math.min(1, elapsed / inertiaDur);
+    const t = Math.min(1, elapsed / inertiaDur);
     // ease-out 减速：v(t) = v0 * (1-t)^2 → 位移 = v0 * dur * (t - t²/2 + t³/3) ... 简化用积分
     // 简单用 easeOut: displacement = v0 * dur/1000 * (t - t²/2) * 2 归一化
     const easeT = t * (2 - t); // ease-out quadratic: 0→0, 1→1
@@ -432,7 +432,7 @@ function onDragEnd(x) {
 ══════════════════════════════════════════════════════════════ */
 stage.addEventListener('mousedown', e => { onDragStart(e.clientX); e.preventDefault(); });
 document.addEventListener('mousemove', e => { if (dragging) onDragMove(e.clientX); });
-document.addEventListener('mouseup',   e => { if (dragging) onDragEnd(e.clientX); });
+document.addEventListener('mouseup', e => { if (dragging) onDragEnd(e.clientX); });
 
 stage.addEventListener('touchstart', e => { onDragStart(e.touches[0].clientX); }, { passive: true });
 stage.addEventListener('touchmove', e => {
@@ -456,11 +456,11 @@ snapTo(0);
 /* ══════════════════════════════════════════════════════════════
    FPS 计数器
 ══════════════════════════════════════════════════════════════ */
-const fpsEl    = document.getElementById('fps-counter');
+const fpsEl = document.getElementById('fps-counter');
 const dbgFpsEl = document.getElementById('dbg-fps');
 let fpsSamples = [];
-let lastFpsTs  = 0;
-let fpsRafId   = null;
+let lastFpsTs = 0;
+let fpsRafId = null;
 
 function fpsLoop(ts) {
   if (lastFpsTs) {
@@ -469,18 +469,18 @@ function fpsLoop(ts) {
   }
   lastFpsTs = ts;
   if (fpsSamples.length >= 10) {
-    const avg   = fpsSamples.reduce((a, b) => a + b, 0) / fpsSamples.length;
-    const fps   = Math.round(1000 / avg);
+    const avg = fpsSamples.reduce((a, b) => a + b, 0) / fpsSamples.length;
+    const fps = Math.round(1000 / avg);
     const color = fps >= 55 ? '#30D158' : fps >= 40 ? '#FF9F0A' : '#FF453A';
-    fpsEl.textContent    = `FPS: ${fps}`;
-    fpsEl.style.color    = color;
+    fpsEl.textContent = `FPS: ${fps}`;
+    fpsEl.style.color = color;
     dbgFpsEl.textContent = fps;
     dbgFpsEl.style.color = color;
   }
   fpsRafId = requestAnimationFrame(fpsLoop);
 }
 function startFPS() { if (!fpsRafId) fpsRafId = requestAnimationFrame(fpsLoop); fpsEl.classList.add('visible'); }
-function stopFPS()  { if (fpsRafId) { cancelAnimationFrame(fpsRafId); fpsRafId = null; } fpsEl.classList.remove('visible'); fpsSamples = []; }
+function stopFPS() { if (fpsRafId) { cancelAnimationFrame(fpsRafId); fpsRafId = null; } fpsEl.classList.remove('visible'); fpsSamples = []; }
 
 /* ══════════════════════════════════════════════════════════════
    调试控制台
@@ -503,21 +503,21 @@ function bindSlider(id, valId, cfgKey, unit, scale) {
   sl.addEventListener('input', () => {
     const raw = parseFloat(sl.value);
     CFG[cfgKey] = raw * (scale || 1);
-    vl.textContent = unit ? `${raw}${unit}` : (raw * (scale||1)).toFixed(2);
+    vl.textContent = unit ? `${raw}${unit}` : (raw * (scale || 1)).toFixed(2);
     render(fracLive);
   });
 }
-bindSlider('sl-step',     'vl-step',     'STEP',         'px');
-bindSlider('sl-drag',     'vl-drag',     'DRAG_PX',      'px');
-bindSlider('sl-scale',    'vl-scale',    'SCALE_STEP',   '/级', 0.01);
-bindSlider('sl-minscale', 'vl-minscale', 'MIN_SCALE',    '',    0.01);
-bindSlider('sl-y',        'vl-y',        'Y_STEP',       'px');
-bindSlider('sl-opacity',  'vl-opacity',  'OPACITY_STEP', '/级', 0.01);
-bindSlider('sl-dur',      'vl-dur',      'SNAP_DUR',     'ms');
-bindSlider('sl-pop',      'vl-pop',      'POP_SCALE',    '',   0.01);
-bindSlider('sl-popdur',   'vl-popdur',   'POP_DUR',      'ms');
+bindSlider('sl-step', 'vl-step', 'STEP', 'px');
+bindSlider('sl-drag', 'vl-drag', 'DRAG_PX', 'px');
+bindSlider('sl-scale', 'vl-scale', 'SCALE_STEP', '/级', 0.01);
+bindSlider('sl-minscale', 'vl-minscale', 'MIN_SCALE', '', 0.01);
+bindSlider('sl-y', 'vl-y', 'Y_STEP', 'px');
+bindSlider('sl-opacity', 'vl-opacity', 'OPACITY_STEP', '/级', 0.01);
+bindSlider('sl-dur', 'vl-dur', 'SNAP_DUR', 'ms');
+bindSlider('sl-pop', 'vl-pop', 'POP_SCALE', '', 0.01);
+bindSlider('sl-popdur', 'vl-popdur', 'POP_DUR', 'ms');
 // 惯性时长：滑块值就是 ms，显示为秒
-(function() {
+(function () {
   const sl = document.getElementById('sl-inertdur');
   const vl = document.getElementById('vl-inertdur');
   sl.addEventListener('input', () => {
@@ -526,16 +526,16 @@ bindSlider('sl-popdur',   'vl-popdur',   'POP_DUR',      'ms');
     render(fracLive);
   });
 })();
-bindSlider('sl-inertratio','vl-inertratio','INERTIA_RATIO','',  0.01);
+bindSlider('sl-inertratio', 'vl-inertratio', 'INERTIA_RATIO', '', 0.01);
 
-bindSlider('sl-cx',       'vl-cx',       'curveX',        null, 0.10);  // 3~30 → 0.3~3.0
-bindSlider('sl-cs',       'vl-cs',       'curveScale',    null, 0.10);
-bindSlider('sl-cy',       'vl-cy',       'curveY',        null, 0.10);
-bindSlider('sl-co',       'vl-co',       'curveOpacity',  null, 0.10);
+bindSlider('sl-cx', 'vl-cx', 'curveX', null, 0.10);  // 3~30 → 0.3~3.0
+bindSlider('sl-cs', 'vl-cs', 'curveScale', null, 0.10);
+bindSlider('sl-cy', 'vl-cy', 'curveY', null, 0.10);
+bindSlider('sl-co', 'vl-co', 'curveOpacity', null, 0.10);
 
-document.getElementById('vl-scale').textContent    = `${CFG.SCALE_STEP.toFixed(2)}/级`;
+document.getElementById('vl-scale').textContent = `${CFG.SCALE_STEP.toFixed(2)}/级`;
 document.getElementById('vl-minscale').textContent = CFG.MIN_SCALE.toFixed(2);
-document.getElementById('vl-opacity').textContent  = `${CFG.OPACITY_STEP.toFixed(2)}/级`;
+document.getElementById('vl-opacity').textContent = `${CFG.OPACITY_STEP.toFixed(2)}/级`;
 
 document.getElementById('tog-shadow').addEventListener('change', e => { CFG.showShadow = e.target.checked; render(fracLive); });
 document.getElementById('tog-fps').addEventListener('change', e => { CFG.showFPS = e.target.checked; CFG.showFPS ? startFPS() : stopFPS(); });
@@ -578,7 +578,7 @@ document.getElementById('tog-sound').addEventListener('change', e => {
   SFX.enabled = e.target.checked;
 });
 
-document.getElementById('sl-vol').addEventListener('input', function() {
+document.getElementById('sl-vol').addEventListener('input', function () {
   SFX.volume = this.value / 100;
   document.getElementById('vl-vol').textContent = this.value + '%';
 });
@@ -592,7 +592,7 @@ document.getElementById('sound-name').addEventListener('click', () => {
 });
 
 // 拖放 & 点击选择文件
-const soundDrop  = document.getElementById('sound-drop');
+const soundDrop = document.getElementById('sound-drop');
 const soundInput = document.getElementById('sound-input');
 
 soundDrop.addEventListener('click', () => soundInput.click());
@@ -645,19 +645,19 @@ const BILL_COLORS = [
   'linear-gradient(135deg,#007AFF,#5AC8FA)',
   'linear-gradient(135deg,#FFD60A,#FF9F0A)',
 ];
-const MEMBER_POOL = ['A','L','W','M','E','F'];
+const MEMBER_POOL = ['A', 'L', 'W', 'M', 'E', 'F'];
 
 function fmtDate(d) { return `${d.getMonth() + 1}月${d.getDate()}日`; }
 function fmtMoney(n) { return `¥ ${Number.isInteger(n) ? n : n.toFixed(2)}`; }
 
 function addBill() {
-  const inpTitle  = document.getElementById('inp-title');
+  const inpTitle = document.getElementById('inp-title');
   const inpAmount = document.getElementById('inp-amount');
-  const inpPayer  = document.getElementById('inp-payer');
+  const inpPayer = document.getElementById('inp-payer');
 
-  const title  = inpTitle.value.trim();
+  const title = inpTitle.value.trim();
   const amount = parseFloat(inpAmount.value);
-  const payer  = inpPayer.value.trim();
+  const payer = inpPayer.value.trim();
 
   // 校验：给父行加 err class（行变红 + 抖动）
   let valid = true;
@@ -665,24 +665,24 @@ function addBill() {
     el.classList.remove('err');
     el.closest('.fg').classList.remove('err');
   });
-  if (!title)              { inpTitle.classList.add('err');  inpTitle.closest('.fg').classList.add('err');  valid = false; }
-  if (!amount || amount<=0){ inpAmount.classList.add('err'); inpAmount.closest('.fg').classList.add('err'); valid = false; }
-  if (!payer)              { inpPayer.classList.add('err');  inpPayer.closest('.fg').classList.add('err');  valid = false; }
+  if (!title) { inpTitle.classList.add('err'); inpTitle.closest('.fg').classList.add('err'); valid = false; }
+  if (!amount || amount <= 0) { inpAmount.classList.add('err'); inpAmount.closest('.fg').classList.add('err'); valid = false; }
+  if (!payer) { inpPayer.classList.add('err'); inpPayer.closest('.fg').classList.add('err'); valid = false; }
   if (!valid) return;
 
-  const icon    = document.querySelector('.ip-btn.on').dataset.icon;
+  const icon = document.querySelector('.ip-btn.on').dataset.icon;
   const nPeople = parseInt(document.querySelector('.pp-btn.on').dataset.n);
-  const per     = amount / nPeople;
+  const per = amount / nPeople;
   const members = MEMBER_POOL.slice(0, nPeople);
-  const color   = BILL_COLORS[bills.length % BILL_COLORS.length];
+  const color = BILL_COLORS[bills.length % BILL_COLORS.length];
 
   const bill = {
     icon, title,
-    desc:    `${payer} · ${nPeople}人均摊`,
-    amount:  fmtMoney(amount),
-    per:     fmtMoney(per),
-    date:    fmtDate(new Date()),
-    payer:   payer + ' 垫付',
+    desc: `${payer} · ${nPeople}人均摊`,
+    amount: fmtMoney(amount),
+    per: fmtMoney(per),
+    date: fmtDate(new Date()),
+    payer: payer + ' 垫付',
     settled: false,
     members, color,
   };
@@ -702,7 +702,7 @@ function addBill() {
   snapTo(idx);
 }
 
-document.getElementById('addBtn').onclick    = () => overlay.classList.add('on');
+document.getElementById('addBtn').onclick = () => overlay.classList.add('on');
 document.getElementById('cancelBtn').onclick = () => overlay.classList.remove('on');
 document.getElementById('createBtn').onclick = addBill;
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('on'); });
@@ -715,16 +715,16 @@ overlay.addEventListener('click', e => { if (e.target === overlay) overlay.class
 let viewMode = 'all'; // 'all' | 'months' | 'month-detail'
 let currentMonthKey = null; // e.g. '2月'
 let monthPileEls = [];
-let monthDotEls  = [];
-let monthKeys    = []; // sorted month keys
-let monthGroups  = {}; // { '2月': [bill, ...], ... }
-let monthN       = 0;
+let monthDotEls = [];
+let monthKeys = []; // sorted month keys
+let monthGroups = {}; // { '2月': [bill, ...], ... }
+let monthN = 0;
 
 // DOM refs
-const monthStage    = document.getElementById('month-stage');
-const clipBtn       = document.getElementById('clip-btn');
-const backBtn       = document.getElementById('back-btn');
-const sectionLabel  = document.getElementById('section-label');
+const monthStage = document.getElementById('month-stage');
+const clipBtn = document.getElementById('clip-btn');
+const backBtn = document.getElementById('back-btn');
+const sectionLabel = document.getElementById('section-label');
 
 // --- Group bills by month ---
 function groupBillsByMonth() {
@@ -739,7 +739,7 @@ function groupBillsByMonth() {
     }
   });
   // Sort months descending (most recent first)
-  const monthOrder = ['12月','11月','10月','9月','8月','7月','6月','5月','4月','3月','2月','1月'];
+  const monthOrder = ['12月', '11月', '10月', '9月', '8月', '7月', '6月', '5月', '4月', '3月', '2月', '1月'];
   monthKeys = Object.keys(monthGroups).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
   monthN = monthKeys.length;
 }
@@ -761,11 +761,7 @@ function createMonthPile(key, billsInMonth, idx) {
   const icons = [...new Set(billsInMonth.map(b => b.icon))].slice(0, 5);
 
   el.innerHTML = `
-    <div class="pile-clip">
-      <div class="pile-clip-handle-l"></div>
-      <div class="pile-clip-handle-r"></div>
-      <div class="pile-clip-body"></div>
-    </div>
+    <div class="pile-pin">📌</div>
     <div class="pile-card">
       <div class="pile-month-label">${key}</div>
       <div class="pile-year">所有账单</div>
@@ -781,15 +777,15 @@ function createMonthPile(key, billsInMonth, idx) {
 
 // --- Month pile carousel engine (mirrors card carousel) ---
 let mFracLive = 0;
-let mCurrent  = 0;
-let mDragging     = false;
-let mStartX       = 0;
-let mStartFrac    = 0;
+let mCurrent = 0;
+let mDragging = false;
+let mStartX = 0;
+let mStartFrac = 0;
 let mTouchStartTime = 0;
-let mTouchStartX    = 0;
-let mInertiaRafId   = null;
-let mMoveHistory    = [];
-let mRafId    = null;
+let mTouchStartX = 0;
+let mInertiaRafId = null;
+let mMoveHistory = [];
+let mRafId = null;
 let mPendFrac = 0;
 
 function renderMonths(frac) {
@@ -804,14 +800,14 @@ function renderMonths(frac) {
     const cY = Math.pow(absO, CFG.curveY);
     const cO = Math.pow(absO, CFG.curveOpacity);
 
-    const x     = sign * cX * CFG.STEP;
-    const y     = cY * CFG.Y_STEP;
+    const x = sign * cX * CFG.STEP;
+    const y = cY * CFG.Y_STEP;
     const scale = Math.max(CFG.MIN_SCALE, 1 - cS * CFG.SCALE_STEP);
-    const op    = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
+    const op = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
 
     el.style.transform = `translateX(${x}px) translateY(${y}px) scale(${scale})`;
-    el.style.opacity   = op;
-    el.style.zIndex    = Math.round(50 - absO * 10);
+    el.style.opacity = op;
+    el.style.zIndex = Math.round(50 - absO * 10);
 
     el.classList.remove('shadow-active', 'shadow-side');
     if (absO < 0.5) el.classList.add('shadow-active');
@@ -856,7 +852,7 @@ function onMonthDragMove(x) {
   const now = Date.now();
   mMoveHistory.push({ x, t: now });
   while (mMoveHistory.length > 2 && now - mMoveHistory[0].t > VELOCITY_WINDOW) mMoveHistory.shift();
-  const dx   = x - mStartX;
+  const dx = x - mStartX;
   const frac = Math.max(0, Math.min(monthN - 1, mStartFrac - dx / CFG.DRAG_PX));
   scheduleRenderMonths(frac);
 }
@@ -892,10 +888,10 @@ function onMonthDragEnd(x) {
   const dxRecent = newest.x - oldest.x;
   const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000);
 
-  const inertiaStart   = performance.now();
-  const startVelocity  = velocity * CFG.INERTIA_RATIO;
-  const inertiaDur     = CFG.INERTIA_DUR;
-  const inertiaStartF  = mFracLive;
+  const inertiaStart = performance.now();
+  const startVelocity = velocity * CFG.INERTIA_RATIO;
+  const inertiaDur = CFG.INERTIA_DUR;
+  const inertiaStartF = mFracLive;
 
   function inertiaStep(now) {
     const elapsed = now - inertiaStart;
@@ -923,7 +919,7 @@ function onMonthDragEnd(x) {
 // Month stage event listeners
 monthStage.addEventListener('mousedown', e => { if (viewMode === 'months') { onMonthDragStart(e.clientX); e.preventDefault(); } });
 document.addEventListener('mousemove', e => { if (mDragging) onMonthDragMove(e.clientX); });
-document.addEventListener('mouseup',   e => { if (mDragging) onMonthDragEnd(e.clientX); });
+document.addEventListener('mouseup', e => { if (mDragging) onMonthDragEnd(e.clientX); });
 
 monthStage.addEventListener('touchstart', e => { if (viewMode === 'months') onMonthDragStart(e.touches[0].clientX); }, { passive: true });
 monthStage.addEventListener('touchmove', e => {
@@ -981,31 +977,84 @@ function enterMonthDetail(monthKey) {
 
   const monthBills = monthGroups[monthKey];
 
-  // Hide month stage, show card stage
-  monthStage.classList.remove('visible');
-  stage.classList.remove('hidden');
+  // Step 1: Unpin animation on the current pile
+  const currentPile = monthPileEls[mCurrent];
+  const pinEl = currentPile ? currentPile.querySelector('.pile-pin') : null;
+  if (pinEl) pinEl.classList.add('unpin');
 
-  // Rebuild card stage with only this month's bills
-  stage.innerHTML = '';
-  dotsEl.innerHTML = '';
+  // Step 2: After unpin, switch view and BURST cards out
+  setTimeout(() => {
+    // Hide month stage, show card stage
+    monthStage.classList.remove('visible');
+    stage.classList.remove('hidden');
 
-  // Temporarily replace cardEls and N
-  cardEls.length = 0;
-  dotEls.length = 0;
-  N = monthBills.length;
+    // Rebuild card stage with only this month's bills
+    stage.innerHTML = '';
+    dotsEl.innerHTML = '';
 
-  monthBills.forEach((b, i) => {
-    cardEls.push(createCard(b, i));
-    dotEls.push(createDot());
-  });
+    cardEls.length = 0;
+    dotEls.length = 0;
+    N = monthBills.length;
 
-  // Update label
-  sectionLabel.textContent = `${monthKey}的账单`;
-  backBtn.style.display = 'inline-block';
+    // Add burst flash effect
+    const flash = document.createElement('div');
+    flash.className = 'burst-flash';
+    stage.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
 
-  current = 0;
-  fracLive = 0;
-  snapTo(0);
+    monthBills.forEach((b, i) => {
+      const card = createCard(b, i);
+      cardEls.push(card);
+      dotEls.push(createDot());
+
+      // Start cards at center, tiny
+      card.style.transform = 'translateX(0) translateY(0) scale(0.3)';
+      card.style.opacity = '0';
+
+      // Per-card randomized burst trajectory
+      const angle = ((i / Math.max(1, monthBills.length - 1)) - 0.5) * 280; // spread across -140° to +140°
+      const rad = (angle * Math.PI) / 180;
+      const dist = 140 + Math.random() * 80; // random distance 140-220px
+      const bx = Math.cos(rad) * dist;
+      const by = Math.sin(rad) * dist * 0.5 + (Math.random() - 0.5) * 40;
+      const rot = (Math.random() - 0.5) * 30; // -15° to +15° rotation
+
+      card.style.setProperty('--burst-x', `${bx}px`);
+      card.style.setProperty('--burst-y', `${by}px`);
+      card.style.setProperty('--burst-rot', `${rot}deg`);
+      card.style.setProperty('--burst-delay', `${i * 35}ms`);
+      card.style.setProperty('--burst-dur', `${550 + Math.random() * 150}ms`);
+    });
+
+    // Update label
+    sectionLabel.textContent = `${monthKey}的账单`;
+    backBtn.style.display = 'inline-block';
+
+    current = 0;
+    fracLive = 0;
+
+    // Step 3: Trigger burst animation
+    requestAnimationFrame(() => {
+      cardEls.forEach(card => {
+        card.style.transition = 'none';
+        card.classList.add('anim-burst');
+      });
+
+      // After burst animation completes, clean up and snap
+      const maxDur = 700 + cardEls.length * 35 + 150;
+      setTimeout(() => {
+        cardEls.forEach(card => {
+          card.classList.remove('anim-burst');
+          card.style.removeProperty('--burst-x');
+          card.style.removeProperty('--burst-y');
+          card.style.removeProperty('--burst-rot');
+          card.style.removeProperty('--burst-delay');
+          card.style.removeProperty('--burst-dur');
+        });
+        snapTo(0);
+      }, maxDur);
+    });
+  }, 350); // wait for unpin animation
 }
 
 function exitToAllView() {
@@ -1037,33 +1086,58 @@ function exitToAllView() {
 }
 
 function exitToMonthsView() {
-  // From month-detail back to months view
-  viewMode = 'months';
-
-  // Hide card stage, show month stage
-  stage.classList.add('hidden');
-  monthStage.classList.add('visible');
-
-  sectionLabel.textContent = '月份账单';
-  backBtn.style.display = 'none';
-
-  // Find index of the month we were viewing
-  const idx = monthKeys.indexOf(currentMonthKey);
-  if (idx >= 0) {
-    mCurrent = idx;
-    mFracLive = idx;
-    snapToMonth(idx);
-  }
-
-  // Rebuild dots for months
-  dotsEl.innerHTML = '';
-  monthDotEls = monthKeys.map(() => {
-    const d = document.createElement('div');
-    d.className = 'dot';
-    dotsEl.appendChild(d);
-    return d;
+  // Step 1: Collapse cards animation
+  cardEls.forEach(card => {
+    card.classList.add('anim-collapse');
   });
-  renderMonths(mFracLive);
+
+  // Trigger collapse by forcing all to center
+  requestAnimationFrame(() => {
+    cardEls.forEach(card => {
+      card.classList.add('collapsed');
+    });
+  });
+
+  // Step 2: After collapse, switch to months view with repin
+  setTimeout(() => {
+    viewMode = 'months';
+
+    // Hide card stage, show month stage
+    stage.classList.add('hidden');
+    monthStage.classList.add('visible');
+
+    sectionLabel.textContent = '月份账单';
+    backBtn.style.display = 'none';
+
+    // Find index of the month we were viewing
+    const idx = monthKeys.indexOf(currentMonthKey);
+    if (idx >= 0) {
+      mCurrent = idx;
+      mFracLive = idx;
+      snapToMonth(idx);
+    }
+
+    // Rebuild dots for months
+    dotsEl.innerHTML = '';
+    monthDotEls = monthKeys.map(() => {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      dotsEl.appendChild(d);
+      return d;
+    });
+    renderMonths(mFracLive);
+
+    // Step 3: Repin animation on the current pile's pushpin
+    const targetPile = monthPileEls[mCurrent];
+    if (targetPile) {
+      const pinEl = targetPile.querySelector('.pile-pin');
+      if (pinEl) {
+        pinEl.classList.remove('unpin');
+        pinEl.classList.add('repin');
+        setTimeout(() => pinEl.classList.remove('repin'), 550);
+      }
+    }
+  }, 420); // wait for collapse animation
 }
 
 // --- Event: Clip button toggle ---

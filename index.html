@@ -1,254 +1,290 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>分一下 · Split</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>分一下 · Split</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-<!-- FPS 计数器 -->
-<div id="fps-counter">FPS: --</div>
+  <!-- FPS 计数器 -->
+  <div id="fps-counter">FPS: --</div>
 
-<div class="app">
+  <div class="app">
 
-  <!-- iOS Navigation Bar -->
-  <div class="header">
-    <div class="nav-row">
-      <div class="h-title" id="logo">分一下</div>
-      <div class="nav-right">
-        <button class="clip-btn" id="clip-btn" title="按月份归档">
-          <div class="clip-icon">
-            <div class="clip-handle-l"></div>
-            <div class="clip-handle-r"></div>
-            <div class="clip-body"></div>
+    <!-- iOS Navigation Bar -->
+    <div class="header">
+      <div class="nav-row">
+        <div class="h-title" id="logo">分一下</div>
+        <div class="nav-right">
+          <button class="clip-btn" id="clip-btn" title="按月份归档">📌</button>
+          <div class="av">🙂</div>
+        </div>
+      </div>
+      <div class="large-title-row">
+        <div class="h-large">账单记录</div>
+        <div class="h-sub">407寝室 · 4人</div>
+      </div>
+    </div>
+
+    <!-- 汇总卡片 -->
+    <div class="summary">
+      <div class="sc">
+        <div class="sc-label">本月</div>
+        <div class="sc-val">¥ 1,284</div>
+      </div>
+      <div class="sc">
+        <div class="sc-label">收回</div>
+        <div class="sc-val g">+¥ 312</div>
+      </div>
+      <div class="sc">
+        <div class="sc-label">还款</div>
+        <div class="sc-val r">-¥ 48</div>
+      </div>
+    </div>
+
+    <!-- 账单轮播 -->
+    <div class="carousel-section">
+      <div class="section-label-row">
+        <button class="back-btn" id="back-btn">← 返回</button>
+        <div class="section-label" id="section-label">最近账单</div>
+      </div>
+      <div class="stage" id="stage"></div>
+      <div class="month-stage" id="month-stage"></div>
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <!-- iOS Tab Bar -->
+    <div class="bottom-nav">
+      <button class="nb on">
+        <div class="nb-icon">📋</div>账单
+      </button>
+      <button class="nb">
+        <div class="nb-icon">👥</div>成员
+      </button>
+      <button class="add-btn" id="addBtn">＋</button>
+      <button class="nb">
+        <div class="nb-icon">📊</div>统计
+      </button>
+      <button class="nb">
+        <div class="nb-icon">⚙️</div>设置
+      </button>
+    </div>
+  </div>
+
+  <!-- 新建账单 Modal（iOS Form Sheet 风格）-->
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <div class="sh"></div>
+      <div class="sheet-titlebar">
+        <button class="sheet-cancel" id="cancelBtn">取消</button>
+        <div class="sh-title">新建账单</div>
+        <div style="width:40px"></div>
+      </div>
+      <div class="sheet-body">
+        <!-- 类型图标 -->
+        <div class="fg-label">类型</div>
+        <div class="icon-picker" id="icon-picker">
+          <button class="ip-btn on" data-icon="🧾">🧾</button>
+          <button class="ip-btn" data-icon="🛒">🛒</button>
+          <button class="ip-btn" data-icon="🍜">🍜</button>
+          <button class="ip-btn" data-icon="⚡">⚡</button>
+          <button class="ip-btn" data-icon="☕">☕</button>
+          <button class="ip-btn" data-icon="🏸">🏸</button>
+          <button class="ip-btn" data-icon="🎮">🎮</button>
+          <button class="ip-btn" data-icon="🚗">🚗</button>
+        </div>
+        <!-- 表单字段（iOS Inset Grouped 风格）-->
+        <div class="form-group">
+          <div class="fg">
+            <div class="fl">名称</div><input class="fi" id="inp-title" type="text" placeholder="超市采购">
           </div>
-        </button>
-        <div class="av">🙂</div>
+          <div class="fg">
+            <div class="fl">金额</div><input class="fi" id="inp-amount" type="number" placeholder="0.00" min="0"
+              step="0.01">
+          </div>
+          <div class="fg">
+            <div class="fl">垫付人</div><input class="fi" id="inp-payer" type="text" placeholder="谁先付的？">
+          </div>
+        </div>
+        <!-- 分账人数（iOS Segmented Control）-->
+        <div class="fg-label">分账人数</div>
+        <div class="people-picker" id="people-picker">
+          <button class="pp-btn" data-n="2">2人</button>
+          <button class="pp-btn" data-n="3">3人</button>
+          <button class="pp-btn on" data-n="4">4人</button>
+          <button class="pp-btn" data-n="5">5人</button>
+          <button class="pp-btn" data-n="6">6人</button>
+        </div>
+        <!-- 创建按钮 -->
+        <button class="sb" id="createBtn">创建账单</button>
       </div>
     </div>
-    <div class="large-title-row">
-      <div class="h-large">账单记录</div>
-      <div class="h-sub">407寝室 · 4人</div>
+  </div>
+
+  <!-- 调试控制台 -->
+  <div id="debug-panel">
+    <div class="dbg-handle"></div>
+    <div class="dbg-header">
+      <div class="dbg-title">🛠 调试控制台</div>
+      <button class="dbg-close" id="dbg-close-btn">✕</button>
     </div>
-  </div>
 
-  <!-- 汇总卡片 -->
-  <div class="summary">
-    <div class="sc"><div class="sc-label">本月</div><div class="sc-val">¥ 1,284</div></div>
-    <div class="sc"><div class="sc-label">收回</div><div class="sc-val g">+¥ 312</div></div>
-    <div class="sc"><div class="sc-label">还款</div><div class="sc-val r">-¥ 48</div></div>
-  </div>
-
-  <!-- 账单轮播 -->
-  <div class="carousel-section">
-    <div class="section-label-row">
-      <button class="back-btn" id="back-btn">← 返回</button>
-      <div class="section-label" id="section-label">最近账单</div>
+    <div class="dbg-section">动画参数</div>
+    <div class="dbg-row">
+      <span class="dbg-label">卡片间距 STEP</span>
+      <input class="dbg-slider" id="sl-step" type="range" min="80" max="220" value="148">
+      <span class="dbg-val" id="vl-step">148px</span>
     </div>
-    <div class="stage" id="stage"></div>
-    <div class="month-stage" id="month-stage"></div>
-    <div class="dots" id="dots"></div>
-  </div>
-
-  <!-- iOS Tab Bar -->
-  <div class="bottom-nav">
-    <button class="nb on"><div class="nb-icon">📋</div>账单</button>
-    <button class="nb"><div class="nb-icon">👥</div>成员</button>
-    <button class="add-btn" id="addBtn">＋</button>
-    <button class="nb"><div class="nb-icon">📊</div>统计</button>
-    <button class="nb"><div class="nb-icon">⚙️</div>设置</button>
-  </div>
-</div>
-
-<!-- 新建账单 Modal（iOS Form Sheet 风格）-->
-<div class="overlay" id="overlay">
-  <div class="sheet">
-    <div class="sh"></div>
-    <div class="sheet-titlebar">
-      <button class="sheet-cancel" id="cancelBtn">取消</button>
-      <div class="sh-title">新建账单</div>
-      <div style="width:40px"></div>
+    <div class="dbg-row">
+      <span class="dbg-label">拖动灵敏度 DRAG_PX</span>
+      <input class="dbg-slider" id="sl-drag" type="range" min="30" max="150" value="72">
+      <span class="dbg-val" id="vl-drag">72px</span>
     </div>
-    <div class="sheet-body">
-      <!-- 类型图标 -->
-      <div class="fg-label">类型</div>
-      <div class="icon-picker" id="icon-picker">
-        <button class="ip-btn on" data-icon="🧾">🧾</button>
-        <button class="ip-btn" data-icon="🛒">🛒</button>
-        <button class="ip-btn" data-icon="🍜">🍜</button>
-        <button class="ip-btn" data-icon="⚡">⚡</button>
-        <button class="ip-btn" data-icon="☕">☕</button>
-        <button class="ip-btn" data-icon="🏸">🏸</button>
-        <button class="ip-btn" data-icon="🎮">🎮</button>
-        <button class="ip-btn" data-icon="🚗">🚗</button>
+    <div class="dbg-row">
+      <span class="dbg-label">两侧缩放系数</span>
+      <input class="dbg-slider" id="sl-scale" type="range" min="1" max="25" value="13">
+      <span class="dbg-val" id="vl-scale">0.13/级</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">最小缩放 min scale</span>
+      <input class="dbg-slider" id="sl-minscale" type="range" min="40" max="90" value="60">
+      <span class="dbg-val" id="vl-minscale">0.60</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">侧移下沉 Y/级</span>
+      <input class="dbg-slider" id="sl-y" type="range" min="0" max="40" value="14">
+      <span class="dbg-val" id="vl-y">14px</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">侧卡透明度衰减</span>
+      <input class="dbg-slider" id="sl-opacity" type="range" min="5" max="50" value="26">
+      <span class="dbg-val" id="vl-opacity">0.26/级</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">Snap 过渡时长</span>
+      <input class="dbg-slider" id="sl-dur" type="range" min="100" max="800" value="420">
+      <span class="dbg-val" id="vl-dur">420ms</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">选中弹跳倍数</span>
+      <input class="dbg-slider" id="sl-pop" type="range" min="100" max="130" value="108">
+      <span class="dbg-val" id="vl-pop">1.08</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">弹跳时长</span>
+      <input class="dbg-slider" id="sl-popdur" type="range" min="100" max="600" value="280">
+      <span class="dbg-val" id="vl-popdur">280ms</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">惯性持续时长</span>
+      <input class="dbg-slider" id="sl-inertdur" type="range" min="500" max="5000" value="2000">
+      <span class="dbg-val" id="vl-inertdur">2.0s</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">惯性速度比例</span>
+      <input class="dbg-slider" id="sl-inertratio" type="range" min="10" max="200" value="60">
+      <span class="dbg-val" id="vl-inertratio">0.60</span>
+    </div>
+
+    <div class="dbg-section">曲线函数 (指数)</div>
+
+    <div class="dbg-row">
+      <span class="dbg-label">位移曲线 X</span>
+      <input class="dbg-slider" id="sl-cx" type="range" min="3" max="30" value="8">
+      <span class="dbg-val" id="vl-cx">1.00</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">缩放曲线 Scale</span>
+      <input class="dbg-slider" id="sl-cs" type="range" min="3" max="30" value="24">
+      <span class="dbg-val" id="vl-cs">1.60</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">下沉曲线 Y</span>
+      <input class="dbg-slider" id="sl-cy" type="range" min="3" max="30" value="17">
+      <span class="dbg-val" id="vl-cy">1.50</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">透明度曲线 Op</span>
+      <input class="dbg-slider" id="sl-co" type="range" min="3" max="30" value="17">
+      <span class="dbg-val" id="vl-co">1.40</span>
+    </div>
+
+    <div class="dbg-section">视觉开关</div>
+    <div class="dbg-row">
+      <span class="dbg-label">显示阴影</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-shadow" checked>
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">显示 FPS 计数</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-fps">
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">显示纸张纹理</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-texture" checked>
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">显示顶部光晕</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-sheen" checked>
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+
+    <div class="dbg-section">交互行为</div>
+    <div class="dbg-row">
+      <span class="dbg-label">无限循环 Cycle</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-cycle">
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">弹跳模式</span>
+      <span class="dbg-val" id="pop-mode-label" style="cursor:pointer;text-decoration:underline;min-width:60px"
+        title="点击切换">整行过冲</span>
+    </div>
+
+    <div class="dbg-section">滑动音效</div>
+    <div class="dbg-row">
+      <span class="dbg-label">启用音效</span>
+      <label class="dbg-toggle"><input type="checkbox" id="tog-sound" checked>
+        <div class="dbg-toggle-track"></div>
+      </label>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">音量</span>
+      <input class="dbg-slider" id="sl-vol" type="range" min="0" max="100" value="60">
+      <span class="dbg-val" id="vl-vol">60%</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-label">当前音效</span>
+      <span class="dbg-val" id="sound-name" style="cursor:pointer;text-decoration:underline;min-width:50px"
+        title="点击切换">1</span>
+    </div>
+    <div class="dbg-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <span class="dbg-label">拖入音频文件或点击添加</span>
+      <input type="file" id="sound-input" accept="audio/*" multiple style="display:none">
+      <div id="sound-drop"
+        style="border:1.5px dashed var(--label3);border-radius:8px;padding:12px;text-align:center;color:var(--label3);cursor:pointer;font-size:11px;transition:border-color .2s">
+        拖放 .mp3 / .wav 到这里，或点击选择
       </div>
-      <!-- 表单字段（iOS Inset Grouped 风格）-->
-      <div class="form-group">
-        <div class="fg"><div class="fl">名称</div><input class="fi" id="inp-title" type="text" placeholder="超市采购"></div>
-        <div class="fg"><div class="fl">金额</div><input class="fi" id="inp-amount" type="number" placeholder="0.00" min="0" step="0.01"></div>
-        <div class="fg"><div class="fl">垫付人</div><input class="fi" id="inp-payer" type="text" placeholder="谁先付的？"></div>
-      </div>
-      <!-- 分账人数（iOS Segmented Control）-->
-      <div class="fg-label">分账人数</div>
-      <div class="people-picker" id="people-picker">
-        <button class="pp-btn" data-n="2">2人</button>
-        <button class="pp-btn" data-n="3">3人</button>
-        <button class="pp-btn on" data-n="4">4人</button>
-        <button class="pp-btn" data-n="5">5人</button>
-        <button class="pp-btn" data-n="6">6人</button>
-      </div>
-      <!-- 创建按钮 -->
-      <button class="sb" id="createBtn">创建账单</button>
     </div>
-  </div>
-</div>
 
-<!-- 调试控制台 -->
-<div id="debug-panel">
-  <div class="dbg-handle"></div>
-  <div class="dbg-header">
-    <div class="dbg-title">🛠 调试控制台</div>
-    <button class="dbg-close" id="dbg-close-btn">✕</button>
+    <div class="dbg-section">实时数据</div>
+    <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
+    <div class="dbg-row"><span class="dbg-label">当前 frac</span><span class="dbg-val" id="dbg-frac">0.000</span></div>
+    <div class="dbg-row"><span class="dbg-label">当前 current</span><span class="dbg-val" id="dbg-cur">0</span></div>
   </div>
 
-  <div class="dbg-section">动画参数</div>
-  <div class="dbg-row">
-    <span class="dbg-label">卡片间距 STEP</span>
-    <input class="dbg-slider" id="sl-step" type="range" min="80" max="220" value="148">
-    <span class="dbg-val" id="vl-step">148px</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">拖动灵敏度 DRAG_PX</span>
-    <input class="dbg-slider" id="sl-drag" type="range" min="30" max="150" value="72">
-    <span class="dbg-val" id="vl-drag">72px</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">两侧缩放系数</span>
-    <input class="dbg-slider" id="sl-scale" type="range" min="1" max="25" value="13">
-    <span class="dbg-val" id="vl-scale">0.13/级</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">最小缩放 min scale</span>
-    <input class="dbg-slider" id="sl-minscale" type="range" min="40" max="90" value="60">
-    <span class="dbg-val" id="vl-minscale">0.60</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">侧移下沉 Y/级</span>
-    <input class="dbg-slider" id="sl-y" type="range" min="0" max="40" value="14">
-    <span class="dbg-val" id="vl-y">14px</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">侧卡透明度衰减</span>
-    <input class="dbg-slider" id="sl-opacity" type="range" min="5" max="50" value="26">
-    <span class="dbg-val" id="vl-opacity">0.26/级</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">Snap 过渡时长</span>
-    <input class="dbg-slider" id="sl-dur" type="range" min="100" max="800" value="420">
-    <span class="dbg-val" id="vl-dur">420ms</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">选中弹跳倍数</span>
-    <input class="dbg-slider" id="sl-pop" type="range" min="100" max="130" value="108">
-    <span class="dbg-val" id="vl-pop">1.08</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">弹跳时长</span>
-    <input class="dbg-slider" id="sl-popdur" type="range" min="100" max="600" value="280">
-    <span class="dbg-val" id="vl-popdur">280ms</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">惯性持续时长</span>
-    <input class="dbg-slider" id="sl-inertdur" type="range" min="500" max="5000" value="2000">
-    <span class="dbg-val" id="vl-inertdur">2.0s</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">惯性速度比例</span>
-    <input class="dbg-slider" id="sl-inertratio" type="range" min="10" max="200" value="60">
-    <span class="dbg-val" id="vl-inertratio">0.60</span>
-  </div>
-
-  <div class="dbg-section">曲线函数 (指数)</div>
-
-  <div class="dbg-row">
-    <span class="dbg-label">位移曲线 X</span>
-    <input class="dbg-slider" id="sl-cx" type="range" min="3" max="30" value="8">
-    <span class="dbg-val" id="vl-cx">1.00</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">缩放曲线 Scale</span>
-    <input class="dbg-slider" id="sl-cs" type="range" min="3" max="30" value="24">
-    <span class="dbg-val" id="vl-cs">1.60</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">下沉曲线 Y</span>
-    <input class="dbg-slider" id="sl-cy" type="range" min="3" max="30" value="17">
-    <span class="dbg-val" id="vl-cy">1.50</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">透明度曲线 Op</span>
-    <input class="dbg-slider" id="sl-co" type="range" min="3" max="30" value="17">
-    <span class="dbg-val" id="vl-co">1.40</span>
-  </div>
-
-  <div class="dbg-section">视觉开关</div>
-  <div class="dbg-row">
-    <span class="dbg-label">显示阴影</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-shadow" checked><div class="dbg-toggle-track"></div></label>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">显示 FPS 计数</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-fps"><div class="dbg-toggle-track"></div></label>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">显示纸张纹理</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-texture" checked><div class="dbg-toggle-track"></div></label>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">显示顶部光晕</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-sheen" checked><div class="dbg-toggle-track"></div></label>
-  </div>
-
-  <div class="dbg-section">交互行为</div>
-  <div class="dbg-row">
-    <span class="dbg-label">无限循环 Cycle</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-cycle"><div class="dbg-toggle-track"></div></label>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">弹跳模式</span>
-    <span class="dbg-val" id="pop-mode-label" style="cursor:pointer;text-decoration:underline;min-width:60px" title="点击切换">整行过冲</span>
-  </div>
-
-  <div class="dbg-section">滑动音效</div>
-  <div class="dbg-row">
-    <span class="dbg-label">启用音效</span>
-    <label class="dbg-toggle"><input type="checkbox" id="tog-sound" checked><div class="dbg-toggle-track"></div></label>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">音量</span>
-    <input class="dbg-slider" id="sl-vol" type="range" min="0" max="100" value="60">
-    <span class="dbg-val" id="vl-vol">60%</span>
-  </div>
-  <div class="dbg-row">
-    <span class="dbg-label">当前音效</span>
-    <span class="dbg-val" id="sound-name" style="cursor:pointer;text-decoration:underline;min-width:50px" title="点击切换">1</span>
-  </div>
-  <div class="dbg-row" style="flex-direction:column;align-items:stretch;gap:8px">
-    <span class="dbg-label">拖入音频文件或点击添加</span>
-    <input type="file" id="sound-input" accept="audio/*" multiple style="display:none">
-    <div id="sound-drop" style="border:1.5px dashed var(--label3);border-radius:8px;padding:12px;text-align:center;color:var(--label3);cursor:pointer;font-size:11px;transition:border-color .2s">
-      拖放 .mp3 / .wav 到这里，或点击选择
-    </div>
-  </div>
-
-  <div class="dbg-section">实时数据</div>
-  <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
-  <div class="dbg-row"><span class="dbg-label">当前 frac</span><span class="dbg-val" id="dbg-frac">0.000</span></div>
-  <div class="dbg-row"><span class="dbg-label">当前 current</span><span class="dbg-val" id="dbg-cur">0</span></div>
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>

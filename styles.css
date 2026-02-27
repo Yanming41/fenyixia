@@ -903,7 +903,7 @@ body {
 }
 
 /* ══════════════════════════════════════════
-   Nav Right & Binder Clip Button
+   Nav Right & Pushpin Button
 ══════════════════════════════════════════ */
 .nav-right {
   display: flex;
@@ -922,76 +922,16 @@ body {
   justify-content: center;
   padding: 0;
   position: relative;
-  transition: transform .15s ease;
+  font-size: 20px;
+  transition: transform .2s ease, filter .2s;
 }
 
 .clip-btn:active {
-  transform: scale(.88);
+  transform: scale(.85);
 }
 
-.clip-btn.active .clip-icon .clip-body {
-  background: var(--accent);
-}
-
-.clip-btn.active .clip-icon .clip-handle-l,
-.clip-btn.active .clip-icon .clip-handle-r {
-  border-color: var(--accent);
-}
-
-.clip-icon {
-  position: relative;
-  width: 22px;
-  height: 26px;
-}
-
-/* Clip body — the triangular base */
-.clip-icon .clip-body {
-  position: absolute;
-  bottom: 0;
-  left: 2px;
-  right: 2px;
-  height: 16px;
-  border-radius: 2px 2px 3px 3px;
-  background: rgba(235, 235, 245, 0.55);
-  transition: background .25s ease;
-}
-
-.clip-icon .clip-body::before {
-  content: '';
-  position: absolute;
-  top: 3px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 6px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.35);
-  border-left: 2px solid rgba(0, 0, 0, 0.35);
-  border-right: 2px solid rgba(0, 0, 0, 0.35);
-  border-radius: 0 0 3px 3px;
-}
-
-/* Clip handles — the two wire arms */
-.clip-icon .clip-handle-l,
-.clip-icon .clip-handle-r {
-  position: absolute;
-  top: 0;
-  width: 7px;
-  height: 14px;
-  border: 2px solid rgba(235, 235, 245, 0.55);
-  border-bottom: none;
-  transition: border-color .25s ease;
-}
-
-.clip-icon .clip-handle-l {
-  left: 2px;
-  border-radius: 4px 0 0 0;
-  border-right: none;
-}
-
-.clip-icon .clip-handle-r {
-  right: 2px;
-  border-radius: 0 4px 0 0;
-  border-left: none;
+.clip-btn.active {
+  filter: brightness(1.3);
 }
 
 /* ══════════════════════════════════════════
@@ -1117,65 +1057,40 @@ body {
   pointer-events: none;
 }
 
-/* Binder clip decoration on top of pile */
-.pile-clip {
+/* Pushpin decoration on top of pile */
+.pile-pin {
   position: absolute;
-  top: -8px;
+  top: -14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
-  width: 48px;
-  height: 32px;
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), opacity .3s;
 }
 
-/* Clip body */
-.pile-clip-body {
-  position: absolute;
-  bottom: 0;
-  left: 6px;
-  right: 6px;
-  height: 20px;
-  border-radius: 3px 3px 5px 5px;
-  background: linear-gradient(180deg, #8E8E93, #636366);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+/* Unpin animation: pin flies up and away */
+.pile-pin.unpin {
+  transform: translateX(-50%) translateY(-40px) rotate(30deg) scale(1.3);
+  opacity: 0;
 }
 
-.pile-clip-body::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 8px;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  border-top: none;
-  border-radius: 0 0 5px 5px;
+/* Re-pin animation: pin drops back in */
+.pile-pin.repin {
+  animation: repin-drop .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
 }
 
-/* Clip handles */
-.pile-clip-handle-l,
-.pile-clip-handle-r {
-  position: absolute;
-  top: 0;
-  width: 10px;
-  height: 18px;
-  border: 2.5px solid #8E8E93;
-  border-bottom: none;
-}
+@keyframes repin-drop {
+  0% {
+    transform: translateX(-50%) translateY(-40px) rotate(30deg) scale(1.3);
+    opacity: 0;
+  }
 
-.pile-clip-handle-l {
-  left: 5px;
-  border-radius: 6px 0 0 0;
-  border-right: none;
-}
-
-.pile-clip-handle-r {
-  right: 5px;
-  border-radius: 0 6px 0 0;
-  border-left: none;
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
 /* Pile content */
@@ -1234,7 +1149,7 @@ body {
 }
 
 /* ══════════════════════════════════════════
-   View Mode Transitions
+   View Mode Transitions & Animations
 ══════════════════════════════════════════ */
 .stage.hidden {
   display: none;
@@ -1244,19 +1159,115 @@ body {
   display: block;
 }
 
-/* Clip button pulse animation when active */
-@keyframes clip-pulse {
+/* Cards burst-out animation (entering month detail) — EXPLOSIVE */
+.bill-card.anim-burst {
+  transition: none !important;
+  animation: card-burst var(--burst-dur, .65s) cubic-bezier(.22, 1.36, .36, 1) forwards;
+  animation-delay: var(--burst-delay, 0s);
+}
 
-  0%,
+@keyframes card-burst {
+  0% {
+    transform: translateX(0) translateY(0) scale(0.3) rotate(0deg);
+    opacity: 0;
+    filter: brightness(2);
+  }
+
+  15% {
+    opacity: 1;
+    filter: brightness(1.6);
+  }
+
+  40% {
+    /* Overshoot: fly far out with rotation */
+    transform:
+      translateX(calc(var(--burst-x, 0px) * 1.4)) translateY(calc(var(--burst-y, 0px) * 1.4)) scale(1.05) rotate(var(--burst-rot, 0deg));
+    opacity: 1;
+    filter: brightness(1.1);
+  }
+
   100% {
-    transform: scale(1);
+    /* Settle back — final position overridden by JS snapTo() */
+    filter: brightness(1);
+  }
+}
+
+/* Burst flash overlay */
+.stage .burst-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  margin-top: -60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(48, 209, 88, 0.3) 40%, transparent 70%);
+  animation: burst-flash-anim .5s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes burst-flash-anim {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
   }
 
   50% {
-    transform: scale(1.08);
+    transform: scale(2.5);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Cards collapse animation (exiting month detail) */
+.bill-card.anim-collapse {
+  transition: transform .4s cubic-bezier(.55, .06, .68, .19), opacity .35s ease !important;
+}
+
+.bill-card.anim-collapse.collapsed {
+  transform: translateX(0) translateY(0) scale(0.7) !important;
+  opacity: 0 !important;
+}
+
+/* Month pile entrance animation */
+.month-pile.anim-pile-in {
+  animation: pile-appear .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+}
+
+@keyframes pile-appear {
+  0% {
+    transform: translateX(var(--pile-x, 0)) translateY(20px) scale(0.5);
+    opacity: 0;
+  }
+
+  100% {
+    /* final position set by JS renderMonths() */
+  }
+}
+
+/* Pushpin button wiggle when active */
+@keyframes pin-wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-8deg);
+  }
+
+  75% {
+    transform: rotate(8deg);
   }
 }
 
 .clip-btn.active {
-  animation: clip-pulse 2s ease-in-out infinite;
+  animation: pin-wiggle .5s ease;
 }
