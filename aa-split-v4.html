@@ -600,6 +600,16 @@ html, body {
     <input class="dbg-slider" id="sl-dur" type="range" min="100" max="800" value="420">
     <span class="dbg-val" id="vl-dur">420ms</span>
   </div>
+  <div class="dbg-row">
+    <span class="dbg-label">选中弹跳倍数</span>
+    <input class="dbg-slider" id="sl-pop" type="range" min="100" max="130" value="108">
+    <span class="dbg-val" id="vl-pop">1.08</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">弹跳时长</span>
+    <input class="dbg-slider" id="sl-popdur" type="range" min="100" max="600" value="280">
+    <span class="dbg-val" id="vl-popdur">280ms</span>
+  </div>
 
   <div class="dbg-section">曲线函数 (指数)</div>
 
@@ -647,6 +657,10 @@ html, body {
     <span class="dbg-label">无限循环 Cycle</span>
     <label class="dbg-toggle"><input type="checkbox" id="tog-cycle"><div class="dbg-toggle-track"></div></label>
   </div>
+  <div class="dbg-row">
+    <span class="dbg-label">弹跳模式</span>
+    <span class="dbg-val" id="pop-mode-label" style="cursor:pointer;text-decoration:underline;min-width:60px" title="点击切换">整行过冲</span>
+  </div>
 
   <div class="dbg-section">实时数据</div>
   <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
@@ -679,6 +693,9 @@ const CFG = {
   Y_STEP:       14,
   OPACITY_STEP: 0.26,
   SNAP_DUR:     420,
+  POP_SCALE:    1.08,  // 选中弹跳放大倍数
+  POP_DUR:      280,   // 选中弹跳时长 ms
+  popMode:      'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
   showShadow:   true,
   showFPS:      false,
   showTexture:  true,
@@ -820,9 +837,12 @@ function scheduleRender(frac) {
 ══════════════════════════════════════════════════════════════ */
 let current = 0;
 
+let popTimer1 = null;
+let popTimer2 = null;
+
 function snapTo(idx) {
+  const oldCurrent = current;
   if (CFG.cycle) {
-    // cycle：保留 idx 原值让动画沿正确方向滑动，current 折算回 [0,N-1]
     current = Math.round(wrapN(idx));
   } else {
     idx     = Math.max(0, Math.min(N - 1, idx));
@@ -832,9 +852,48 @@ function snapTo(idx) {
     el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
   });
   render(idx);
-  // cycle：动画结束后把 fracLive 归一化，避免长期漂移
+
+  // 清理之前的弹跳定时器
+  if (popTimer1) { clearTimeout(popTimer1); popTimer1 = null; }
+  if (popTimer2) { clearTimeout(popTimer2); popTimer2 = null; }
+
+  // 切换到新卡片时播放弹跳
+  if (current !== oldCurrent) {
+    if (CFG.popMode === 'all') {
+      // 模式 A：整行滑过目标再回弹（模拟惯性过冲）
+      const dir    = current > oldCurrent ? 1 : -1;
+      const overshoot = (CFG.POP_SCALE - 1);  // 复用 POP_SCALE 控制过冲幅度
+      const overIdx   = idx + dir * overshoot;
+
+      // 先滑到过冲位置
+      render(overIdx);
+
+      popTimer1 = setTimeout(() => {
+        // 再回弹到精确目标
+        cardEls.forEach(el => {
+          el.style.transition = `transform ${CFG.POP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.POP_DUR}ms ease`;
+        });
+        render(idx);
+      }, CFG.SNAP_DUR);
+    } else {
+      // 模式 B：仅居中卡片放大再缩回
+      const targetEl = cardEls[current];
+      if (targetEl) {
+        popTimer1 = setTimeout(() => {
+          targetEl.style.transition = `transform ${CFG.POP_DUR / 2}ms cubic-bezier(.25,.46,.45,.94)`;
+          targetEl.style.transform  = `translateX(0px) translateY(0px) scale(${CFG.POP_SCALE})`;
+
+          popTimer2 = setTimeout(() => {
+            targetEl.style.transition = `transform ${CFG.POP_DUR / 2}ms cubic-bezier(.25,.46,.45,.94)`;
+            targetEl.style.transform  = `translateX(0px) translateY(0px) scale(1)`;
+          }, CFG.POP_DUR / 2);
+        }, CFG.SNAP_DUR);
+      }
+    }
+  }
+
   if (CFG.cycle) {
-    setTimeout(() => { fracLive = current; }, CFG.SNAP_DUR + 60);
+    setTimeout(() => { fracLive = current; }, CFG.SNAP_DUR + CFG.POP_DUR + 60);
   }
 }
 
@@ -881,13 +940,9 @@ function onDragEnd(x) {
     return;
   }
 
-  let target;
-  if (Math.abs(dx) < 36) {
-    target = current; // 回弹
-  } else {
-    target = Math.round(fracLive);
-    if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
-  }
+  // 始终吸附到最近的整数卡片
+  let target = Math.round(fracLive);
+  if (!CFG.cycle) target = Math.max(0, Math.min(N - 1, target));
   snapTo(target);
 }
 
@@ -969,6 +1024,8 @@ bindSlider('sl-minscale', 'vl-minscale', 'MIN_SCALE',    '',    0.01);
 bindSlider('sl-y',        'vl-y',        'Y_STEP',       'px');
 bindSlider('sl-opacity',  'vl-opacity',  'OPACITY_STEP', '/级', 0.01);
 bindSlider('sl-dur',      'vl-dur',      'SNAP_DUR',     'ms');
+bindSlider('sl-pop',      'vl-pop',      'POP_SCALE',    '',   0.01);
+bindSlider('sl-popdur',   'vl-popdur',   'POP_DUR',      'ms');
 
 bindSlider('sl-cx',       'vl-cx',       'curveX',        null, 0.10);  // 3~30 → 0.3~3.0
 bindSlider('sl-cs',       'vl-cs',       'curveScale',    null, 0.10);
@@ -1000,8 +1057,14 @@ document.getElementById('tog-sheen').addEventListener('change', e => {
 
 document.getElementById('tog-cycle').addEventListener('change', e => {
   CFG.cycle = e.target.checked;
-  // 切换时把 fracLive / current 归一化到 [0, N-1]，避免状态混乱
   snapTo(current);
+});
+
+// 弹跳模式切换：点击文字在 'all' / 'single' 间切换
+document.getElementById('pop-mode-label').addEventListener('click', () => {
+  CFG.popMode = CFG.popMode === 'all' ? 'single' : 'all';
+  document.getElementById('pop-mode-label').textContent =
+    CFG.popMode === 'all' ? '整行过冲' : '仅居中放大';
 });
 
 document.getElementById('dbg-close-btn').addEventListener('click', () => {
