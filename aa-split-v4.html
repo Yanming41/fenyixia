@@ -917,23 +917,29 @@ let startX         = 0;
 let startFrac      = 0;
 let touchStartTime = 0;
 let touchStartX    = 0;
-let lastMoveX      = 0;
-let lastMoveTime   = 0;
 let inertiaRafId   = null;
 
+// 保留最近若干采样点，用于计算松手速度
+const VELOCITY_WINDOW = 80; // 只看最近 80ms 内的采样
+let moveHistory = []; // { x, t }
+
 function onDragStart(x) {
-  // 取消进行中的惯性动画
   if (inertiaRafId) { cancelAnimationFrame(inertiaRafId); inertiaRafId = null; }
   dragging = true; startX = x; touchStartX = x;
-  lastMoveX = x; lastMoveTime = Date.now();
   startFrac = fracLive; touchStartTime = Date.now();
+  moveHistory = [{ x, t: Date.now() }];
   stage.classList.add('dragging');
   cardEls.forEach(el => { el.style.transition = 'none'; });
 }
 
 function onDragMove(x) {
   if (!dragging) return;
-  lastMoveX = x; lastMoveTime = Date.now();
+  const now = Date.now();
+  moveHistory.push({ x, t: now });
+  // 只保留窗口内的采样
+  while (moveHistory.length > 2 && now - moveHistory[0].t > VELOCITY_WINDOW) {
+    moveHistory.shift();
+  }
   const dx   = x - startX;
   const raw  = startFrac - dx / CFG.DRAG_PX;
   const frac = CFG.cycle ? raw : Math.max(0, Math.min(N - 1, raw));
@@ -960,10 +966,15 @@ function onDragEnd(x) {
     return;
   }
 
-  // 计算松手时的瞬时速度（frac 单位 / ms）
-  const recentDt = Math.max(1, Date.now() - lastMoveTime + 1);
-  const recentDx = x - lastMoveX;
-  const velocity = -(recentDx / CFG.DRAG_PX) / (recentDt / 1000); // frac/s
+  // 把松手点也加入历史
+  moveHistory.push({ x, t: Date.now() });
+
+  // 用历史窗口首尾计算速度（px/s → frac/s）
+  const oldest = moveHistory[0];
+  const newest = moveHistory[moveHistory.length - 1];
+  const dt = Math.max(1, newest.t - oldest.t); // ms
+  const dxRecent = newest.x - oldest.x;         // px
+  const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000); // frac/s
 
   // 惯性滑行：用 RAF 逐帧减速
   const inertiaStart   = performance.now();
