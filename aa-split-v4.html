@@ -601,6 +601,29 @@ html, body {
     <span class="dbg-val" id="vl-dur">420ms</span>
   </div>
 
+  <div class="dbg-section">曲线函数 (指数)</div>
+
+  <div class="dbg-row">
+    <span class="dbg-label">位移曲线 X</span>
+    <input class="dbg-slider" id="sl-cx" type="range" min="3" max="30" value="10">
+    <span class="dbg-val" id="vl-cx">1.00</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">缩放曲线 Scale</span>
+    <input class="dbg-slider" id="sl-cs" type="range" min="3" max="30" value="16">
+    <span class="dbg-val" id="vl-cs">1.60</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">下沉曲线 Y</span>
+    <input class="dbg-slider" id="sl-cy" type="range" min="3" max="30" value="15">
+    <span class="dbg-val" id="vl-cy">1.50</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">透明度曲线 Op</span>
+    <input class="dbg-slider" id="sl-co" type="range" min="3" max="30" value="14">
+    <span class="dbg-val" id="vl-co">1.40</span>
+  </div>
+
   <div class="dbg-section">视觉开关</div>
   <div class="dbg-row">
     <span class="dbg-label">显示阴影</span>
@@ -661,6 +684,11 @@ const CFG = {
   showTexture:  true,
   showSheen:    true,
   cycle:        false, // 无限循环
+  // 曲线指数：1.0 = 线性, >1 = 中心缓慢/边缘加速, <1 = 中心快/边缘缓
+  curveX:       1.0,   // 位移曲线
+  curveScale:   1.6,   // 缩放曲线
+  curveY:       1.5,   // 下沉曲线
+  curveOpacity: 1.4,   // 透明度曲线
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -733,11 +761,19 @@ function render(frac) {
       if (offset < -N / 2) offset += N;
     }
     const absO = Math.abs(offset);
+    const sign = Math.sign(offset);
 
-    const x     = offset * CFG.STEP;
-    const y     = absO   * CFG.Y_STEP;
-    const scale = Math.max(CFG.MIN_SCALE, 1 - absO * CFG.SCALE_STEP);
-    const op    = Math.max(0.28, 1 - absO * CFG.OPACITY_STEP);
+    // 各属性独立走幂曲线：pow(absO, exponent)
+    // exponent=1 → 线性 | >1 → 中心变化慢,边缘加速 | <1 → 中心变化快
+    const cX = Math.pow(absO, CFG.curveX);
+    const cS = Math.pow(absO, CFG.curveScale);
+    const cY = Math.pow(absO, CFG.curveY);
+    const cO = Math.pow(absO, CFG.curveOpacity);
+
+    const x     = sign * cX * CFG.STEP;
+    const y     = cY * CFG.Y_STEP;
+    const scale = Math.max(CFG.MIN_SCALE, 1 - cS * CFG.SCALE_STEP);
+    const op    = Math.max(0.28, 1 - cO * CFG.OPACITY_STEP);
 
     el.style.transform = `translateX(${x}px) translateY(${y}px) scale(${scale})`;
     el.style.opacity   = op;
@@ -933,6 +969,11 @@ bindSlider('sl-minscale', 'vl-minscale', 'MIN_SCALE',    '',    0.01);
 bindSlider('sl-y',        'vl-y',        'Y_STEP',       'px');
 bindSlider('sl-opacity',  'vl-opacity',  'OPACITY_STEP', '/级', 0.01);
 bindSlider('sl-dur',      'vl-dur',      'SNAP_DUR',     'ms');
+
+bindSlider('sl-cx',       'vl-cx',       'curveX',        null, 0.10);  // 3~30 → 0.3~3.0
+bindSlider('sl-cs',       'vl-cs',       'curveScale',    null, 0.10);
+bindSlider('sl-cy',       'vl-cy',       'curveY',        null, 0.10);
+bindSlider('sl-co',       'vl-co',       'curveOpacity',  null, 0.10);
 
 document.getElementById('vl-scale').textContent    = `${CFG.SCALE_STEP.toFixed(2)}/级`;
 document.getElementById('vl-minscale').textContent = CFG.MIN_SCALE.toFixed(2);
