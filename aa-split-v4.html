@@ -605,22 +605,22 @@ html, body {
 
   <div class="dbg-row">
     <span class="dbg-label">位移曲线 X</span>
-    <input class="dbg-slider" id="sl-cx" type="range" min="3" max="30" value="10">
+    <input class="dbg-slider" id="sl-cx" type="range" min="3" max="30" value="8">
     <span class="dbg-val" id="vl-cx">1.00</span>
   </div>
   <div class="dbg-row">
     <span class="dbg-label">缩放曲线 Scale</span>
-    <input class="dbg-slider" id="sl-cs" type="range" min="3" max="30" value="16">
+    <input class="dbg-slider" id="sl-cs" type="range" min="3" max="30" value="24">
     <span class="dbg-val" id="vl-cs">1.60</span>
   </div>
   <div class="dbg-row">
     <span class="dbg-label">下沉曲线 Y</span>
-    <input class="dbg-slider" id="sl-cy" type="range" min="3" max="30" value="15">
+    <input class="dbg-slider" id="sl-cy" type="range" min="3" max="30" value="17">
     <span class="dbg-val" id="vl-cy">1.50</span>
   </div>
   <div class="dbg-row">
     <span class="dbg-label">透明度曲线 Op</span>
-    <input class="dbg-slider" id="sl-co" type="range" min="3" max="30" value="14">
+    <input class="dbg-slider" id="sl-co" type="range" min="3" max="30" value="17">
     <span class="dbg-val" id="vl-co">1.40</span>
   </div>
 
@@ -685,10 +685,10 @@ const CFG = {
   showSheen:    true,
   cycle:        false, // 无限循环
   // 曲线指数：1.0 = 线性, >1 = 中心缓慢/边缘加速, <1 = 中心快/边缘缓
-  curveX:       1.0,   // 位移曲线
-  curveScale:   1.6,   // 缩放曲线
-  curveY:       1.5,   // 下沉曲线
-  curveOpacity: 1.4,   // 透明度曲线
+  curveX:       0.8,   // 位移曲线
+  curveScale:   2.4,   // 缩放曲线
+  curveY:       1.7,   // 下沉曲线
+  curveOpacity: 1.7,   // 透明度曲线
 };
 
 /* ══════════════════════════════════════════════════════════════
