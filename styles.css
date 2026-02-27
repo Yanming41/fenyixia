@@ -1284,6 +1284,18 @@ body {
   }
 }
 
+/* Position-preserving pop-in: uses independent `scale` so render() transform is kept */
+.bill-card.scale-pop {
+  scale: 0 !important;
+  opacity: 0 !important;
+  transition: scale .45s cubic-bezier(.175, .885, .32, 1.275), opacity .15s ease !important;
+}
+
+.bill-card.scale-pop.pop-go {
+  scale: 1 !important;
+  opacity: 1 !important;
+}
+
 /* Cards collapse animation (exiting month detail) */
 .bill-card.anim-collapse {
   transition: transform .4s cubic-bezier(.55, .06, .68, .19), opacity .35s ease !important;

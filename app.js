@@ -695,50 +695,89 @@ function addBill() {
   cardEls.push(newCard);
   dotEls.push(createDot());
 
-  // Start new card completely invisible at center
-  newCard.style.transform = 'translateX(0) translateY(0) scale(0)';
-  newCard.style.opacity = '0';
-  newCard.style.zIndex = '60';
+  // Start new card invisible via scale-pop
+  newCard.classList.add('scale-pop');
 
   overlay.classList.remove('on');
   inpTitle.value = ''; inpAmount.value = ''; inpPayer.value = '';
   document.querySelectorAll('.ip-btn').forEach((b, i) => b.classList.toggle('on', i === 0));
   document.querySelectorAll('.pp-btn').forEach(b => b.classList.toggle('on', b.dataset.n === '4'));
 
-  // First snap other cards to make room, then animate new card
-  cardEls.forEach((el, i) => {
-    if (i !== idx) {
-      el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
-    }
+  // Slide carousel to the new card's position
+  cardEls.forEach(el => {
+    el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
   });
   render(idx);
+  current = idx;
+  fracLive = idx;
 
-  // After other cards settle, play new card pop-in
+  // After carousel settles, pop in the new card
   setTimeout(() => {
-    // Add glow ring
-    const glow = document.createElement('div');
-    glow.className = 'new-card-glow';
-    stage.appendChild(glow);
-    setTimeout(() => glow.remove(), 750);
-
-    // Trigger pop-in animation
-    newCard.style.opacity = '';
-    newCard.classList.add('anim-new-card');
-
-    // After animation, clean up and set final state
+    requestAnimationFrame(() => {
+      newCard.classList.add('pop-go');
+    });
+    // Cleanup after pop
     setTimeout(() => {
-      newCard.classList.remove('anim-new-card');
-      current = idx;
-      fracLive = idx;
+      newCard.classList.remove('scale-pop', 'pop-go');
       snapTo(idx);
-    }, 550);
-  }, CFG.SNAP_DUR * 0.6);
+    }, 500);
+  }, CFG.SNAP_DUR * 0.5);
 }
 
 document.getElementById('addBtn').onclick = () => overlay.classList.add('on');
 document.getElementById('cancelBtn').onclick = () => overlay.classList.remove('on');
 document.getElementById('createBtn').onclick = addBill;
 overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('on'); });
+
+// --- Debug: Add random card ---
+function addRandomBill() {
+  const RAND_ICONS = ['🍜', '🛒', '🎬', '🚕', '☕', '🏥', '📚', '🎮', '💡', '🏠', '✈️', '🍕'];
+  const RAND_TITLES = ['外卖午餐', '超市采购', '电影票', '打车回家', '咖啡续命', '挂号费', '买书', '游戏充值', '电费', '房租', '机票', '聚餐'];
+  const r = Math.floor(Math.random() * RAND_ICONS.length);
+  const amount = Math.round((20 + Math.random() * 480) * 100) / 100;
+  const nPeople = 2 + Math.floor(Math.random() * 3);
+  const per = amount / nPeople;
+  const color = BILL_COLORS[bills.length % BILL_COLORS.length];
+
+  const bill = {
+    icon: RAND_ICONS[r],
+    title: RAND_TITLES[r],
+    desc: `测试 · ${nPeople}人均摊`,
+    amount: fmtMoney(amount),
+    per: fmtMoney(per),
+    date: fmtDate(new Date()),
+    payer: '测试用户 垫付',
+    settled: false,
+    members: MEMBER_POOL.slice(0, nPeople),
+    color,
+  };
+
+  bills.push(bill);
+  const idx = bills.length - 1;
+  N = bills.length;
+
+  const newCard = createCard(bill, idx);
+  cardEls.push(newCard);
+  dotEls.push(createDot());
+
+  newCard.classList.add('scale-pop');
+
+  cardEls.forEach(el => {
+    el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+  });
+  render(idx);
+  current = idx;
+  fracLive = idx;
+
+  setTimeout(() => {
+    requestAnimationFrame(() => { newCard.classList.add('pop-go'); });
+    setTimeout(() => {
+      newCard.classList.remove('scale-pop', 'pop-go');
+      snapTo(idx);
+    }, 500);
+  }, CFG.SNAP_DUR * 0.5);
+}
+document.getElementById('dbg-add-random').onclick = addRandomBill;
 
 /* ══════════════════════════════════════════════════════════════
    燕尾夹 — 月份视图系统
@@ -1015,79 +1054,65 @@ function enterMonthDetail(monthKey) {
   const pinEl = currentPile ? currentPile.querySelector('.pile-pin') : null;
   if (pinEl) pinEl.classList.add('unpin');
 
-  // Step 2: After unpin, switch view and BURST cards out
+  // Step 2: After unpin, switch view and add cards one-by-one
   setTimeout(() => {
-    // Hide month stage, show card stage
     monthStage.classList.remove('visible');
     stage.classList.remove('hidden');
-
-    // Rebuild card stage with only this month's bills
     stage.innerHTML = '';
     dotsEl.innerHTML = '';
-
     cardEls.length = 0;
     dotEls.length = 0;
-    N = monthBills.length;
 
-    // Add burst flash effect
-    const flash = document.createElement('div');
-    flash.className = 'burst-flash';
-    stage.appendChild(flash);
-    setTimeout(() => flash.remove(), 600);
-
+    // Pre-create all cards but keep invisible
+    const allCards = [];
+    const allDots = [];
     monthBills.forEach((b, i) => {
       const card = createCard(b, i);
-      cardEls.push(card);
-      dotEls.push(createDot());
-
-      // Start cards at center, tiny
-      card.style.transform = 'translateX(0) translateY(0) scale(0.3)';
-      card.style.opacity = '0';
-
-      // Per-card randomized burst trajectory
-      const angle = ((i / Math.max(1, monthBills.length - 1)) - 0.5) * 280; // spread across -140° to +140°
-      const rad = (angle * Math.PI) / 180;
-      const dist = 140 + Math.random() * 80; // random distance 140-220px
-      const bx = Math.cos(rad) * dist;
-      const by = Math.sin(rad) * dist * 0.5 + (Math.random() - 0.5) * 40;
-      const rot = (Math.random() - 0.5) * 30; // -15° to +15° rotation
-
-      card.style.setProperty('--burst-x', `${bx}px`);
-      card.style.setProperty('--burst-y', `${by}px`);
-      card.style.setProperty('--burst-rot', `${rot}deg`);
-      card.style.setProperty('--burst-delay', `${i * 35}ms`);
-      card.style.setProperty('--burst-dur', `${550 + Math.random() * 150}ms`);
+      const dot = createDot();
+      allCards.push(card);
+      allDots.push(dot);
+      card.classList.add('scale-pop'); // invisible via scale:0
     });
 
-    // Update label
     sectionLabel.textContent = `${monthKey}的账单`;
     backBtn.style.display = 'inline-block';
-
     current = 0;
     fracLive = 0;
 
-    // Step 3: Trigger burst animation
-    requestAnimationFrame(() => {
-      cardEls.forEach(card => {
-        card.style.transition = 'none';
-        card.classList.add('anim-burst');
+    // Add cards one by one at stagger intervals
+    const STAGGER = 100;
+    let added = 0;
+    N = allCards.length; // N is full count so render positions all correctly
+
+    function addNextCard() {
+      if (added >= allCards.length) {
+        // All done — cleanup
+        setTimeout(() => {
+          cardEls.forEach(c => c.classList.remove('scale-pop', 'pop-go'));
+          snapTo(0);
+        }, 500);
+        return;
+      }
+
+      const card = allCards[added];
+      cardEls.push(card);
+      dotEls.push(allDots[added]);
+
+      // Render positions for all visible cards
+      cardEls.forEach(el => { el.style.transition = 'none'; });
+      render(0);
+
+      // Pop this card in at its carousel position
+      requestAnimationFrame(() => {
+        card.classList.add('pop-go');
       });
 
-      // After burst animation completes, clean up and snap
-      const maxDur = 700 + cardEls.length * 35 + 150;
-      setTimeout(() => {
-        cardEls.forEach(card => {
-          card.classList.remove('anim-burst');
-          card.style.removeProperty('--burst-x');
-          card.style.removeProperty('--burst-y');
-          card.style.removeProperty('--burst-rot');
-          card.style.removeProperty('--burst-delay');
-          card.style.removeProperty('--burst-dur');
-        });
-        snapTo(0);
-      }, maxDur);
-    });
-  }, 350); // wait for unpin animation
+      added++;
+      setTimeout(addNextCard, STAGGER);
+    }
+
+    addNextCard();
+  }, 350);
 }
 
 function exitToAllView() {
