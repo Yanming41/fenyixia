@@ -672,6 +672,28 @@ html, body {
     <span class="dbg-val" id="pop-mode-label" style="cursor:pointer;text-decoration:underline;min-width:60px" title="点击切换">整行过冲</span>
   </div>
 
+  <div class="dbg-section">滑动音效</div>
+  <div class="dbg-row">
+    <span class="dbg-label">启用音效</span>
+    <label class="dbg-toggle"><input type="checkbox" id="tog-sound" checked><div class="dbg-toggle-track"></div></label>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">音量</span>
+    <input class="dbg-slider" id="sl-vol" type="range" min="0" max="100" value="60">
+    <span class="dbg-val" id="vl-vol">60%</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">当前音效</span>
+    <span class="dbg-val" id="sound-name" style="cursor:pointer;text-decoration:underline;min-width:50px" title="点击切换">1</span>
+  </div>
+  <div class="dbg-row" style="flex-direction:column;align-items:stretch;gap:8px">
+    <span class="dbg-label">拖入音频文件或点击添加</span>
+    <input type="file" id="sound-input" accept="audio/*" multiple style="display:none">
+    <div id="sound-drop" style="border:1.5px dashed var(--label3);border-radius:8px;padding:12px;text-align:center;color:var(--label3);cursor:pointer;font-size:11px;transition:border-color .2s">
+      拖放 .mp3 / .wav 到这里，或点击选择
+    </div>
+  </div>
+
   <div class="dbg-section">实时数据</div>
   <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
   <div class="dbg-row"><span class="dbg-label">当前 frac</span><span class="dbg-val" id="dbg-frac">0.000</span></div>
@@ -764,6 +786,66 @@ const cardEls = bills.map((b, i) => createCard(b, i));
 const dotEls  = bills.map(() => createDot());
 
 /* ══════════════════════════════════════════════════════════════
+   滑动音效引擎
+══════════════════════════════════════════════════════════════ */
+const SFX = {
+  enabled:  true,
+  volume:   0.6,
+  sounds:   [],       // AudioBuffer[]
+  current:  0,        // 当前选中的音效索引
+  names:    [],       // 文件名列表
+  lastInt:  0,        // 上一次经过的整数位置（用于检测跨越）
+};
+
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playSfx() {
+  if (!SFX.enabled || SFX.sounds.length === 0) return;
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const src  = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  src.buffer = SFX.sounds[SFX.current % SFX.sounds.length];
+  gain.gain.value = SFX.volume;
+  src.connect(gain).connect(ctx.destination);
+  src.start();
+}
+
+// 检测 frac 是否跨过了新的整数边界
+function checkSfxTrigger(frac) {
+  const nearest = Math.round(frac);
+  if (nearest !== SFX.lastInt) {
+    SFX.lastInt = nearest;
+    playSfx();
+  }
+}
+
+// 加载音频文件（File 对象）
+async function loadSoundFile(file) {
+  const ctx    = getAudioCtx();
+  const buf    = await file.arrayBuffer();
+  const audio  = await ctx.decodeAudioData(buf);
+  SFX.sounds.push(audio);
+  SFX.names.push(file.name.replace(/\.[^.]+$/, ''));
+  // 默认选最新加的
+  SFX.current = SFX.sounds.length - 1;
+  updateSoundLabel();
+}
+
+function updateSoundLabel() {
+  const el = document.getElementById('sound-name');
+  if (SFX.names.length === 0) {
+    el.textContent = '无';
+  } else {
+    el.textContent = `${SFX.current + 1}/${SFX.sounds.length} ${SFX.names[SFX.current]}`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
    核心渲染
 ══════════════════════════════════════════════════════════════ */
 let fracLive = 0;
@@ -777,6 +859,9 @@ let logoClickTs  = 0;
 function wrapN(v) { return ((v % N) + N) % N; }
 
 function render(frac) {
+  // 检测是否跨过整数边界 → 播放音效
+  checkSfxTrigger(frac);
+
   fracLive = frac;
 
   // cycle 模式下，frac 可超出 [0,N-1]，用 modulo 折算视觉位置
@@ -1151,6 +1236,48 @@ document.getElementById('pop-mode-label').addEventListener('click', () => {
 document.getElementById('dbg-close-btn').addEventListener('click', () => {
   debugOpen = false;
   document.getElementById('debug-panel').classList.remove('open');
+});
+
+/* ── 音效控制台绑定 ── */
+document.getElementById('tog-sound').addEventListener('change', e => {
+  SFX.enabled = e.target.checked;
+});
+
+document.getElementById('sl-vol').addEventListener('input', function() {
+  SFX.volume = this.value / 100;
+  document.getElementById('vl-vol').textContent = this.value + '%';
+});
+
+// 点击切换音效
+document.getElementById('sound-name').addEventListener('click', () => {
+  if (SFX.sounds.length < 2) return;
+  SFX.current = (SFX.current + 1) % SFX.sounds.length;
+  updateSoundLabel();
+  playSfx(); // 试听
+});
+
+// 拖放 & 点击选择文件
+const soundDrop  = document.getElementById('sound-drop');
+const soundInput = document.getElementById('sound-input');
+
+soundDrop.addEventListener('click', () => soundInput.click());
+soundInput.addEventListener('change', () => {
+  Array.from(soundInput.files).forEach(f => loadSoundFile(f));
+});
+
+soundDrop.addEventListener('dragover', e => {
+  e.preventDefault();
+  soundDrop.style.borderColor = 'var(--accent)';
+});
+soundDrop.addEventListener('dragleave', () => {
+  soundDrop.style.borderColor = '';
+});
+soundDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  soundDrop.style.borderColor = '';
+  Array.from(e.dataTransfer.files)
+    .filter(f => f.type.startsWith('audio/'))
+    .forEach(f => loadSoundFile(f));
 });
 
 /* ══════════════════════════════════════════════════════════════
