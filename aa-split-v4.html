@@ -2076,7 +2076,19 @@
         const target = CFG.cycle
           ? clickedCard
           : Math.max(0, Math.min(N - 1, clickedCard));
-        snapTo(target);
+
+        // 点击当前卡片 → 弹跳动画
+        if (target === current && cardEls[current]) {
+          const card = cardEls[current];
+          card.style.transition = 'transform .15s cubic-bezier(.34,1.56,.64,1)';
+          card.style.transform += ' scale(0.95)';
+          setTimeout(() => {
+            card.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
+            snapTo(current);
+          }, 120);
+        } else {
+          snapTo(target);
+        }
         return;
       }
 
@@ -2152,7 +2164,7 @@
       for (const s of BUILTIN_SOUNDS) {
         await loadBuiltinSound(s.src, s.name);
       }
-      SFX.current = 0;
+      SFX.current = 2; // 默认使用第3个音效
       updateSoundLabel();
     })();
 
