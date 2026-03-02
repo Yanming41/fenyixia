@@ -1,1305 +1,1830 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>分一下</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Syne:wght@700;800&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>分一下</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Syne:wght@700;800&display=swap');
 
-:root {
-  --bg: #0a0a0f;
-  --surface: #13131a;
-  --surface2: #1c1c26;
-  --surface3: #242433;
-  --border: #2a2a3a;
-  --border2: #353548;
-  --accent: #c8f135;
-  --accent-dim: rgba(200,241,53,0.1);
-  --text: #eeeef5;
-  --text2: #8888a8;
-  --text3: #44445a;
-  --error: #ff5e6e;
-  --success: #5ddb8a;
-  --radius: 20px;
-}
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c26;
+      --surface3: #242433;
+      --border: #2a2a3a;
+      --border2: #353548;
+      --accent: #c8f135;
+      --accent-dim: rgba(200, 241, 53, 0.1);
+      --text: #eeeef5;
+      --text2: #8888a8;
+      --text3: #44445a;
+      --error: #ff5e6e;
+      --success: #5ddb8a;
+      --radius: 20px;
+    }
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-html, body {
-  height: 100%; width: 100%;
-  font-family: 'Noto Sans SC', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  overflow: hidden;
-}
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
 
-/* ── Ambient background ── */
-.bg-canvas {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-}
-.orb {
-  position: absolute; border-radius: 50%;
-  filter: blur(90px); opacity: 0.15;
-  animation: drift 14s ease-in-out infinite alternate;
-}
-.orb-1 { width:500px;height:500px;background:#c8f135;top:-180px;right:-120px;animation-delay:0s; }
-.orb-2 { width:350px;height:350px;background:#5b6dff;bottom:80px;left:-100px;animation-delay:-5s; }
-.orb-3 { width:250px;height:250px;background:#ff6b9d;top:45%;right:15%;animation-delay:-9s; }
-@keyframes drift {
-  from { transform: translate(0,0) scale(1); }
-  to   { transform: translate(25px,18px) scale(1.08); }
-}
+    /* ── Ambient background ── */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
 
-/* ════════════════════════════════
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.15;
+      animation: drift 14s ease-in-out infinite alternate;
+    }
+
+    .orb-1 {
+      width: 500px;
+      height: 500px;
+      background: #c8f135;
+      top: -180px;
+      right: -120px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 350px;
+      height: 350px;
+      background: #5b6dff;
+      bottom: 80px;
+      left: -100px;
+      animation-delay: -5s;
+    }
+
+    .orb-3 {
+      width: 250px;
+      height: 250px;
+      background: #ff6b9d;
+      top: 45%;
+      right: 15%;
+      animation-delay: -9s;
+    }
+
+    @keyframes drift {
+      from {
+        transform: translate(0, 0) scale(1);
+      }
+
+      to {
+        transform: translate(25px, 18px) scale(1.08);
+      }
+    }
+
+    /* ════════════════════════════════
    STEP SYSTEM
 ════════════════════════════════ */
-.app {
-  position: relative; z-index: 1;
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-}
+    .app {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
 
-/* Each step is a full-screen panel */
-.step {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 40px 28px 48px;
-  opacity: 0; pointer-events: none;
-  transition: none;
-}
-.step.active {
-  opacity: 1; pointer-events: all;
-}
-/* Slide animations */
-.step.enter-from-right { animation: slideInRight 0.38s cubic-bezier(0.32,0.72,0,1) forwards; }
-.step.enter-from-left  { animation: slideInLeft  0.38s cubic-bezier(0.32,0.72,0,1) forwards; }
-.step.exit-to-left     { animation: slideOutLeft  0.32s cubic-bezier(0.32,0,0.67,0) forwards; }
-.step.exit-to-right    { animation: slideOutRight 0.32s cubic-bezier(0.32,0,0.67,0) forwards; }
+    /* Each step is a full-screen panel */
+    .step {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 28px 48px;
+      opacity: 0;
+      pointer-events: none;
+      transition: none;
+    }
 
-@keyframes slideInRight  { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
-@keyframes slideInLeft   { from{transform:translateX(-60px);opacity:0} to{transform:translateX(0);opacity:1} }
-@keyframes slideOutLeft  { from{transform:translateX(0);opacity:1} to{transform:translateX(-50px);opacity:0} }
-@keyframes slideOutRight { from{transform:translateX(0);opacity:1} to{transform:translateX(50px);opacity:0} }
+    .step.active {
+      opacity: 1;
+      pointer-events: all;
+    }
 
-/* ── Progress bar ── */
-.progress-wrap {
-  position: fixed; top: 0; left: 0; right: 0;
-  height: 3px; z-index: 50;
-  background: var(--border);
-}
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 0 2px 2px 0;
-  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
-}
+    /* Slide animations */
+    .step.enter-from-right {
+      animation: slideInRight 0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
 
-/* ── Back button ── */
-.back-btn {
-  position: fixed; top: 18px; left: 20px;
-  z-index: 50;
-  width: 40px; height: 40px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 18px; color: var(--text2);
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.25s;
-}
-.back-btn.visible { opacity: 1; pointer-events: all; }
+    .step.enter-from-left {
+      animation: slideInLeft 0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+    }
 
-/* ── Step counter ── */
-.step-counter {
-  position: fixed; top: 24px; right: 22px;
-  z-index: 50;
-  font-size: 12px; color: var(--text3);
-  font-family: 'Syne', sans-serif;
-  opacity: 0; transition: opacity 0.25s;
-}
-.step-counter.visible { opacity: 1; }
+    .step.exit-to-left {
+      animation: slideOutLeft 0.32s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+    }
 
-/* ── Common step parts ── */
-.step-eyebrow {
-  font-family: 'Syne', sans-serif;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 14px;
-  text-align: center;
-}
+    .step.exit-to-right {
+      animation: slideOutRight 0.32s cubic-bezier(0.32, 0, 0.67, 0) forwards;
+    }
 
-.step-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(26px, 7vw, 38px);
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
-  color: var(--text);
-  margin-bottom: 10px;
-}
-.step-title .hl { color: var(--accent); }
+    @keyframes slideInRight {
+      from {
+        transform: translateX(60px);
+        opacity: 0
+      }
 
-.step-subtitle {
-  font-size: 14px;
-  color: var(--text2);
-  text-align: center;
-  line-height: 1.6;
-  margin-bottom: 40px;
-  max-width: 280px;
-}
+      to {
+        transform: translateX(0);
+        opacity: 1
+      }
+    }
 
-.step-bottom {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  padding: 0 28px 40px;
-  padding-bottom: max(40px, env(safe-area-inset-bottom));
-}
+    @keyframes slideInLeft {
+      from {
+        transform: translateX(-60px);
+        opacity: 0
+      }
 
-/* ── Primary button ── */
-.primary-btn {
-  width: 100%;
-  padding: 18px;
-  background: var(--accent);
-  color: #0a0a0f;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 16px;
-  font-weight: 900;
-  font-family: 'Syne', sans-serif;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  position: relative; overflow: hidden;
-  box-shadow: 0 8px 32px rgba(200,241,53,0.2);
-  transition: transform 0.12s, opacity 0.12s;
-}
-.primary-btn::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg,rgba(255,255,255,0.18) 0%,transparent 60%);
-  pointer-events: none;
-}
-.primary-btn:active { transform: scale(0.97); opacity: 0.9; }
-.primary-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+      to {
+        transform: translateX(0);
+        opacity: 1
+      }
+    }
 
-.ghost-btn {
-  width: 100%;
-  padding: 16px;
-  background: none;
-  border: 1.5px solid var(--border2);
-  border-radius: var(--radius);
-  color: var(--text2);
-  font-size: 15px;
-  font-weight: 700;
-  font-family: 'Noto Sans SC', sans-serif;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: border-color 0.2s, color 0.2s;
-}
-.ghost-btn:active { border-color: var(--text2); color: var(--text); }
+    @keyframes slideOutLeft {
+      from {
+        transform: translateX(0);
+        opacity: 1
+      }
 
-/* ════════════════════════════════
+      to {
+        transform: translateX(-50px);
+        opacity: 0
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        transform: translateX(0);
+        opacity: 1
+      }
+
+      to {
+        transform: translateX(50px);
+        opacity: 0
+      }
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      z-index: 50;
+      background: var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 0 2px 2px 0;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ── Back button ── */
+    .back-btn {
+      position: fixed;
+      top: 18px;
+      left: 20px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .back-btn.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── Step counter ── */
+    .step-counter {
+      position: fixed;
+      top: 24px;
+      right: 22px;
+      z-index: 50;
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'Syne', sans-serif;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .step-counter.visible {
+      opacity: 1;
+    }
+
+    /* ── Common step parts ── */
+    .step-eyebrow {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .step-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(26px, 7vw, 38px);
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .step-title .hl {
+      color: var(--accent);
+    }
+
+    .step-subtitle {
+      font-size: 14px;
+      color: var(--text2);
+      text-align: center;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      max-width: 280px;
+    }
+
+    .step-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0 28px 40px;
+      padding-bottom: max(40px, env(safe-area-inset-bottom));
+    }
+
+    /* ── Primary button ── */
+    .primary-btn {
+      width: 100%;
+      padding: 18px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 900;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(200, 241, 53, 0.2);
+      transition: transform 0.12s, opacity 0.12s;
+    }
+
+    .primary-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .primary-btn:active {
+      transform: scale(0.97);
+      opacity: 0.9;
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .ghost-btn {
+      width: 100%;
+      padding: 16px;
+      background: none;
+      border: 1.5px solid var(--border2);
+      border-radius: var(--radius);
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Noto Sans SC', sans-serif;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .ghost-btn:active {
+      border-color: var(--text2);
+      color: var(--text);
+    }
+
+    /* ════════════════════════════════
    STEP 0 — WELCOME (login/register)
 ════════════════════════════════ */
-.welcome-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 48px;
-  font-weight: 800;
-  color: var(--accent);
-  margin-bottom: 6px;
-  letter-spacing: -2px;
-}
-.welcome-tagline {
-  font-size: 14px;
-  color: var(--text3);
-  text-align: center;
-  margin-bottom: 60px;
-  letter-spacing: 1px;
-}
-.welcome-btns {
-  width: 100%; max-width: 340px;
-  display: flex; flex-direction: column; gap: 12px;
-}
+    .welcome-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 6px;
+      letter-spacing: -2px;
+    }
 
-/* ════════════════════════════════
+    .welcome-tagline {
+      font-size: 14px;
+      color: var(--text3);
+      text-align: center;
+      margin-bottom: 60px;
+      letter-spacing: 1px;
+    }
+
+    .welcome-btns {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ════════════════════════════════
    STEP — TEXT INPUT
 ════════════════════════════════ */
-.big-input-wrap {
-  width: 100%; max-width: 340px;
-  position: relative;
-}
-.big-input {
-  width: 100%;
-  background: var(--surface2);
-  border: 2px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  outline: none;
-  font-family: 'Noto Sans SC', sans-serif;
-  text-align: center;
-  transition: border-color 0.2s;
-  caret-color: var(--accent);
-}
-.big-input:focus { border-color: var(--accent); }
-.big-input::placeholder { color: var(--text3); font-size: 18px; font-weight: 400; }
-.input-error {
-  font-size: 12px; color: var(--error);
-  text-align: center; margin-top: 10px;
-  min-height: 18px;
-}
+    .big-input-wrap {
+      width: 100%;
+      max-width: 340px;
+      position: relative;
+    }
 
-/* ════════════════════════════════
+    .big-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 2px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      outline: none;
+      font-family: 'Noto Sans SC', sans-serif;
+      text-align: center;
+      transition: border-color 0.2s;
+      caret-color: var(--accent);
+    }
+
+    .big-input:focus {
+      border-color: var(--accent);
+    }
+
+    .big-input::placeholder {
+      color: var(--text3);
+      font-size: 18px;
+      font-weight: 400;
+    }
+
+    .input-error {
+      font-size: 12px;
+      color: var(--error);
+      text-align: center;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+
+    /* ════════════════════════════════
    STEP — EMOJI AVATAR
 ════════════════════════════════ */
-.avatar-stage {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 0; margin-bottom: 8px;
-}
+    .avatar-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 8px;
+    }
 
-/* Outer wrapper handles the spinning rainbow ring */
-.avatar-ring-wrap {
-  position: relative;
-  width: 142px; height: 142px;
-  margin-bottom: 18px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.avatar-ring-track {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(#c8f135, #5b6dff, #ff6b9d, #f4a100, #c8f135);
-  animation: spin 3s linear infinite;
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-.avatar-ring-wrap.has-emoji .avatar-ring-track { opacity: 1; }
-/* Gap between ring and circle */
-.avatar-ring-gap {
-  position: absolute; inset: 3px;
-  border-radius: 50%;
-  background: var(--bg);
-}
-.avatar-big {
-  position: absolute; inset: 6px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 64px;
-  transition: background 0.25s ease;
-  cursor: default;
-  overflow: hidden;
-  /* No pseudo-elements, no z-index tricks — background-color shows directly */
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+    /* Outer wrapper handles the spinning rainbow ring */
+    .avatar-ring-wrap {
+      position: relative;
+      width: 142px;
+      height: 142px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
 
-/* Bounce keyframe — applied to the whole wrap so ring bounces too */
-@keyframes avatarBounce {
-  0%   { transform: scale(1); }
-  28%  { transform: scale(1.28) rotate(-9deg); }
-  52%  { transform: scale(0.88) rotate(6deg); }
-  72%  { transform: scale(1.1) rotate(-3deg); }
-  88%  { transform: scale(0.97); }
-  100% { transform: scale(1); }
-}
-.avatar-ring-wrap.bounce { animation: avatarBounce 0.58s cubic-bezier(0.36,0.07,0.19,0.97); }
+    .avatar-ring-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(#c8f135, #5b6dff, #ff6b9d, #f4a100, #c8f135);
+      animation: spin 3s linear infinite;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
 
-.avatar-placeholder-txt {
-  font-size: 15px; color: var(--text3); text-align: center;
-}
+    .avatar-ring-wrap.has-emoji .avatar-ring-track {
+      opacity: 1;
+    }
 
-/* Random / choose buttons */
-.avatar-actions {
-  display: flex; gap: 10px; width: 100%; max-width: 320px; margin-top: 4px;
-}
-.avatar-action-btn {
-  flex: 1; padding: 14px 10px;
-  background: var(--surface2);
-  border: 1.5px solid var(--border2);
-  border-radius: 16px;
-  color: var(--text2);
-  font-size: 13px; font-weight: 700;
-  font-family: 'Noto Sans SC', sans-serif;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: all 0.15s;
-}
-.avatar-action-btn:active { transform: scale(0.96); }
-.avatar-action-btn.primary {
-  background: var(--accent-dim);
-  border-color: rgba(200,241,53,0.3);
-  color: var(--accent);
-}
+    /* Gap between ring and circle */
+    .avatar-ring-gap {
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
 
-/* ════════════════════════════════
+    .avatar-big {
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      transition: background 0.25s ease;
+      cursor: default;
+      overflow: hidden;
+      /* No pseudo-elements, no z-index tricks — background-color shows directly */
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Bounce keyframe — applied to the whole wrap so ring bounces too */
+    @keyframes avatarBounce {
+      0% {
+        transform: scale(1);
+      }
+
+      28% {
+        transform: scale(1.28) rotate(-9deg);
+      }
+
+      52% {
+        transform: scale(0.88) rotate(6deg);
+      }
+
+      72% {
+        transform: scale(1.1) rotate(-3deg);
+      }
+
+      88% {
+        transform: scale(0.97);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .avatar-ring-wrap.bounce {
+      animation: avatarBounce 0.58s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+    }
+
+    .avatar-placeholder-txt {
+      font-size: 15px;
+      color: var(--text3);
+      text-align: center;
+    }
+
+    /* Random / choose buttons */
+    .avatar-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 320px;
+      margin-top: 4px;
+    }
+
+    .avatar-action-btn {
+      flex: 1;
+      padding: 14px 10px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 16px;
+      color: var(--text2);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Noto Sans SC', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .avatar-action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .avatar-action-btn.primary {
+      background: var(--accent-dim);
+      border-color: rgba(200, 241, 53, 0.3);
+      color: var(--accent);
+    }
+
+    /* ════════════════════════════════
    EMOJI PICKER SHEET
 ════════════════════════════════ */
-.sheet-backdrop {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(8px);
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.25s;
-}
-.sheet-backdrop.open { opacity: 1; pointer-events: all; }
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
 
-.emoji-sheet {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  z-index: 101;
-  background: var(--surface);
-  border-radius: 28px 28px 0 0;
-  border-top: 1px solid var(--border2);
-  display: flex; flex-direction: column;
-  max-height: 78vh;
-  transform: translateY(100%);
-  transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
-}
-.emoji-sheet.open { transform: translateY(0); }
+    .sheet-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
 
-.sheet-handle {
-  width: 40px; height: 4px;
-  background: var(--border2); border-radius: 2px;
-  margin: 12px auto 0; flex-shrink: 0;
-}
+    .emoji-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 101;
+      background: var(--surface);
+      border-radius: 28px 28px 0 0;
+      border-top: 1px solid var(--border2);
+      display: flex;
+      flex-direction: column;
+      max-height: 78vh;
+      transform: translateY(100%);
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+    }
 
-.sheet-header {
-  padding: 14px 20px 0; flex-shrink: 0;
-}
-.sheet-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 18px; font-weight: 800;
-  margin-bottom: 12px;
-}
+    .emoji-sheet.open {
+      transform: translateY(0);
+    }
 
-/* Search */
-.sheet-search-wrap { position: relative; margin-bottom: 12px; }
-.sheet-search {
-  width: 100%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border2);
-  border-radius: 14px;
-  padding: 10px 14px 10px 38px;
-  color: var(--text); font-size: 15px;
-  font-family: 'Noto Sans SC', sans-serif;
-  outline: none;
-}
-.sheet-search:focus { border-color: var(--accent); }
-.sheet-search::placeholder { color: var(--text3); }
-.sheet-search-ico {
-  position: absolute; left: 12px; top: 50%;
-  transform: translateY(-50%); font-size: 15px; pointer-events: none;
-}
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin: 12px auto 0;
+      flex-shrink: 0;
+    }
 
-/* Tabs */
-.sheet-tabs {
-  display: flex; gap: 6px; overflow-x: auto;
-  padding-bottom: 12px; scrollbar-width: none;
-}
-.sheet-tabs::-webkit-scrollbar { display: none; }
-.sheet-tab {
-  flex-shrink: 0; padding: 6px 13px;
-  border-radius: 20px; border: 1px solid var(--border);
-  background: none; color: var(--text2); font-size: 12px;
-  cursor: pointer; font-family: 'Noto Sans SC', sans-serif;
-  transition: all 0.15s; display: flex; align-items: center; gap: 4px;
-  white-space: nowrap;
-}
-.sheet-tab.active {
-  background: var(--accent-dim);
-  border-color: rgba(200,241,53,0.4);
-  color: var(--accent);
-}
+    .sheet-header {
+      padding: 14px 20px 0;
+      flex-shrink: 0;
+    }
 
-/* Grid */
-.sheet-grid-wrap {
-  flex: 1; overflow-y: auto; padding: 4px 20px 20px;
-  overscroll-behavior: contain;
-}
-.emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 3px;
-}
-.e-btn {
-  aspect-ratio: 1; border: none; background: none;
-  border-radius: 10px; font-size: 26px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.1s; position: relative;
-}
-.e-btn:active { transform: scale(0.85); background: var(--surface2); }
-.e-btn.sel {
-  background: var(--accent-dim);
-  box-shadow: 0 0 0 2px var(--accent);
-}
-.e-btn.sel::after {
-  content: '✓'; position: absolute;
-  bottom: 1px; right: 2px; font-size: 7px;
-  color: var(--accent); font-weight: 900;
-}
-.sec-label {
-  font-size: 10px; color: var(--text3); text-transform: uppercase;
-  letter-spacing: 1px; padding: 10px 0 7px; font-weight: 700;
-}
-.no-res {
-  text-align: center; padding: 30px 0;
-  color: var(--text3); font-size: 14px;
-}
-.no-res-ico { font-size: 32px; margin-bottom: 8px; }
+    .sheet-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
 
-/* Sheet bottom */
-.sheet-bottom {
-  padding: 12px 20px;
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border); flex-shrink: 0;
-}
-.sheet-confirm-btn {
-  width: 100%; padding: 15px;
-  background: var(--accent); color: #0a0a0f;
-  border: none; border-radius: 16px;
-  font-size: 15px; font-weight: 900;
-  font-family: 'Syne', sans-serif;
-  cursor: pointer; transition: opacity 0.15s;
-}
-.sheet-confirm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.sheet-confirm-btn:active { opacity: 0.85; }
+    /* Search */
+    .sheet-search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
 
-/* ════════════════════════════════
-   STEP — 4-DIGIT PIN
+    .sheet-search {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border2);
+      border-radius: 14px;
+      padding: 10px 14px 10px 38px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Noto Sans SC', sans-serif;
+      outline: none;
+    }
+
+    .sheet-search:focus {
+      border-color: var(--accent);
+    }
+
+    .sheet-search::placeholder {
+      color: var(--text3);
+    }
+
+    .sheet-search-ico {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    /* Tabs */
+    .sheet-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .sheet-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sheet-tab {
+      flex-shrink: 0;
+      padding: 6px 13px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text2);
+      font-size: 12px;
+      cursor: pointer;
+      font-family: 'Noto Sans SC', sans-serif;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .sheet-tab.active {
+      background: var(--accent-dim);
+      border-color: rgba(200, 241, 53, 0.4);
+      color: var(--accent);
+    }
+
+    /* Grid */
+    .sheet-grid-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 20px 20px;
+      overscroll-behavior: contain;
+    }
+
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 3px;
+    }
+
+    .e-btn {
+      aspect-ratio: 1;
+      border: none;
+      background: none;
+      border-radius: 10px;
+      font-size: 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+      position: relative;
+    }
+
+    .e-btn:active {
+      transform: scale(0.85);
+      background: var(--surface2);
+    }
+
+    .e-btn.sel {
+      background: var(--accent-dim);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .e-btn.sel::after {
+      content: '✓';
+      position: absolute;
+      bottom: 1px;
+      right: 2px;
+      font-size: 7px;
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .sec-label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 0 7px;
+      font-weight: 700;
+    }
+
+    .no-res {
+      text-align: center;
+      padding: 30px 0;
+      color: var(--text3);
+      font-size: 14px;
+    }
+
+    .no-res-ico {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    /* Sheet bottom */
+    .sheet-bottom {
+      padding: 12px 20px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sheet-confirm-btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 900;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .sheet-confirm-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .sheet-confirm-btn:active {
+      opacity: 0.85;
+    }
+
+    /* ════════════════════════════════
+   STEP — 6-DIGIT PIN
 ════════════════════════════════ */
-.pin-dots {
-  display: flex; gap: 18px; margin-bottom: 32px;
-}
-.pin-dot {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  border: 2px solid var(--border2);
-  background: transparent;
-  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
-}
-.pin-dot.filled {
-  background: var(--accent);
-  border-color: var(--accent);
-  transform: scale(1.15);
-}
-.pin-dot.error {
-  background: var(--error);
-  border-color: var(--error);
-  animation: shake 0.35s ease;
-}
-@keyframes shake {
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-8px)}
-  40%{transform:translateX(8px)}
-  60%{transform:translateX(-6px)}
-  80%{transform:translateX(5px)}
-}
+    .pin-dots {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 32px;
+    }
 
-/* PIN step needs its own layout — top-aligned, scrollable, no bottom button */
-.step.pin-step {
-  justify-content: flex-start;
-  padding-top: 80px;
-  overflow-y: auto;
-}
+    .pin-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border2);
+      background: transparent;
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
 
-/* Numpad */
-.numpad {
-  display: grid;
-  grid-template-columns: repeat(3, 72px);
-  gap: 12px;
-  margin-top: 4px;
-  flex-shrink: 0;
-}
-.num-btn {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  color: var(--text);
-  font-size: 24px; font-weight: 700;
-  font-family: 'Syne', sans-serif;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column;
-  transition: all 0.1s;
-  user-select: none;
-}
-.num-btn:active {
-  background: var(--surface3);
-  transform: scale(0.92);
-}
-.num-btn.empty { background: transparent; border-color: transparent; pointer-events: none; }
-.num-btn.del { font-size: 20px; background: var(--surface); }
-.num-sub {
-  font-size: 8px; color: var(--text3);
-  letter-spacing: 1px; font-family: 'Noto Sans SC', sans-serif;
-  margin-top: 1px;
-}
+    .pin-dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.15);
+    }
 
-/* ════════════════════════════════
+    .pin-dot.error {
+      background: var(--error);
+      border-color: var(--error);
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0)
+      }
+
+      20% {
+        transform: translateX(-8px)
+      }
+
+      40% {
+        transform: translateX(8px)
+      }
+
+      60% {
+        transform: translateX(-6px)
+      }
+
+      80% {
+        transform: translateX(5px)
+      }
+    }
+
+    /* PIN step needs its own layout — top-aligned, scrollable, no bottom button */
+    .step.pin-step {
+      justify-content: flex-start;
+      padding-top: 80px;
+      overflow-y: auto;
+    }
+
+    /* Numpad */
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      gap: 12px;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .num-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: all 0.1s;
+      user-select: none;
+    }
+
+    .num-btn:active {
+      background: var(--surface3);
+      transform: scale(0.92);
+    }
+
+    .num-btn.empty {
+      background: transparent;
+      border-color: transparent;
+      pointer-events: none;
+    }
+
+    .num-btn.del {
+      font-size: 20px;
+      background: var(--surface);
+    }
+
+    .num-sub {
+      font-size: 8px;
+      color: var(--text3);
+      letter-spacing: 1px;
+      font-family: 'Noto Sans SC', sans-serif;
+      margin-top: 1px;
+    }
+
+    /* ════════════════════════════════
    STEP — SUCCESS
 ════════════════════════════════ */
-.success-avatar {
-  width: 120px; height: 120px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 60px; margin-bottom: 24px;
-  position: relative;
-  animation: successPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-@keyframes successPop {
-  from { transform: scale(0.3) rotate(-20deg); opacity: 0; }
-  to   { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-.confetti-wrap {
-  position: absolute; inset: -40px;
-  pointer-events: none; overflow: visible;
-}
-.confetti-piece {
-  position: absolute;
-  width: 8px; height: 8px;
-  border-radius: 2px;
-  animation: confettiFall 1.2s ease forwards;
-}
-@keyframes confettiFall {
-  from { transform: translateY(0) rotate(0deg); opacity: 1; }
-  to   { transform: translateY(80px) rotate(720deg); opacity: 0; }
-}
+    .success-avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      margin-bottom: 24px;
+      position: relative;
+      animation: successPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
 
-/* ── Toast ── */
-.toast {
-  position: fixed; bottom: 32px; left: 50%;
-  transform: translateX(-50%) translateY(16px);
-  background: var(--surface3); border: 1px solid var(--border2);
-  color: var(--text); padding: 11px 20px;
-  border-radius: 30px; font-size: 13px; z-index: 200;
-  opacity: 0; transition: all 0.28s; pointer-events: none;
-  white-space: nowrap;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-</style>
+    @keyframes successPop {
+      from {
+        transform: scale(0.3) rotate(-20deg);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+    }
+
+    .confetti-wrap {
+      position: absolute;
+      inset: -40px;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      animation: confettiFall 1.2s ease forwards;
+    }
+
+    @keyframes confettiFall {
+      from {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateY(80px) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 11px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      z-index: 200;
+      opacity: 0;
+      transition: all 0.28s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Loading Overlay ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .loading-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      margin-top: 16px;
+      color: var(--text2);
+      font-size: 14px;
+      letter-spacing: 0.03em;
+    }
+  </style>
 </head>
+
 <body>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
 
-<div class="bg-canvas">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-</div>
-
-<!-- Progress & back -->
-<div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-<div class="back-btn" id="backBtn" onclick="goBack()">←</div>
-<div class="step-counter" id="stepCounter"></div>
-
-<div class="app" id="app">
-
-  <!-- ══════════ STEP 0: Welcome ══════════ -->
-  <div class="step active" id="step-0">
-    <div class="welcome-logo">分一下</div>
-    <div class="welcome-tagline">SPLIT · PAY · DONE</div>
-    <div class="welcome-btns">
-      <button class="primary-btn" onclick="startRegister()">创建新账户</button>
-      <button class="ghost-btn"   onclick="startLogin()">已有账户，去登录</button>
-    </div>
+  <div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
   </div>
 
-  <!-- ══════════ STEP 1: Name ══════════ -->
-  <div class="step" id="step-1">
-    <div class="step-eyebrow">第 1 步</div>
-    <div class="step-title">你叫<br><span class="hl">什么名字？</span></div>
-    <div class="step-subtitle">室友们会用这个名字认出你</div>
-    <div class="big-input-wrap">
-      <input class="big-input" id="inputName" type="text"
-             placeholder="输入昵称" maxlength="16"
-             oninput="validateName()" onkeydown="enterNext(event,'goToEmail')" />
-      <div class="input-error" id="nameError"></div>
-    </div>
-    <div class="step-bottom">
-      <button class="primary-btn" id="nameNextBtn" disabled onclick="goToEmail()">继续 →</button>
-    </div>
+  <!-- Progress & back -->
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
   </div>
+  <div class="back-btn" id="backBtn" onclick="goBack()">←</div>
+  <div class="step-counter" id="stepCounter"></div>
 
-  <!-- ══════════ STEP 2: Email ══════════ -->
-  <div class="step" id="step-2">
-    <div class="step-eyebrow">第 2 步</div>
-    <div class="step-title">你的<br><span class="hl">邮箱地址</span></div>
-    <div class="step-subtitle">同时用于登录和 Interac e-Transfer 收款</div>
-    <div class="big-input-wrap">
-      <input class="big-input" id="inputEmail" type="email"
-             placeholder="you@example.com" style="font-size:17px"
-             oninput="validateEmail()" onkeydown="enterNext(event,'goToAvatar')" />
-      <div class="input-error" id="emailError"></div>
+  <div class="app" id="app">
+
+    <!-- ══════════ STEP 0: Welcome ══════════ -->
+    <div class="step active" id="step-0">
+      <div class="welcome-logo">分一下</div>
+      <div class="welcome-tagline">SPLIT · PAY · DONE</div>
+      <div class="welcome-btns">
+        <button class="primary-btn" onclick="startRegister()">创建新账户</button>
+        <button class="ghost-btn" onclick="startLogin()">已有账户，去登录</button>
+      </div>
     </div>
-    <div class="step-bottom">
-      <button class="primary-btn" id="emailNextBtn" disabled onclick="goToAvatar()">继续 →</button>
+
+    <!-- ══════════ STEP 1: Name ══════════ -->
+    <div class="step" id="step-1">
+      <div class="step-eyebrow">第 1 步</div>
+      <div class="step-title">你叫<br><span class="hl">什么名字？</span></div>
+      <div class="step-subtitle">室友们会用这个名字认出你</div>
+      <div class="big-input-wrap">
+        <input class="big-input" id="inputName" type="text" placeholder="输入昵称" maxlength="16" oninput="validateName()"
+          onkeydown="enterNext(event,'goToEmail')" />
+        <div class="input-error" id="nameError"></div>
+      </div>
+      <div class="step-bottom">
+        <button class="primary-btn" id="nameNextBtn" disabled onclick="goToEmail()">继续 →</button>
+      </div>
     </div>
-  </div>
 
-  <!-- ══════════ STEP 3: Avatar ══════════ -->
-  <div class="step" id="step-3">
-    <div class="step-eyebrow">第 3 步</div>
-    <div class="step-title">选你的<br><span class="hl">专属头像</span></div>
-    <div class="step-subtitle" style="margin-bottom:24px">一个能代表你的 Emoji</div>
+    <!-- ══════════ STEP 2: Email ══════════ -->
+    <div class="step" id="step-2">
+      <div class="step-eyebrow">第 2 步</div>
+      <div class="step-title">你的<br><span class="hl">邮箱地址</span></div>
+      <div class="step-subtitle">同时用于登录和 Interac e-Transfer 收款</div>
+      <div class="big-input-wrap">
+        <input class="big-input" id="inputEmail" type="email" placeholder="you@example.com" style="font-size:17px"
+          oninput="validateEmail()" onkeydown="enterNext(event,'goToAvatar')" />
+        <div class="input-error" id="emailError"></div>
+      </div>
+      <div class="step-bottom">
+        <button class="primary-btn" id="emailNextBtn" disabled onclick="goToAvatar()">继续 →</button>
+      </div>
+    </div>
 
-    <div class="avatar-stage">
-      <div class="avatar-ring-wrap" id="avatarRingWrap">
-        <div class="avatar-ring-track"></div>
-        <div class="avatar-ring-gap"></div>
-        <div class="avatar-big" id="avatarBig">
-          <span id="avatarEmoji" style="font-size:64px;line-height:1">❓</span>
+    <!-- ══════════ STEP 3: Avatar ══════════ -->
+    <div class="step" id="step-3">
+      <div class="step-eyebrow">第 3 步</div>
+      <div class="step-title">选你的<br><span class="hl">专属头像</span></div>
+      <div class="step-subtitle" style="margin-bottom:24px">一个能代表你的 Emoji</div>
+
+      <div class="avatar-stage">
+        <div class="avatar-ring-wrap" id="avatarRingWrap">
+          <div class="avatar-ring-track"></div>
+          <div class="avatar-ring-gap"></div>
+          <div class="avatar-big" id="avatarBig">
+            <span id="avatarEmoji" style="font-size:64px;line-height:1">❓</span>
+          </div>
         </div>
+        <div class="avatar-actions">
+          <button class="avatar-action-btn primary" onclick="randomEmoji()">
+            🎲 随机一个
+          </button>
+          <button class="avatar-action-btn" onclick="openEmojiSheet()">
+            🔍 自己选
+          </button>
+        </div>
+      </div><!-- /avatar-stage -->
+
+      <div class="step-bottom">
+        <button class="primary-btn" id="avatarNextBtn" disabled onclick="goToPin()">继续 →</button>
       </div>
-      <div class="avatar-actions">
-        <button class="avatar-action-btn primary" onclick="randomEmoji()">
-          🎲 随机一个
-        </button>
-        <button class="avatar-action-btn" onclick="openEmojiSheet()">
-          🔍 自己选
-        </button>
+    </div><!-- /step-3 -->
+
+    <!-- ══════════ STEP 4: PIN ══════════ -->
+    <!-- ══════════ STEP 4: PIN ══════════ -->
+    <div class="step pin-step" id="step-4">
+      <div class="step-eyebrow">第 4 步</div>
+      <div class="step-title">设置<br><span class="hl">6 位密码</span></div>
+      <div class="step-subtitle" style="margin-bottom:28px">下次登录时使用</div>
+
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+        <div class="pin-dot" id="pd4"></div>
+        <div class="pin-dot" id="pd5"></div>
       </div>
-    </div><!-- /avatar-stage -->
 
-    <div class="step-bottom">
-      <button class="primary-btn" id="avatarNextBtn" disabled onclick="goToPin()">继续 →</button>
-    </div>
-  </div><!-- /step-3 -->
-
-  <!-- ══════════ STEP 4: PIN ══════════ -->
-  <!-- ══════════ STEP 4: PIN ══════════ -->
-  <div class="step pin-step" id="step-4">
-    <div class="step-eyebrow">第 4 步</div>
-    <div class="step-title">设置<br><span class="hl">4 位密码</span></div>
-    <div class="step-subtitle" style="margin-bottom:28px">下次登录时使用</div>
-
-    <div class="pin-dots" id="pinDots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
+      <div class="numpad" id="numpad">
+        <!-- rendered by JS -->
+      </div>
     </div>
 
-    <div class="numpad" id="numpad">
-      <!-- rendered by JS -->
+    <!-- ══════════ STEP 5: Confirm PIN ══════════ -->
+    <div class="step pin-step" id="step-5">
+      <div class="step-eyebrow">确认密码</div>
+      <div class="step-title">再输<br><span class="hl">一次密码</span></div>
+      <div class="step-subtitle" style="margin-bottom:28px">确保你没有输错</div>
+
+      <div class="pin-dots" id="pinDots2">
+        <div class="pin-dot" id="pd20"></div>
+        <div class="pin-dot" id="pd21"></div>
+        <div class="pin-dot" id="pd22"></div>
+        <div class="pin-dot" id="pd23"></div>
+        <div class="pin-dot" id="pd24"></div>
+        <div class="pin-dot" id="pd25"></div>
+      </div>
+
+      <div class="numpad" id="numpad2"></div>
+    </div>
+
+    <!-- ══════════ STEP 6: Success ══════════ -->
+    <div class="step" id="step-6">
+      <div class="success-avatar" id="successAvatar" style="background:#1c1c26">
+        <span id="successEmoji">🎉</span>
+        <div class="confetti-wrap" id="confettiWrap"></div>
+      </div>
+      <div class="step-title" style="margin-bottom:10px">欢迎，<br><span class="hl" id="welcomeName"></span>！</div>
+      <div class="step-subtitle" style="margin-bottom:0">账户已创建，快去邀请室友吧</div>
+      <div class="step-bottom">
+        <button class="primary-btn" onclick="enterApp()">进入分一下 →</button>
+      </div>
+    </div>
+
+    <!-- ══════════ LOGIN STEP A: Email ══════════ -->
+    <div class="step" id="step-la">
+      <div class="step-eyebrow">登录</div>
+      <div class="step-title">输入你的<br><span class="hl">邮箱</span></div>
+      <div class="step-subtitle">用注册时的邮箱地址</div>
+      <div class="big-input-wrap">
+        <input class="big-input" id="loginEmail" type="email" placeholder="you@example.com" style="font-size:17px"
+          oninput="validateLoginEmail()" onkeydown="enterNext(event,'goToLoginPin')" />
+        <div class="input-error" id="loginEmailError"></div>
+      </div>
+      <div class="step-bottom">
+        <button class="primary-btn" id="loginEmailBtn" disabled onclick="goToLoginPin()">继续 →</button>
+      </div>
+    </div>
+
+    <!-- ══════════ LOGIN STEP B: PIN ══════════ -->
+    <div class="step pin-step" id="step-lb">
+      <div class="step-eyebrow">登录</div>
+      <div class="step-title">输入<br><span class="hl">6 位密码</span></div>
+      <div class="step-subtitle" style="margin-bottom:28px" id="loginEmailDisplay"></div>
+
+      <div class="pin-dots" id="pinDotsL">
+        <div class="pin-dot" id="pdL0"></div>
+        <div class="pin-dot" id="pdL1"></div>
+        <div class="pin-dot" id="pdL2"></div>
+        <div class="pin-dot" id="pdL3"></div>
+        <div class="pin-dot" id="pdL4"></div>
+        <div class="pin-dot" id="pdL5"></div>
+      </div>
+
+      <div class="numpad" id="numpadL"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════ EMOJI SHEET ══════════ -->
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeEmojiSheet()"></div>
+  <div class="emoji-sheet" id="emojiSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">选择 Emoji 头像</div>
+      <div class="sheet-search-wrap">
+        <span class="sheet-search-ico">🔍</span>
+        <input class="sheet-search" id="sheetSearch" type="text" placeholder="搜索..." oninput="onSheetSearch()" />
+      </div>
+      <div class="sheet-tabs" id="sheetTabs"></div>
+    </div>
+    <div class="sheet-grid-wrap" id="sheetGrid"></div>
+    <div class="sheet-bottom">
+      <button class="sheet-confirm-btn" id="sheetConfirmBtn" disabled onclick="confirmEmojiSheet()">
+        选好了
+      </button>
     </div>
   </div>
 
-  <!-- ══════════ STEP 5: Confirm PIN ══════════ -->
-  <div class="step pin-step" id="step-5">
-    <div class="step-eyebrow">确认密码</div>
-    <div class="step-title">再输<br><span class="hl">一次密码</span></div>
-    <div class="step-subtitle" style="margin-bottom:28px">确保你没有输错</div>
+  <div class="toast" id="toast"></div>
 
-    <div class="pin-dots" id="pinDots2">
-      <div class="pin-dot" id="pd20"></div>
-      <div class="pin-dot" id="pd21"></div>
-      <div class="pin-dot" id="pd22"></div>
-      <div class="pin-dot" id="pd23"></div>
-    </div>
+  <script>
+    // ════════════════════════════════════════════
+    //  EMOJI DATA
+    // ════════════════════════════════════════════
+    const CATS = [
+      {
+        id: 'faces', icon: '😊', label: '表情',
+        e: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '🥲', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤔', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😴', '😷', '🤒', '🤕', '🤢', '🤧', '🥵', '🥶', '😵', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️', '😮', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖']
+      },
+      {
+        id: 'hands', icon: '👋', label: '手势',
+        e: ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '💪', '🦾']
+      },
+      {
+        id: 'animals', icon: '🐶', label: '动物',
+        e: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🦋', '🐌', '🐞', '🐜', '🐢', '🐍', '🦎', '🐙', '🦑', '🦐', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🐘', '🦛', '🦏', '🐪', '🦒', '🦘', '🐃', '🐎', '🐖', '🐑', '🦙', '🐐', '🦌', '🐕', '🐈', '🐇', '🦝', '🦔', '🦦', '🦥', '🦫']
+      },
+      {
+        id: 'food', icon: '🍕', label: '食物',
+        e: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🌶️', '🥕', '🧄', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🌭', '🍔', '🍟', '🍕', '🌮', '🌯', '🥗', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🍤', '🍙', '🍚', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🍯', '☕', '🍵', '🧋', '🍺', '🥂', '🍷', '🥃', '🍸', '🍹', '🧉', '🍾']
+      },
+      {
+        id: 'nature', icon: '🌿', label: '自然',
+        e: ['🌸', '🌺', '🌻', '🌹', '🥀', '🌷', '🌱', '🪴', '🌿', '☘️', '🍀', '🍃', '🍂', '🍁', '🍄', '🌾', '💐', '🌵', '🎄', '🌲', '🌳', '🌴', '🌏', '🌍', '🌎', '🌙', '⭐', '🌟', '💫', '✨', '⚡', '☄️', '☀️', '🌈', '❄️', '🔥', '🌊', '💧', '🌋', '⛰️', '🏔️', '🌅', '🌄', '🌠', '🌌', '🌃', '🌆', '🌇']
+      },
+      {
+        id: 'sports', icon: '⚽', label: '运动',
+        e: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🏒', '⛳', '🎯', '🎣', '🤿', '🎽', '🎿', '🛷', '🥊', '🥋', '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🎳', '🏋️', '🤸', '🧗', '🤺', '⛷️', '🏂', '🏄', '🏊', '🚵', '🚴', '🧘']
+      },
+      {
+        id: 'travel', icon: '✈️', label: '旅行',
+        e: ['✈️', '🚀', '🛸', '🚁', '🛫', '🛬', '🚗', '🚕', '🚙', '🏎️', '🚓', '🚑', '🚒', '🚌', '🚎', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '⛵', '🚤', '🛥️', '🚢', '🗺️', '🌐', '🏖️', '🏝️', '🏕️', '🏔️', '🗼', '🗽', '⛪', '🏰', '🏯', '🕌', '🛕', '🕍', '⛩️']
+      },
+      {
+        id: 'objects', icon: '💎', label: '物品',
+        e: ['💎', '👑', '🎩', '🪄', '🔮', '🪬', '🧿', '🎭', '🎨', '🖼️', '🎪', '🎁', '🎀', '🎊', '🎉', '🎈', '🧧', '🎆', '🎇', '🏮', '🪔', '💡', '🔦', '🕯️', '💰', '💴', '💵', '💶', '💷', '💸', '💳', '🪙', '⚖️', '🗝️', '🔑', '🔨', '⚙️', '🧲', '🔭', '🔬', '💻', '📱', '📷', '🎮', '🕹️', '🎲', '♟️', '🧩', '🪆', '🪅', '🪀', '🪁', '🎯', '🏹', '🛡️', '⚔️', '🪚', '🔧', '🪛', '🔩', '🧰']
+      },
+      {
+        id: 'symbols', icon: '💯', label: '符号',
+        e: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '✡️', '☯️', '🆔', '⚛️', '♻️', '🔱', '✅', '❌', '⭕', '🛑', '⛔', '📛', '🚫', '💯', '♨️', '🔔', '🔕', '💬', '💭', '🗯️', '🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⚫', '⚪', '🟥', '🟧', '🟨', '🟩', '🟦', '🟪', '🟫', '⬛', '⬜']
+      }
+    ];
 
-    <div class="numpad" id="numpad2"></div>
-  </div>
+    // All emojis flat
+    const ALL_EMOJIS = CATS.flatMap(c => c.e);
 
-  <!-- ══════════ STEP 6: Success ══════════ -->
-  <div class="step" id="step-6">
-    <div class="success-avatar" id="successAvatar" style="background:#1c1c26">
-      <span id="successEmoji">🎉</span>
-      <div class="confetti-wrap" id="confettiWrap"></div>
-    </div>
-    <div class="step-title" style="margin-bottom:10px">欢迎，<br><span class="hl" id="welcomeName"></span>！</div>
-    <div class="step-subtitle" style="margin-bottom:0">账户已创建，快去邀请室友吧</div>
-    <div class="step-bottom">
-      <button class="primary-btn" onclick="enterApp()">进入分一下 →</button>
-    </div>
-  </div>
+    // Curated random pool (fun, expressive)
+    const RANDOM_POOL = [
+      '🐶', '🐱', '🐻', '🐼', '🦊', '🐨', '🐯', '🦁', '🐸', '🐧', '🦆', '🦉', '🦋', '🐙', '🦄',
+      '🌸', '🌊', '⚡', '🔥', '🌈', '🍕', '🍔', '🍜', '🍣', '🍦', '☕', '🧋', '🍵',
+      '🎮', '🎸', '🎨', '🎭', '🎯', '🏆', '⚽', '🏀', '🎾', '🏄', '🧗', '🚀', '✈️', '🛸',
+      '😎', '🥳', '🤩', '😏', '🤠', '🥸', '😈', '👻', '🤖', '👾', '💎', '👑', '🎩', '🪄', '🔮',
+      '🌙', '⭐', '🌟', '✨', '🌺', '🌻', '🌵', '🍀', '🍁', '🦀', '🐠', '🐬', '🦈', '🦁', '🐊'
+    ];
 
-  <!-- ══════════ LOGIN STEP A: Email ══════════ -->
-  <div class="step" id="step-la">
-    <div class="step-eyebrow">登录</div>
-    <div class="step-title">输入你的<br><span class="hl">邮箱</span></div>
-    <div class="step-subtitle">用注册时的邮箱地址</div>
-    <div class="big-input-wrap">
-      <input class="big-input" id="loginEmail" type="email"
-             placeholder="you@example.com" style="font-size:17px"
-             oninput="validateLoginEmail()" onkeydown="enterNext(event,'goToLoginPin')" />
-      <div class="input-error" id="loginEmailError"></div>
-    </div>
-    <div class="step-bottom">
-      <button class="primary-btn" id="loginEmailBtn" disabled onclick="goToLoginPin()">继续 →</button>
-    </div>
-  </div>
+    // ════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════
+    let mode = 'register'; // 'register' | 'login'
+    let currentStep = 0;
+    let stepHistory = [0];
 
-  <!-- ══════════ LOGIN STEP B: PIN ══════════ -->
-  <div class="step pin-step" id="step-lb">
-    <div class="step-eyebrow">登录</div>
-    <div class="step-title">输入<br><span class="hl">4 位密码</span></div>
-    <div class="step-subtitle" style="margin-bottom:28px" id="loginEmailDisplay"></div>
+    let userName = '';
+    let userEmail = '';
+    let userEmoji = '';
+    let userColor = '#1c1c26';
+    let pinFirst = '';
+    let pinInput = '';
+    let activeNumpad = null; // 'set' | 'confirm' | 'login'
 
-    <div class="pin-dots" id="pinDotsL">
-      <div class="pin-dot" id="pdL0"></div>
-      <div class="pin-dot" id="pdL1"></div>
-      <div class="pin-dot" id="pdL2"></div>
-      <div class="pin-dot" id="pdL3"></div>
-    </div>
+    let sheetTempEmoji = '';
+    let sheetCategory = 'faces';
+    let sheetSearch = '';
+    let recentEmojis = JSON.parse(localStorage.getItem('fx_recent') || '[]');
 
-    <div class="numpad" id="numpadL"></div>
-  </div>
+    // ════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════
+    window.addEventListener('load', () => {
+      buildNumpad('numpad', 'set');
+      buildNumpad('numpad2', 'confirm');
+      buildNumpad('numpadL', 'login');
+      buildSheetTabs();
+      renderSheetGrid();
+      // Pre-load a random avatar so step 3 never shows black on first visit
+      preWarmAvatar();
+    });
 
-</div>
+    function preWarmAvatar() {
+      const emoji = RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)];
+      const color = complementaryColor(emoji);
+      userEmoji = emoji;
+      userColor = color;
+      const wrap = document.getElementById('avatarRingWrap');
+      const big = document.getElementById('avatarBig');
+      const em = document.getElementById('avatarEmoji');
+      big.style.background = color;
+      em.textContent = emoji;
+      wrap.classList.add('has-emoji');
+      document.getElementById('avatarNextBtn').disabled = false;
+    }
 
-<!-- ══════════ EMOJI SHEET ══════════ -->
-<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeEmojiSheet()"></div>
-<div class="emoji-sheet" id="emojiSheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-header">
-    <div class="sheet-title">选择 Emoji 头像</div>
-    <div class="sheet-search-wrap">
-      <span class="sheet-search-ico">🔍</span>
-      <input class="sheet-search" id="sheetSearch" type="text"
-             placeholder="搜索..." oninput="onSheetSearch()" />
-    </div>
-    <div class="sheet-tabs" id="sheetTabs"></div>
-  </div>
-  <div class="sheet-grid-wrap" id="sheetGrid"></div>
-  <div class="sheet-bottom">
-    <button class="sheet-confirm-btn" id="sheetConfirmBtn" disabled onclick="confirmEmojiSheet()">
-      选好了
-    </button>
-  </div>
-</div>
+    // ════════════════════════════════════════════
+    //  NAVIGATION
+    // ════════════════════════════════════════════
+    const REGISTER_FLOW = [0, 1, 2, 3, 4, 5, 6];
+    const LOGIN_FLOW = [0, 'la', 'lb'];
 
-<div class="toast" id="toast"></div>
+    function getStepId(idx) {
+      return 'step-' + idx;
+    }
 
-<script>
-// ════════════════════════════════════════════
-//  EMOJI DATA
-// ════════════════════════════════════════════
-const CATS = [
-  { id:'faces',   icon:'😊', label:'表情',
-    e:['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤔','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔','😴','😷','🤒','🤕','🤢','🤧','🥵','🥶','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','😟','🙁','☹️','😮','😲','😳','🥺','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','😤','😡','😠','🤬','😈','👿','💀','💩','🤡','👹','👺','👻','👽','👾','🤖'] },
-  { id:'hands',   icon:'👋', label:'手势',
-    e:['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','💪','🦾'] },
-  { id:'animals', icon:'🐶', label:'动物',
-    e:['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🦋','🐌','🐞','🐜','🐢','🐍','🦎','🐙','🦑','🦐','🦀','🐡','🐠','🐟','🐬','🐳','🦈','🐊','🐅','🐆','🦓','🦍','🐘','🦛','🦏','🐪','🦒','🦘','🐃','🐎','🐖','🐑','🦙','🐐','🦌','🐕','🐈','🐇','🦝','🦔','🦦','🦥','🦫'] },
-  { id:'food',    icon:'🍕', label:'食物',
-    e:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🌶️','🥕','🧄','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🌭','🍔','🍟','🍕','🌮','🌯','🥗','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🍯','☕','🍵','🧋','🍺','🥂','🍷','🥃','🍸','🍹','🧉','🍾'] },
-  { id:'nature',  icon:'🌿', label:'自然',
-    e:['🌸','🌺','🌻','🌹','🥀','🌷','🌱','🪴','🌿','☘️','🍀','🍃','🍂','🍁','🍄','🌾','💐','🌵','🎄','🌲','🌳','🌴','🌏','🌍','🌎','🌙','⭐','🌟','💫','✨','⚡','☄️','☀️','🌈','❄️','🔥','🌊','💧','🌋','⛰️','🏔️','🌅','🌄','🌠','🌌','🌃','🌆','🌇'] },
-  { id:'sports',  icon:'⚽', label:'运动',
-    e:['⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🏒','⛳','🎯','🎣','🤿','🎽','🎿','🛷','🥊','🥋','🏆','🥇','🥈','🥉','🏅','🎖️','🎳','🏋️','🤸','🧗','🤺','⛷️','🏂','🏄','🏊','🚵','🚴','🧘'] },
-  { id:'travel',  icon:'✈️', label:'旅行',
-    e:['✈️','🚀','🛸','🚁','🛫','🛬','🚗','🚕','🚙','🏎️','🚓','🚑','🚒','🚌','🚎','🛻','🚚','🚛','🚜','🏍️','🛵','🚲','🛴','🛹','⛵','🚤','🛥️','🚢','🗺️','🌐','🏖️','🏝️','🏕️','🏔️','🗼','🗽','⛪','🏰','🏯','🕌','🛕','🕍','⛩️'] },
-  { id:'objects', icon:'💎', label:'物品',
-    e:['💎','👑','🎩','🪄','🔮','🪬','🧿','🎭','🎨','🖼️','🎪','🎁','🎀','🎊','🎉','🎈','🧧','🎆','🎇','🏮','🪔','💡','🔦','🕯️','💰','💴','💵','💶','💷','💸','💳','🪙','⚖️','🗝️','🔑','🔨','⚙️','🧲','🔭','🔬','💻','📱','📷','🎮','🕹️','🎲','♟️','🧩','🪆','🪅','🪀','🪁','🎯','🏹','🛡️','⚔️','🪚','🔧','🪛','🔩','🧰'] },
-  { id:'symbols', icon:'💯', label:'符号',
-    e:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','✡️','☯️','🆔','⚛️','♻️','🔱','✅','❌','⭕','🛑','⛔','📛','🚫','💯','♨️','🔔','🔕','💬','💭','🗯️','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟥','🟧','🟨','🟩','🟦','🟪','🟫','⬛','⬜'] }
-];
+    function goTo(nextId, direction = 'forward') {
+      const curId = 'step-' + currentStep;
+      const nextEl = document.getElementById('step-' + nextId);
+      const curEl = document.getElementById(curId);
+      if (!nextEl) return;
 
-// All emojis flat
-const ALL_EMOJIS = CATS.flatMap(c => c.e);
+      // Animate out current
+      curEl.classList.remove('active');
+      curEl.classList.add(direction === 'forward' ? 'exit-to-left' : 'exit-to-right');
+      setTimeout(() => curEl.classList.remove('exit-to-left', 'exit-to-right'), 400);
 
-// Curated random pool (fun, expressive)
-const RANDOM_POOL = [
-  '🐶','🐱','🐻','🐼','🦊','🐨','🐯','🦁','🐸','🐧','🦆','🦉','🦋','🐙','🦄',
-  '🌸','🌊','⚡','🔥','🌈','🍕','🍔','🍜','🍣','🍦','☕','🧋','🍵',
-  '🎮','🎸','🎨','🎭','🎯','🏆','⚽','🏀','🎾','🏄','🧗','🚀','✈️','🛸',
-  '😎','🥳','🤩','😏','🤠','🥸','😈','👻','🤖','👾','💎','👑','🎩','🪄','🔮',
-  '🌙','⭐','🌟','✨','🌺','🌻','🌵','🍀','🍁','🦀','🐠','🐬','🦈','🦁','🐊'
-];
+      // Animate in next
+      nextEl.classList.add('active', direction === 'forward' ? 'enter-from-right' : 'enter-from-left');
+      setTimeout(() => nextEl.classList.remove('enter-from-right', 'enter-from-left'), 400);
 
-// ════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════
-let mode          = 'register'; // 'register' | 'login'
-let currentStep   = 0;
-let stepHistory   = [0];
+      currentStep = nextId;
+      stepHistory.push(nextId);
+      updateChrome();
+    }
 
-let userName      = '';
-let userEmail     = '';
-let userEmoji     = '';
-let userColor     = '#1c1c26';
-let pinFirst      = '';
-let pinInput      = '';
-let activeNumpad  = null; // 'set' | 'confirm' | 'login'
+    function goBack() {
+      if (stepHistory.length <= 1) return;
+      stepHistory.pop();
+      const prev = stepHistory[stepHistory.length - 1];
+      const curId = 'step-' + currentStep;
+      const prevEl = document.getElementById('step-' + prev);
+      const curEl = document.getElementById(curId);
 
-let sheetTempEmoji = '';
-let sheetCategory  = 'faces';
-let sheetSearch    = '';
-let recentEmojis   = JSON.parse(localStorage.getItem('fx_recent')||'[]');
+      curEl.classList.remove('active');
+      curEl.classList.add('exit-to-right');
+      setTimeout(() => curEl.classList.remove('exit-to-right'), 400);
 
-// ════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════
-window.addEventListener('load', () => {
-  buildNumpad('numpad',  'set');
-  buildNumpad('numpad2', 'confirm');
-  buildNumpad('numpadL', 'login');
-  buildSheetTabs();
-  renderSheetGrid();
-  // Pre-load a random avatar so step 3 never shows black on first visit
-  preWarmAvatar();
-});
+      prevEl.classList.add('active', 'enter-from-left');
+      setTimeout(() => prevEl.classList.remove('enter-from-left'), 400);
 
-function preWarmAvatar() {
-  const emoji = RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)];
-  const color = complementaryColor(emoji);
-  userEmoji = emoji;
-  userColor = color;
-  const wrap = document.getElementById('avatarRingWrap');
-  const big  = document.getElementById('avatarBig');
-  const em   = document.getElementById('avatarEmoji');
-  big.style.background = color;
-  em.textContent = emoji;
-  wrap.classList.add('has-emoji');
-  document.getElementById('avatarNextBtn').disabled = false;
-}
+      currentStep = prev;
+      updateChrome();
 
-// ════════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════════
-const REGISTER_FLOW = [0, 1, 2, 3, 4, 5, 6];
-const LOGIN_FLOW    = [0, 'la', 'lb'];
+      // Clear pin state when going back to pin steps
+      if (prev === 4) { pinFirst = ''; pinInput = ''; renderPinDots('pinDots', 0, false); }
+      if (prev === 5) { pinInput = ''; renderPinDots('pinDots2', 0, false); }
+    }
 
-function getStepId(idx) {
-  return 'step-' + idx;
-}
+    function updateChrome() {
+      const isWelcome = (currentStep === 0);
+      const backBtn = document.getElementById('backBtn');
+      const counter = document.getElementById('stepCounter');
+      backBtn.classList.toggle('visible', !isWelcome);
+      counter.classList.toggle('visible', !isWelcome && mode === 'register' && typeof currentStep === 'number' && currentStep >= 1 && currentStep <= 5);
 
-function goTo(nextId, direction = 'forward') {
-  const curId  = 'step-' + currentStep;
-  const nextEl = document.getElementById('step-' + nextId);
-  const curEl  = document.getElementById(curId);
-  if (!nextEl) return;
+      // Progress
+      const fill = document.getElementById('progressFill');
+      if (isWelcome) { fill.style.width = '0%'; return; }
 
-  // Animate out current
-  curEl.classList.remove('active');
-  curEl.classList.add(direction === 'forward' ? 'exit-to-left' : 'exit-to-right');
-  setTimeout(() => curEl.classList.remove('exit-to-left','exit-to-right'), 400);
+      if (mode === 'register') {
+        const pct = Math.min(100, ((currentStep) / 6) * 100);
+        fill.style.width = pct + '%';
+        if (typeof currentStep === 'number' && currentStep >= 1 && currentStep <= 5)
+          counter.textContent = currentStep + ' / 5';
+      } else {
+        fill.style.width = currentStep === 'la' ? '50%' : currentStep === 'lb' ? '90%' : '0%';
+      }
+    }
 
-  // Animate in next
-  nextEl.classList.add('active', direction === 'forward' ? 'enter-from-right' : 'enter-from-left');
-  setTimeout(() => nextEl.classList.remove('enter-from-right','enter-from-left'), 400);
+    // ════════════════════════════════════════════
+    //  WELCOME
+    // ════════════════════════════════════════════
+    function startRegister() { mode = 'register'; goTo(1); setTimeout(() => document.getElementById('inputName').focus(), 450); }
+    function startLogin() { mode = 'login'; goTo('la'); setTimeout(() => document.getElementById('loginEmail').focus(), 450); }
 
-  currentStep = nextId;
-  stepHistory.push(nextId);
-  updateChrome();
-}
+    // ════════════════════════════════════════════
+    //  STEP 1: NAME
+    // ════════════════════════════════════════════
+    function validateName() {
+      const v = document.getElementById('inputName').value.trim();
+      document.getElementById('nameNextBtn').disabled = v.length < 1;
+      document.getElementById('nameError').textContent = '';
+    }
+    function goToEmail() {
+      const v = document.getElementById('inputName').value.trim();
+      if (!v) return;
+      userName = v;
+      goTo(2);
+      setTimeout(() => document.getElementById('inputEmail').focus(), 450);
+    }
 
-function goBack() {
-  if (stepHistory.length <= 1) return;
-  stepHistory.pop();
-  const prev = stepHistory[stepHistory.length - 1];
-  const curId  = 'step-' + currentStep;
-  const prevEl = document.getElementById('step-' + prev);
-  const curEl  = document.getElementById(curId);
+    // ════════════════════════════════════════════
+    //  STEP 2: EMAIL
+    // ════════════════════════════════════════════
+    function validateEmail() {
+      const v = document.getElementById('inputEmail').value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      document.getElementById('emailNextBtn').disabled = !ok;
+      document.getElementById('emailError').textContent = v && !ok ? '请输入有效的邮箱地址' : '';
+    }
+    function goToAvatar() {
+      const v = document.getElementById('inputEmail').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return;
+      userEmail = v;
+      goTo(3);
+    }
 
-  curEl.classList.remove('active');
-  curEl.classList.add('exit-to-right');
-  setTimeout(() => curEl.classList.remove('exit-to-right'), 400);
+    // ════════════════════════════════════════════
+    //  STEP 3: AVATAR
+    // ════════════════════════════════════════════
 
-  prevEl.classList.add('active','enter-from-left');
-  setTimeout(() => prevEl.classList.remove('enter-from-left'), 400);
+    // ── Complementary color engine ──────────────
+    function hslToHex(h, s, l) {
+      h /= 360;
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const hue2rgb = (t) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      return '#' + [1 / 3, 0, -1 / 3].map(o => Math.round(hue2rgb(h + o) * 255).toString(16).padStart(2, '0')).join('');
+    }
 
-  currentStep = prev;
-  updateChrome();
+    // Approximate dominant hue for each emoji in RANDOM_POOL
+    const EMOJI_HUE = {
+      '🐶': 30, '🐱': 30, '🐻': 30, '🐼': 0, '🦊': 25, '🐨': 30, '🐯': 35, '🦁': 38,
+      '🐸': 130, '🐧': 220, '🦆': 45, '🦉': 35, '🦋': 280, '🐙': 300, '🦄': 290,
+      '🌸': 330, '🌊': 200, '⚡': 55, '🔥': 15, '🌈': 260, '🍕': 20, '🍔': 30, '🍜': 45,
+      '🍣': 350, '🍦': 200, '☕': 30, '🧋': 35, '🍵': 110,
+      '🎮': 220, '🎸': 30, '🎨': 330, '🎭': 280, '🎯': 0, '🏆': 50, '⚽': 120, '🏀': 25,
+      '🎾': 120, '🏄': 200, '🧗': 30, '🚀': 220, '✈️': 210, '🛸': 200,
+      '😎': 55, '🥳': 330, '🤩': 55, '😏': 30, '🤠': 35, '🥸': 45, '😈': 280, '👻': 0,
+      '🤖': 200, '👾': 280, '💎': 200, '👑': 50, '🎩': 0, '🪄': 280, '🔮': 270,
+      '🌙': 220, '⭐': 55, '🌟': 55, '✨': 55, '🌺': 340, '🌻': 50, '🌵': 120, '🍀': 120,
+      '🍁': 15, '🦀': 5, '🐠': 200, '🐬': 200, '🦈': 200, '🦁': 38, '🐊': 120,
+    };
 
-  // Clear pin state when going back to pin steps
-  if (prev === 4) { pinFirst = ''; pinInput = ''; renderPinDots('pinDots', 0, false); }
-  if (prev === 5) { pinInput = ''; renderPinDots('pinDots2', 0, false); }
-}
+    function complementaryColor(emoji) {
+      const base = EMOJI_HUE[emoji] !== undefined ? EMOJI_HUE[emoji] : Math.random() * 360;
+      // Shift 150-210 degrees for complementary zone
+      const h = (base + 155 + Math.random() * 50) % 360;
+      const s = 0.70 + Math.random() * 0.20;   // vivid
+      const l = 0.26 + Math.random() * 0.12;   // dark enough for emoji to pop
+      return hslToHex(h, s, l);
+    }
 
-function updateChrome() {
-  const isWelcome = (currentStep === 0);
-  const backBtn = document.getElementById('backBtn');
-  const counter = document.getElementById('stepCounter');
-  backBtn.classList.toggle('visible', !isWelcome);
-  counter.classList.toggle('visible', !isWelcome && mode === 'register' && typeof currentStep === 'number' && currentStep >= 1 && currentStep <= 5);
+    function setAvatarEmoji(emoji, color, bounce = true) {
+      userEmoji = emoji;
+      if (color) userColor = color;
 
-  // Progress
-  const fill = document.getElementById('progressFill');
-  if (isWelcome) { fill.style.width = '0%'; return; }
+      const wrap = document.getElementById('avatarRingWrap');
+      const big = document.getElementById('avatarBig');
+      const em = document.getElementById('avatarEmoji');
 
-  if (mode === 'register') {
-    const pct = Math.min(100, ((currentStep) / 6) * 100);
-    fill.style.width = pct + '%';
-    if (typeof currentStep === 'number' && currentStep >= 1 && currentStep <= 5)
-      counter.textContent = currentStep + ' / 5';
-  } else {
-    fill.style.width = currentStep === 'la' ? '50%' : currentStep === 'lb' ? '90%' : '0%';
-  }
-}
+      // Set background directly on the element — no pseudo-elements blocking it
+      big.style.background = userColor;
+      em.textContent = emoji;
+      wrap.classList.add('has-emoji');
+      document.getElementById('avatarNextBtn').disabled = false;
 
-// ════════════════════════════════════════════
-//  WELCOME
-// ════════════════════════════════════════════
-function startRegister() { mode = 'register'; goTo(1); setTimeout(() => document.getElementById('inputName').focus(), 450); }
-function startLogin()    { mode = 'login';    goTo('la'); setTimeout(() => document.getElementById('loginEmail').focus(), 450); }
+      if (bounce) {
+        wrap.classList.remove('bounce');
+        void wrap.offsetWidth; // force reflow
+        wrap.classList.add('bounce');
+        setTimeout(() => wrap.classList.remove('bounce'), 640);
+      }
+    }
 
-// ════════════════════════════════════════════
-//  STEP 1: NAME
-// ════════════════════════════════════════════
-function validateName() {
-  const v = document.getElementById('inputName').value.trim();
-  document.getElementById('nameNextBtn').disabled = v.length < 1;
-  document.getElementById('nameError').textContent = '';
-}
-function goToEmail() {
-  const v = document.getElementById('inputName').value.trim();
-  if (!v) return;
-  userName = v;
-  goTo(2);
-  setTimeout(() => document.getElementById('inputEmail').focus(), 450);
-}
+    function randomEmoji() {
+      const emoji = RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)];
+      const color = complementaryColor(emoji);
+      setAvatarEmoji(emoji, color, true);
+    }
 
-// ════════════════════════════════════════════
-//  STEP 2: EMAIL
-// ════════════════════════════════════════════
-function validateEmail() {
-  const v = document.getElementById('inputEmail').value.trim();
-  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  document.getElementById('emailNextBtn').disabled = !ok;
-  document.getElementById('emailError').textContent = v && !ok ? '请输入有效的邮箱地址' : '';
-}
-function goToAvatar() {
-  const v = document.getElementById('inputEmail').value.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return;
-  userEmail = v;
-  goTo(3);
-}
+    function goToPin() {
+      if (!userEmoji) { showToast('先选一个头像吧 😊'); return; }
+      pinFirst = ''; pinInput = '';
+      renderPinDots('pinDots', 0, false);
+      goTo(4);
+    }
 
-// ════════════════════════════════════════════
-//  STEP 3: AVATAR
-// ════════════════════════════════════════════
+    // ── Emoji sheet ─────────────────────────────
+    function openEmojiSheet() {
+      sheetTempEmoji = userEmoji;
+      document.getElementById('sheetSearch').value = '';
+      sheetSearch = ''; sheetCategory = 'faces';
+      buildSheetTabs();
+      renderSheetGrid();
+      updateSheetConfirm();
+      document.getElementById('sheetBackdrop').classList.add('open');
+      document.getElementById('emojiSheet').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeEmojiSheet() {
+      document.getElementById('sheetBackdrop').classList.remove('open');
+      document.getElementById('emojiSheet').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function confirmEmojiSheet() {
+      if (!sheetTempEmoji) return;
+      addToRecent(sheetTempEmoji);
+      setAvatarEmoji(sheetTempEmoji, userColor, true);
+      closeEmojiSheet();
+    }
+    function buildSheetTabs() {
+      const allCats = recentEmojis.length
+        ? [{ id: 'recent', icon: '🕐', label: '最近', e: recentEmojis.slice(0, 24) }, ...CATS]
+        : CATS;
+      document.getElementById('sheetTabs').innerHTML = allCats.map(c =>
+        `<button class="sheet-tab ${c.id === sheetCategory ? 'active' : ''}" onclick="switchSheetCat('${c.id}')">${c.icon} ${c.label}</button>`
+      ).join('');
+    }
+    function switchSheetCat(id) {
+      sheetCategory = id;
+      sheetSearch = '';
+      document.getElementById('sheetSearch').value = '';
+      buildSheetTabs();
+      renderSheetGrid();
+    }
+    function onSheetSearch() {
+      sheetSearch = document.getElementById('sheetSearch').value.trim().toLowerCase();
+      renderSheetGrid();
+    }
+    function renderSheetGrid() {
+      const wrap = document.getElementById('sheetGrid');
+      let emojis;
+      if (sheetSearch) {
+        emojis = ALL_EMOJIS;
+      } else if (sheetCategory === 'recent') {
+        emojis = recentEmojis.slice(0, 24);
+      } else {
+        const cat = CATS.find(c => c.id === sheetCategory);
+        emojis = cat ? cat.e : [];
+      }
 
-// ── Complementary color engine ──────────────
-function hslToHex(h, s, l) {
-  h /= 360;
-  const q = l < 0.5 ? l*(1+s) : l+s-l*s;
-  const p = 2*l - q;
-  const hue2rgb = (t) => {
-    if(t<0) t+=1; if(t>1) t-=1;
-    if(t<1/6) return p+(q-p)*6*t;
-    if(t<1/2) return q;
-    if(t<2/3) return p+(q-p)*(2/3-t)*6;
-    return p;
-  };
-  return '#'+[1/3,0,-1/3].map(o=>Math.round(hue2rgb(h+o)*255).toString(16).padStart(2,'0')).join('');
-}
+      if (!emojis.length) {
+        wrap.innerHTML = `<div class="no-res"><div class="no-res-ico">🔍</div>没有找到</div>`;
+        return;
+      }
+      wrap.innerHTML = `<div class="emoji-grid">${emojis.map(e =>
+        `<button class="e-btn ${e === sheetTempEmoji ? 'sel' : ''}" onclick="pickSheetEmoji('${e}')">${e}</button>`
+      ).join('')}</div>`;
+      wrap.scrollTop = 0;
+    }
+    function pickSheetEmoji(e) {
+      sheetTempEmoji = e;
+      renderSheetGrid();
+      updateSheetConfirm();
+    }
+    function updateSheetConfirm() {
+      const btn = document.getElementById('sheetConfirmBtn');
+      btn.disabled = !sheetTempEmoji;
+      btn.textContent = sheetTempEmoji ? `选好了 ${sheetTempEmoji}` : '选好了';
+    }
+    function addToRecent(e) {
+      recentEmojis = [e, ...recentEmojis.filter(x => x !== e)].slice(0, 24);
+      localStorage.setItem('fx_recent', JSON.stringify(recentEmojis));
+    }
 
-// Approximate dominant hue for each emoji in RANDOM_POOL
-const EMOJI_HUE = {
-  '🐶':30,'🐱':30,'🐻':30,'🐼':0,'🦊':25,'🐨':30,'🐯':35,'🦁':38,
-  '🐸':130,'🐧':220,'🦆':45,'🦉':35,'🦋':280,'🐙':300,'🦄':290,
-  '🌸':330,'🌊':200,'⚡':55,'🔥':15,'🌈':260,'🍕':20,'🍔':30,'🍜':45,
-  '🍣':350,'🍦':200,'☕':30,'🧋':35,'🍵':110,
-  '🎮':220,'🎸':30,'🎨':330,'🎭':280,'🎯':0,'🏆':50,'⚽':120,'🏀':25,
-  '🎾':120,'🏄':200,'🧗':30,'🚀':220,'✈️':210,'🛸':200,
-  '😎':55,'🥳':330,'🤩':55,'😏':30,'🤠':35,'🥸':45,'😈':280,'👻':0,
-  '🤖':200,'👾':280,'💎':200,'👑':50,'🎩':0,'🪄':280,'🔮':270,
-  '🌙':220,'⭐':55,'🌟':55,'✨':55,'🌺':340,'🌻':50,'🌵':120,'🍀':120,
-  '🍁':15,'🦀':5,'🐠':200,'🐬':200,'🦈':200,'🦁':38,'🐊':120,
-};
+    // ════════════════════════════════════════════
+    //  PIN NUMPAD
+    // ════════════════════════════════════════════
+    const NUM_LAYOUT = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+    const NUM_SUBS = ['', 'ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQRS', 'TUV', 'WXYZ', '', '', ''];
 
-function complementaryColor(emoji) {
-  const base = EMOJI_HUE[emoji] !== undefined ? EMOJI_HUE[emoji] : Math.random()*360;
-  // Shift 150-210 degrees for complementary zone
-  const h = (base + 155 + Math.random()*50) % 360;
-  const s = 0.70 + Math.random()*0.20;   // vivid
-  const l = 0.26 + Math.random()*0.12;   // dark enough for emoji to pop
-  return hslToHex(h, s, l);
-}
-
-function setAvatarEmoji(emoji, color, bounce = true) {
-  userEmoji = emoji;
-  if (color) userColor = color;
-
-  const wrap = document.getElementById('avatarRingWrap');
-  const big  = document.getElementById('avatarBig');
-  const em   = document.getElementById('avatarEmoji');
-
-  // Set background directly on the element — no pseudo-elements blocking it
-  big.style.background = userColor;
-  em.textContent = emoji;
-  wrap.classList.add('has-emoji');
-  document.getElementById('avatarNextBtn').disabled = false;
-
-  if (bounce) {
-    wrap.classList.remove('bounce');
-    void wrap.offsetWidth; // force reflow
-    wrap.classList.add('bounce');
-    setTimeout(() => wrap.classList.remove('bounce'), 640);
-  }
-}
-
-function randomEmoji() {
-  const emoji = RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)];
-  const color = complementaryColor(emoji);
-  setAvatarEmoji(emoji, color, true);
-}
-
-function goToPin() {
-  if (!userEmoji) { showToast('先选一个头像吧 😊'); return; }
-  pinFirst = ''; pinInput = '';
-  renderPinDots('pinDots', 0, false);
-  goTo(4);
-}
-
-// ── Emoji sheet ─────────────────────────────
-function openEmojiSheet() {
-  sheetTempEmoji = userEmoji;
-  document.getElementById('sheetSearch').value = '';
-  sheetSearch = ''; sheetCategory = 'faces';
-  buildSheetTabs();
-  renderSheetGrid();
-  updateSheetConfirm();
-  document.getElementById('sheetBackdrop').classList.add('open');
-  document.getElementById('emojiSheet').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeEmojiSheet() {
-  document.getElementById('sheetBackdrop').classList.remove('open');
-  document.getElementById('emojiSheet').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function confirmEmojiSheet() {
-  if (!sheetTempEmoji) return;
-  addToRecent(sheetTempEmoji);
-  setAvatarEmoji(sheetTempEmoji, userColor, true);
-  closeEmojiSheet();
-}
-function buildSheetTabs() {
-  const allCats = recentEmojis.length
-    ? [{ id:'recent', icon:'🕐', label:'最近', e: recentEmojis.slice(0,24) }, ...CATS]
-    : CATS;
-  document.getElementById('sheetTabs').innerHTML = allCats.map(c =>
-    `<button class="sheet-tab ${c.id===sheetCategory?'active':''}" onclick="switchSheetCat('${c.id}')">${c.icon} ${c.label}</button>`
-  ).join('');
-}
-function switchSheetCat(id) {
-  sheetCategory = id;
-  sheetSearch = '';
-  document.getElementById('sheetSearch').value = '';
-  buildSheetTabs();
-  renderSheetGrid();
-}
-function onSheetSearch() {
-  sheetSearch = document.getElementById('sheetSearch').value.trim().toLowerCase();
-  renderSheetGrid();
-}
-function renderSheetGrid() {
-  const wrap = document.getElementById('sheetGrid');
-  let emojis;
-  if (sheetSearch) {
-    emojis = ALL_EMOJIS;
-  } else if (sheetCategory === 'recent') {
-    emojis = recentEmojis.slice(0,24);
-  } else {
-    const cat = CATS.find(c => c.id === sheetCategory);
-    emojis = cat ? cat.e : [];
-  }
-
-  if (!emojis.length) {
-    wrap.innerHTML = `<div class="no-res"><div class="no-res-ico">🔍</div>没有找到</div>`;
-    return;
-  }
-  wrap.innerHTML = `<div class="emoji-grid">${emojis.map(e =>
-    `<button class="e-btn ${e===sheetTempEmoji?'sel':''}" onclick="pickSheetEmoji('${e}')">${e}</button>`
-  ).join('')}</div>`;
-  wrap.scrollTop = 0;
-}
-function pickSheetEmoji(e) {
-  sheetTempEmoji = e;
-  renderSheetGrid();
-  updateSheetConfirm();
-}
-function updateSheetConfirm() {
-  const btn = document.getElementById('sheetConfirmBtn');
-  btn.disabled = !sheetTempEmoji;
-  btn.textContent = sheetTempEmoji ? `选好了 ${sheetTempEmoji}` : '选好了';
-}
-function addToRecent(e) {
-  recentEmojis = [e, ...recentEmojis.filter(x=>x!==e)].slice(0,24);
-  localStorage.setItem('fx_recent', JSON.stringify(recentEmojis));
-}
-
-// ════════════════════════════════════════════
-//  PIN NUMPAD
-// ════════════════════════════════════════════
-const NUM_LAYOUT = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
-const NUM_SUBS   = ['','ABC','DEF','GHI','JKL','MNO','PQRS','TUV','WXYZ','','',''];
-
-function buildNumpad(containerId, padType) {
-  const wrap = document.getElementById(containerId);
-  wrap.innerHTML = NUM_LAYOUT.map((k, i) => {
-    if (k === '') return `<button class="num-btn empty"></button>`;
-    if (k === '⌫') return `<button class="num-btn del" onclick="pinDel('${padType}')">⌫</button>`;
-    return `<button class="num-btn" onclick="pinPress('${padType}','${k}')">
+    function buildNumpad(containerId, padType) {
+      const wrap = document.getElementById(containerId);
+      wrap.innerHTML = NUM_LAYOUT.map((k, i) => {
+        if (k === '') return `<button class="num-btn empty"></button>`;
+        if (k === '⌫') return `<button class="num-btn del" onclick="pinDel('${padType}')">⌫</button>`;
+        return `<button class="num-btn" onclick="pinPress('${padType}','${k}')">
       ${k}
       ${NUM_SUBS[i] ? `<span class="num-sub">${NUM_SUBS[i]}</span>` : ''}
     </button>`;
-  }).join('');
-}
-
-function renderPinDots(dotsId, count, error = false) {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById(dotsId.replace('Dots','Dot').replace('pinDots','pd') + i)
-             || document.getElementById(dotsId.replace('Dots','') + i);
-    // fallback: find by constructing id
-    const d = document.getElementById(
-      dotsId === 'pinDots'  ? 'pd'  + i :
-      dotsId === 'pinDots2' ? 'pd2' + i :
-      dotsId === 'pinDotsL' ? 'pdL' + i : ''
-    );
-    if (!d) continue;
-    d.classList.toggle('filled', i < count && !error);
-    d.classList.toggle('error',  error);
-  }
-}
-
-function pinPress(type, digit) {
-  if (type === 'set') {
-    if (pinInput.length >= 4) return;
-    pinInput += digit;
-    renderPinDots('pinDots', pinInput.length, false);
-    if (pinInput.length === 4) {
-      setTimeout(() => {
-        pinFirst = pinInput;
-        pinInput = '';
-        renderPinDots('pinDots2', 0, false);
-        goTo(5);
-      }, 220);
+      }).join('');
     }
-  } else if (type === 'confirm') {
-    if (pinInput.length >= 4) return;
-    pinInput += digit;
-    renderPinDots('pinDots2', pinInput.length, false);
-    if (pinInput.length === 4) {
-      if (pinInput === pinFirst) {
-        setTimeout(finishRegister, 250);
-      } else {
-        // Error
-        renderPinDots('pinDots2', 4, true);
-        setTimeout(() => {
-          pinInput = '';
-          renderPinDots('pinDots2', 0, false);
-          showToast('密码不一致，重新输入');
-        }, 700);
+
+    function renderPinDots(dotsId, count, error = false) {
+      const max = 6;
+      for (let i = 0; i < max; i++) {
+        const d = document.getElementById(
+          dotsId === 'pinDots' ? 'pd' + i :
+            dotsId === 'pinDots2' ? 'pd2' + i :
+              dotsId === 'pinDotsL' ? 'pdL' + i : ''
+        );
+        if (!d) continue;
+        d.classList.toggle('filled', i < count && !error);
+        d.classList.toggle('error', error);
       }
     }
-  } else if (type === 'login') {
-    if (pinInput.length >= 4) return;
-    pinInput += digit;
-    renderPinDots('pinDotsL', pinInput.length, false);
-    if (pinInput.length === 4) {
-      setTimeout(checkLoginPin, 250);
+
+    function pinPress(type, digit) {
+      if (type === 'set') {
+        if (pinInput.length >= 6) return;
+        pinInput += digit;
+        renderPinDots('pinDots', pinInput.length, false);
+        if (pinInput.length === 6) {
+          setTimeout(() => {
+            pinFirst = pinInput;
+            pinInput = '';
+            renderPinDots('pinDots2', 0, false);
+            goTo(5);
+          }, 220);
+        }
+      } else if (type === 'confirm') {
+        if (pinInput.length >= 6) return;
+        pinInput += digit;
+        renderPinDots('pinDots2', pinInput.length, false);
+        if (pinInput.length === 6) {
+          if (pinInput === pinFirst) {
+            setTimeout(finishRegister, 250);
+          } else {
+            // Error
+            renderPinDots('pinDots2', 4, true);
+            setTimeout(() => {
+              pinInput = '';
+              renderPinDots('pinDots2', 0, false);
+              showToast('密码不一致，重新输入');
+            }, 700);
+          }
+        }
+      } else if (type === 'login') {
+        if (pinInput.length >= 6) return;
+        pinInput += digit;
+        renderPinDots('pinDotsL', pinInput.length, false);
+        if (pinInput.length === 6) {
+          setTimeout(checkLoginPin, 250);
+        }
+      }
     }
-  }
-}
 
-function pinDel(type) {
-  if (!pinInput.length) return;
-  pinInput = pinInput.slice(0,-1);
-  const dotsId = type === 'set' ? 'pinDots' : type === 'confirm' ? 'pinDots2' : 'pinDotsL';
-  renderPinDots(dotsId, pinInput.length, false);
-}
+    function pinDel(type) {
+      if (!pinInput.length) return;
+      pinInput = pinInput.slice(0, -1);
+      const dotsId = type === 'set' ? 'pinDots' : type === 'confirm' ? 'pinDots2' : 'pinDotsL';
+      renderPinDots(dotsId, pinInput.length, false);
+    }
 
-// ════════════════════════════════════════════
-//  REGISTER FINISH
-// ════════════════════════════════════════════
-async function finishRegister() {
-  try {
-    // PIN as password (Supabase requires min 6 chars, so we pad it)
-    const password = 'fx' + pinFirst + 'px';
-    await DB.signUp(userEmail, password, userName, userEmoji, userColor);
+    // ════════════════════════════════════════════
+    //  REGISTER FINISH
+    // ════════════════════════════════════════════
+    async function finishRegister() {
+      // 使用之前步骤中已存储的状态变量
+      const email = userEmail;
+      const name = userName;
+      const password = pinInput;   // 确认 PIN（6 位）
 
-    // Also keep localStorage for quick access
-    const userData = { name: userName, email: userEmail, emoji: userEmoji, color: userColor };
-    localStorage.setItem('fx_user', JSON.stringify(userData));
+      if (!email || !name || password.length < 6) {
+        showToast('请填写完整，且 PIN 码至少 6 位');
+        return;
+      }
 
-    // Set up success screen
-    const sa = document.getElementById('successAvatar');
-    sa.style.background = userColor;
-    document.getElementById('successEmoji').textContent = userEmoji;
-    document.getElementById('welcomeName').textContent = userName;
-    goTo(6);
-    setTimeout(spawnConfetti, 300);
-  } catch (err) {
-    showToast('注册失败: ' + (err.message || err));
-  }
-}
+      try {
+        showLoading('正在创建账户…');
+        await DB.signUp(email, password, name, userEmoji, userColor);
+        hideLoading();
 
-function spawnConfetti() {
-  const wrap = document.getElementById('confettiWrap');
-  const colors = ['#c8f135','#5b6dff','#ff6b9d','#ffb347','#7ec8e3','#fff'];
-  wrap.innerHTML = Array.from({length: 20}, (_,i) => {
-    const c = colors[i % colors.length];
-    const x = (Math.random()-0.5)*120;
-    const delay = Math.random()*0.4;
-    const size  = 6 + Math.random()*6;
-    return `<div class="confetti-piece" style="
+        // 成功 → 跳到欢迎页
+        document.getElementById('successEmoji').textContent = userEmoji;
+        document.getElementById('successAvatar').style.background = userColor;
+        document.getElementById('welcomeName').textContent = name;
+        spawnConfetti();
+        goTo(6);
+      } catch (err) {
+        hideLoading();
+        console.error('Supabase Auth Error:', err);
+        // 如果用户已注册，跳转到登录界面
+        if (err.message && err.message.toLowerCase().includes('already registered')) {
+          showToast('该邮箱已注册，请直接登录');
+          // 预填邮箱并跳转到登录流程
+          document.getElementById('loginEmail').value = userEmail;
+          document.getElementById('loginEmailBtn').disabled = false;
+          mode = 'login';
+          pinInput = '';
+          stepHistory = [0];
+          currentStep = 0;
+          // 先回到 step-0 再跳到登录
+          document.querySelectorAll('.step').forEach(s => { s.classList.remove('active'); });
+          document.getElementById('step-0').classList.add('active');
+          setTimeout(() => goTo('la'), 300);
+          return;
+        }
+        showToast('注册失败: ' + (err.message || '请检查网络或邮箱格式'));
+        pinInput = '';
+        renderPinDots('pinDots2', 0, false);
+      }
+    }
+
+    function spawnConfetti() {
+      const wrap = document.getElementById('confettiWrap');
+      const colors = ['#c8f135', '#5b6dff', '#ff6b9d', '#ffb347', '#7ec8e3', '#fff'];
+      wrap.innerHTML = Array.from({ length: 20 }, (_, i) => {
+        const c = colors[i % colors.length];
+        const x = (Math.random() - 0.5) * 120;
+        const delay = Math.random() * 0.4;
+        const size = 6 + Math.random() * 6;
+        return `<div class="confetti-piece" style="
       background:${c}; width:${size}px; height:${size}px;
       left:calc(50% + ${x}px); top:50%;
       animation-delay:${delay}s;
-      border-radius:${Math.random()>0.5?'50%':'3px'};
+      border-radius:${Math.random() > 0.5 ? '50%' : '3px'};
     "></div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function enterApp() {
-  window.location.href = 'aa-split-v4.html';
-}
+    function enterApp() {
+      window.location.href = 'aa-split-v4.html';
+    }
 
-// ════════════════════════════════════════════
-//  LOGIN
-// ════════════════════════════════════════════
-function validateLoginEmail() {
-  const v = document.getElementById('loginEmail').value.trim();
-  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  document.getElementById('loginEmailBtn').disabled = !ok;
-  document.getElementById('loginEmailError').textContent = v && !ok ? '请输入有效的邮箱地址' : '';
-}
-function goToLoginPin() {
-  const v = document.getElementById('loginEmail').value.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return;
-  pinInput = '';
-  renderPinDots('pinDotsL', 0, false);
-  document.getElementById('loginEmailDisplay').textContent = v;
-  goTo('lb');
-}
-async function checkLoginPin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = 'fx' + pinInput + 'px';
-  try {
-    await DB.signIn(email, password);
-    showToast('✅ 登录成功！');
-    pinInput = '';
-    setTimeout(() => { window.location.href = 'aa-split-v4.html'; }, 1200);
-  } catch (err) {
-    showToast('登录失败: ' + (err.message || err));
-    pinInput = '';
-    renderPinDots('pinDotsL', 0, true);
-  }
-}
+    // ════════════════════════════════════════════
+    //  LOGIN
+    // ════════════════════════════════════════════
+    function validateLoginEmail() {
+      const v = document.getElementById('loginEmail').value.trim();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      document.getElementById('loginEmailBtn').disabled = !ok;
+      document.getElementById('loginEmailError').textContent = v && !ok ? '请输入有效的邮箱地址' : '';
+    }
+    function goToLoginPin() {
+      const v = document.getElementById('loginEmail').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return;
+      pinInput = '';
+      renderPinDots('pinDotsL', 0, false);
+      document.getElementById('loginEmailDisplay').textContent = v;
+      goTo('lb');
+    }
+    async function checkLoginPin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = pinInput;
+      showLoading('正在登录…');
+      try {
+        await DB.signIn(email, password);
 
-// ════════════════════════════════════════════
-//  UTILS
-// ════════════════════════════════════════════
-function enterNext(event, fn) {
-  if (event.key === 'Enter') window[fn]?.();
-}
+        // 验证登录成功
+        showLoading('正在加载数据…');
+        const user = await DB.getCurrentUser();
+        if (!user) throw new Error('登录未完成，请重试');
 
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
-}
-</script>
+        hideLoading();
+        showToast('✅ 登录成功！');
+        pinInput = '';
+        setTimeout(() => { window.location.href = 'aa-split-v4.html'; }, 800);
+      } catch (err) {
+        hideLoading();
+        showToast('登录失败: ' + (err.message || err));
+        pinInput = '';
+        renderPinDots('pinDotsL', 0, true);
+      }
+    }
+
+    // ════════════════════════════════════════════
+    //  UTILS
+    // ════════════════════════════════════════════
+    function enterNext(event, fn) {
+      if (event.key === 'Enter') window[fn]?.();
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    // ════════════════════════════════════════════
+    //  LOADING OVERLAY
+    // ════════════════════════════════════════════
+    function showLoading(text) {
+      const el = document.getElementById('loadingOverlay');
+      const tx = document.getElementById('loadingText');
+      if (tx) tx.textContent = text || '正在连接…';
+      if (el) el.classList.add('show');
+    }
+    function hideLoading() {
+      const el = document.getElementById('loadingOverlay');
+      if (el) el.classList.remove('show');
+    }
+  </script>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">正在连接…</div>
+  </div>
+
 </body>
+
 </html>

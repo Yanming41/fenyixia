@@ -106,6 +106,7 @@ create policy "users_read_self_and_friends" on users for select using (
     select user_a from friendships where user_b = auth.uid()
   )
 );
+create policy "users_insert_self" on users for insert with check (id = auth.uid());
 create policy "users_update_self" on users for update using (id = auth.uid());
 
 -- 好友关系：自己创建的
