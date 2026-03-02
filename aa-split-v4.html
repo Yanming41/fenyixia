@@ -908,6 +908,344 @@
       text-transform: uppercase;
       margin: 14px 0 6px;
     }
+
+    /* ══════════════════════════════════════════
+       Card Pop Animation (create / load)
+    ══════════════════════════════════════════ */
+    .bill-card.scale-pop {
+      scale: 0 !important;
+      opacity: 0 !important;
+      transition: scale .45s cubic-bezier(.175, .885, .32, 1.275), opacity .15s ease !important;
+    }
+
+    .bill-card.scale-pop.pop-go {
+      scale: 1 !important;
+      opacity: 1 !important;
+    }
+
+    /* ══════════════════════════════════════════
+       Nav Right & Pushpin Button
+    ══════════════════════════════════════════ */
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .clip-btn {
+      width: 36px;
+      height: 36px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      position: relative;
+      font-size: 20px;
+      transition: transform .2s ease, filter .2s;
+    }
+
+    .clip-btn:active {
+      transform: scale(.85);
+    }
+
+    .clip-btn.active {
+      filter: brightness(1.3);
+    }
+
+    @keyframes pin-wiggle {
+
+      0%,
+      100% {
+        transform: rotate(0deg);
+      }
+
+      25% {
+        transform: rotate(-8deg);
+      }
+
+      75% {
+        transform: rotate(8deg);
+      }
+    }
+
+    .clip-btn.active {
+      animation: pin-wiggle .5s ease;
+    }
+
+    /* ══════════════════════════════════════════
+       Section Label Row & Back Button
+    ══════════════════════════════════════════ */
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px 10px;
+      position: relative;
+    }
+
+    .section-label-row .section-label {
+      padding: 0;
+      flex: 1;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--blue);
+      font-size: 15px;
+      font-weight: 500;
+      font-family: inherit;
+      padding: 2px 6px 2px 0;
+      display: none;
+      transition: opacity .2s;
+      letter-spacing: -0.2px;
+    }
+
+    .back-btn:active {
+      opacity: 0.6;
+    }
+
+    /* ══════════════════════════════════════════
+       Month Stage
+    ══════════════════════════════════════════ */
+    .month-stage {
+      position: relative;
+      width: 100%;
+      height: 310px;
+      overflow: visible;
+      cursor: grab;
+      display: none;
+    }
+
+    .month-stage.dragging {
+      cursor: grabbing;
+    }
+
+    .month-stage.visible {
+      display: block;
+    }
+
+    .stage.hidden {
+      display: none;
+    }
+
+    /* ══════════════════════════════════════════
+       Month Pile Cards
+    ══════════════════════════════════════════ */
+    .month-pile {
+      position: absolute;
+      width: 220px;
+      height: 270px;
+      left: 50%;
+      top: 50%;
+      margin-left: -110px;
+      margin-top: -135px;
+      cursor: pointer;
+      will-change: transform, opacity;
+      transition: transform .42s cubic-bezier(.25, .46, .45, .94), opacity .42s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .month-pile::before,
+    .month-pile::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      background: var(--bg3);
+      border: 0.5px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .month-pile::before {
+      transform: rotate(-2.5deg) translate(-4px, 6px);
+      opacity: 0.5;
+      z-index: -2;
+    }
+
+    .month-pile::after {
+      transform: rotate(1.8deg) translate(3px, 3px);
+      opacity: 0.7;
+      z-index: -1;
+    }
+
+    .pile-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      background: var(--bg2);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 24px;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .pile-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      opacity: 0.02;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px;
+    }
+
+    /* Pushpin */
+    .pile-pin {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      font-size: 28px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      transition: transform .4s cubic-bezier(.34, 1.56, .64, 1), opacity .3s;
+    }
+
+    .pile-pin.unpin {
+      transform: translateX(-50%) translateY(-40px) rotate(30deg) scale(1.3);
+      opacity: 0;
+    }
+
+    .pile-pin.repin {
+      animation: repin-drop .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    }
+
+    @keyframes repin-drop {
+      0% {
+        transform: translateX(-50%) translateY(-40px) rotate(30deg) scale(1.3);
+        opacity: 0;
+      }
+
+      100% {
+        transform: translateX(-50%) translateY(0) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Pile content */
+    .pile-month-label {
+      font-size: 42px;
+      font-weight: 800;
+      color: var(--label);
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .pile-year {
+      font-size: 13px;
+      color: var(--label3);
+      font-weight: 400;
+      margin-bottom: 16px;
+    }
+
+    .pile-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--sep);
+      margin-bottom: 16px;
+    }
+
+    .pile-count {
+      font-size: 14px;
+      color: var(--label2);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .pile-total {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--label);
+      letter-spacing: -0.5px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pile-icons {
+      display: flex;
+      gap: 4px;
+      margin-top: 14px;
+      font-size: 18px;
+    }
+
+    /* Pile shadows */
+    .month-pile.shadow-active {
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.6));
+    }
+
+    .month-pile.shadow-side {
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+    }
+
+    /* ══════════════════════════════════════════
+       Burst / Collapse / Glow Animations
+    ══════════════════════════════════════════ */
+    .bill-card.anim-collapse {
+      transition: transform .4s cubic-bezier(.55, .06, .68, .19), opacity .35s ease !important;
+    }
+
+    .bill-card.anim-collapse.collapsed {
+      transform: translateX(0) translateY(0) scale(0.7) !important;
+      opacity: 0 !important;
+    }
+
+    .month-pile.anim-pile-in {
+      animation: pile-appear .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    }
+
+    @keyframes pile-appear {
+      0% {
+        transform: translateX(var(--pile-x, 0)) translateY(20px) scale(0.5);
+        opacity: 0;
+      }
+
+      100% {}
+    }
+
+    .stage .new-card-glow {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 80px;
+      height: 80px;
+      margin-left: -40px;
+      margin-top: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(48, 209, 88, 0.5) 0%, rgba(48, 209, 88, 0.15) 40%, transparent 70%);
+      animation: new-card-glow-anim .7s ease-out forwards;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    @keyframes new-card-glow-anim {
+      0% {
+        transform: scale(0.3);
+        opacity: 1;
+      }
+
+      60% {
+        transform: scale(3);
+        opacity: 0.5;
+      }
+
+      100% {
+        transform: scale(4.5);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 
@@ -950,8 +1288,15 @@
 
     <!-- 账单轮播 -->
     <div class="carousel-section">
-      <div class="section-label">最近账单</div>
+      <div class="section-label-row">
+        <button class="back-btn" id="back-btn">← 返回</button>
+        <div class="section-label" id="section-label">最近账单</div>
+        <div class="nav-right">
+          <button class="clip-btn" id="clip-btn">📌</button>
+        </div>
+      </div>
       <div class="stage" id="stage"></div>
+      <div class="month-stage" id="month-stage"></div>
       <div class="dots" id="dots"></div>
     </div>
 
@@ -1221,10 +1566,8 @@
         console.log('[Load] 正在从 Supabase 拉取账单...');
         const remoteBills = await DB.fetchMyBills();
         console.log('[Load] 拉取到', remoteBills.length, '条账单:', remoteBills);
-        bills = remoteBills;
-        N = bills.length;
-        // 无论有没有账单都重建轮播（空则显示空状态）
-        if (typeof rebuildCarousel === 'function') rebuildCarousel(bills);
+        // 用动画重建轮播
+        rebuildCarousel(remoteBills, true);
       } catch (e) {
         console.error('[Load] Supabase 数据加载失败:', e);
       }
@@ -1301,7 +1644,7 @@
     let cardEls = bills.map((b, i) => createCard(b, i));
     let dotEls = bills.map(() => createDot());
 
-    function rebuildCarousel(billList) {
+    function rebuildCarousel(billList, animate) {
       stage.innerHTML = '';
       dotsEl.innerHTML = '';
       bills = billList;
@@ -1310,7 +1653,25 @@
       dotEls = bills.map(() => createDot());
       current = 0;
       fracLive = 0;
-      if (typeof snapTo === 'function') snapTo(0);
+
+      if (animate && N > 0) {
+        // Staggered pop-in animation
+        cardEls.forEach(c => c.classList.add('scale-pop'));
+        cardEls.forEach(el => { el.style.transition = 'none'; });
+        render(0);
+        const STAGGER = 80;
+        cardEls.forEach((card, i) => {
+          setTimeout(() => {
+            requestAnimationFrame(() => card.classList.add('pop-go'));
+          }, i * STAGGER + 50);
+        });
+        setTimeout(() => {
+          cardEls.forEach(c => c.classList.remove('scale-pop', 'pop-go'));
+          snapTo(0);
+        }, N * STAGGER + 500);
+      } else {
+        if (typeof snapTo === 'function') snapTo(0);
+      }
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -1929,7 +2290,35 @@
         // 重新从 Supabase 拉取最新账单列表
         const remoteBills = await DB.fetchMyBills();
         rebuildCarousel(remoteBills);
-        snapTo(remoteBills.length - 1);
+
+        // Pop animation for the new card (last one)
+        const newIdx = remoteBills.length - 1;
+        if (newIdx >= 0) {
+          const newCard = cardEls[newIdx];
+          if (newCard) {
+            // Add glow
+            const glow = document.createElement('div');
+            glow.className = 'new-card-glow';
+            stage.appendChild(glow);
+            setTimeout(() => glow.remove(), 800);
+
+            newCard.classList.add('scale-pop');
+            cardEls.forEach(el => {
+              el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+            });
+            render(newIdx);
+            current = newIdx;
+            fracLive = newIdx;
+
+            setTimeout(() => {
+              requestAnimationFrame(() => newCard.classList.add('pop-go'));
+              setTimeout(() => {
+                newCard.classList.remove('scale-pop', 'pop-go');
+                snapTo(newIdx);
+              }, 500);
+            }, CFG.SNAP_DUR * 0.5);
+          }
+        }
 
         overlay.classList.remove('on');
         inpTitle.value = ''; inpAmount.value = ''; inpPayer.value = '';
@@ -1948,6 +2337,328 @@
     document.getElementById('cancelBtn').onclick = () => overlay.classList.remove('on');
     document.getElementById('createBtn').onclick = addBill;
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('on'); });
+
+    /* ══════════════════════════════════════════════════════════════
+       月度账单分组（📌 Pushpin Feature）
+    ══════════════════════════════════════════════════════════════ */
+    function isoToMonthKey(iso) {
+      const d = new Date(iso);
+      return `${d.getMonth() + 1}月`;
+    }
+
+    let viewMode = 'all'; // 'all' | 'months' | 'month-detail'
+    let currentMonthKey = null;
+    let monthPileEls = [];
+    let monthDotEls = [];
+    let monthKeys = [];
+    let monthGroups = {};
+    let monthN = 0;
+
+    const monthStage = document.getElementById('month-stage');
+    const clipBtn = document.getElementById('clip-btn');
+    const backBtn = document.getElementById('back-btn');
+    const sectionLabel = document.getElementById('section-label');
+
+    function groupBillsByMonth() {
+      monthGroups = {};
+      bills.forEach(b => {
+        const key = isoToMonthKey(b.date);
+        if (!monthGroups[key]) monthGroups[key] = [];
+        monthGroups[key].push(b);
+      });
+      const monthOrder = ['12月', '11月', '10月', '9月', '8月', '7月', '6月', '5月', '4月', '3月', '2月', '1月'];
+      monthKeys = Object.keys(monthGroups).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+      monthN = monthKeys.length;
+    }
+
+    function createMonthPile(key, billsInMonth, idx) {
+      const el = document.createElement('div');
+      el.className = 'month-pile';
+      el.dataset.idx = idx;
+      el.dataset.month = key;
+      const total = billsInMonth.reduce((sum, b) => sum + (b.total_amount || 0), 0);
+      const icons = [...new Set(billsInMonth.map(b => b.icon))].slice(0, 5);
+      el.innerHTML = `
+        <div class="pile-pin">📌</div>
+        <div class="pile-card">
+          <div class="pile-month-label">${key}</div>
+          <div class="pile-year">所有账单</div>
+          <div class="pile-divider"></div>
+          <div class="pile-count">${billsInMonth.length} 笔账单</div>
+          <div class="pile-total">¥ ${total.toLocaleString('zh-CN', { minimumFractionDigits: 0 })}</div>
+          <div class="pile-icons">${icons.map(i => `<span>${i}</span>`).join('')}</div>
+        </div>`;
+      monthStage.appendChild(el);
+      return el;
+    }
+
+    // Month pile carousel engine
+    let mFracLive = 0, mCurrent = 0, mDragging = false;
+    let mStartX = 0, mStartFrac = 0, mTouchStartTime = 0, mTouchStartX = 0;
+    let mInertiaRafId = null, mMoveHistory = [], mRafId = null, mPendFrac = 0;
+
+    function renderMonths(frac) {
+      mFracLive = frac;
+      monthPileEls.forEach((el, i) => {
+        const offset = i - frac;
+        const absO = Math.abs(offset);
+        const sign = Math.sign(offset);
+        const x = sign * Math.pow(absO, CFG.curveX) * CFG.STEP;
+        const y = Math.pow(absO, CFG.curveY) * CFG.Y_STEP;
+        const scale = Math.max(CFG.MIN_SCALE, 1 - Math.pow(absO, CFG.curveScale) * CFG.SCALE_STEP);
+        const op = Math.max(0.28, 1 - Math.pow(absO, CFG.curveOpacity) * CFG.OPACITY_STEP);
+        el.style.transform = `translateX(${x}px) translateY(${y}px) scale(${scale})`;
+        el.style.opacity = op;
+        el.style.zIndex = Math.round(50 - absO * 10);
+        el.classList.remove('shadow-active', 'shadow-side');
+        if (absO < 0.5) el.classList.add('shadow-active');
+        else if (absO < 1.6) el.classList.add('shadow-side');
+      });
+      const ci = Math.max(0, Math.min(monthN - 1, Math.round(frac)));
+      monthDotEls.forEach((d, i) => {
+        const on = (i === ci);
+        if (on !== d.classList.contains('on')) d.classList.toggle('on', on);
+      });
+    }
+
+    function scheduleRenderMonths(frac) {
+      mPendFrac = frac;
+      if (mRafId) return;
+      mRafId = requestAnimationFrame(() => { mRafId = null; renderMonths(mPendFrac); });
+    }
+
+    function snapToMonth(idx) {
+      idx = Math.max(0, Math.min(monthN - 1, idx));
+      mCurrent = idx;
+      monthPileEls.forEach(el => {
+        el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+      });
+      renderMonths(idx);
+      setTimeout(() => { mFracLive = mCurrent; }, CFG.SNAP_DUR + 60);
+    }
+
+    function onMonthDragStart(x) {
+      if (mInertiaRafId) { cancelAnimationFrame(mInertiaRafId); mInertiaRafId = null; }
+      mDragging = true; mStartX = x; mTouchStartX = x;
+      mStartFrac = mFracLive; mTouchStartTime = Date.now();
+      mMoveHistory = [{ x, t: Date.now() }];
+      monthStage.classList.add('dragging');
+      monthPileEls.forEach(el => { el.style.transition = 'none'; });
+    }
+
+    function onMonthDragMove(x) {
+      if (!mDragging) return;
+      const now = Date.now();
+      mMoveHistory.push({ x, t: now });
+      while (mMoveHistory.length > 2 && now - mMoveHistory[0].t > VELOCITY_WINDOW) mMoveHistory.shift();
+      const dx = x - mStartX;
+      const frac = Math.max(0, Math.min(monthN - 1, mStartFrac - dx / CFG.DRAG_PX));
+      scheduleRenderMonths(frac);
+    }
+
+    function onMonthDragEnd(x) {
+      if (!mDragging) return;
+      mDragging = false;
+      monthStage.classList.remove('dragging');
+      const dx = x - mStartX;
+      const duration = Date.now() - mTouchStartTime;
+
+      if (Math.abs(dx) < 8 && duration < 250) {
+        const rect = monthStage.getBoundingClientRect();
+        const clickX = x - rect.left - rect.width / 2;
+        const clicked = Math.round(mCurrent + (clickX / CFG.STEP));
+        const target = Math.max(0, Math.min(monthN - 1, clicked));
+        if (target === mCurrent) {
+          enterMonthDetail(monthKeys[mCurrent]);
+        } else {
+          snapToMonth(target);
+        }
+        return;
+      }
+
+      mMoveHistory.push({ x, t: Date.now() });
+      const oldest = mMoveHistory[0];
+      const newest = mMoveHistory[mMoveHistory.length - 1];
+      const dt = Math.max(1, newest.t - oldest.t);
+      const dxRecent = newest.x - oldest.x;
+      const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000);
+      const inertiaStart = performance.now();
+      const startVelocity = velocity * CFG.INERTIA_RATIO;
+      const inertiaDur = CFG.INERTIA_DUR;
+      const inertiaStartF = mFracLive;
+
+      function inertiaStep(now) {
+        const elapsed = now - inertiaStart;
+        const t = Math.min(1, elapsed / inertiaDur);
+        const easeT = t * (2 - t);
+        const displacement = startVelocity * (inertiaDur / 1000) * easeT * 0.5;
+        let frac = Math.max(0, Math.min(monthN - 1, inertiaStartF + displacement));
+        monthPileEls.forEach(el => { el.style.transition = 'none'; });
+        renderMonths(frac);
+        if (t < 1) { mInertiaRafId = requestAnimationFrame(inertiaStep); }
+        else { mInertiaRafId = null; snapToMonth(Math.round(frac)); }
+      }
+
+      if (Math.abs(startVelocity) < 0.3) snapToMonth(Math.round(mFracLive));
+      else mInertiaRafId = requestAnimationFrame(inertiaStep);
+    }
+
+    // Month stage event listeners
+    monthStage.addEventListener('mousedown', e => { if (viewMode === 'months') { onMonthDragStart(e.clientX); e.preventDefault(); } });
+    document.addEventListener('mousemove', e => { if (mDragging) onMonthDragMove(e.clientX); });
+    document.addEventListener('mouseup', e => { if (mDragging) onMonthDragEnd(e.clientX); });
+    monthStage.addEventListener('touchstart', e => { if (viewMode === 'months') onMonthDragStart(e.touches[0].clientX); }, { passive: true });
+    monthStage.addEventListener('touchmove', e => { if (!mDragging) return; e.preventDefault(); onMonthDragMove(e.touches[0].clientX); }, { passive: false });
+    monthStage.addEventListener('touchend', e => { if (mDragging) onMonthDragEnd(e.changedTouches[0].clientX); });
+
+    // View mode switching
+    function buildMonthPiles() {
+      groupBillsByMonth();
+      monthStage.innerHTML = '';
+      monthPileEls = [];
+      dotsEl.innerHTML = '';
+      monthKeys.forEach((key, i) => {
+        monthPileEls.push(createMonthPile(key, monthGroups[key], i));
+      });
+      monthDotEls = monthKeys.map(() => {
+        const d = document.createElement('div');
+        d.className = 'dot';
+        dotsEl.appendChild(d);
+        return d;
+      });
+    }
+
+    function enterMonthsView() {
+      viewMode = 'months';
+      clipBtn.classList.add('active');
+      buildMonthPiles();
+      stage.classList.add('hidden');
+      monthStage.classList.add('visible');
+      sectionLabel.textContent = '月份账单';
+      backBtn.style.display = 'none';
+      mCurrent = 0; mFracLive = 0;
+      snapToMonth(0);
+    }
+
+    function enterMonthDetail(monthKey) {
+      viewMode = 'month-detail';
+      currentMonthKey = monthKey;
+      const monthBills = monthGroups[monthKey];
+
+      const currentPile = monthPileEls[mCurrent];
+      const pinEl = currentPile ? currentPile.querySelector('.pile-pin') : null;
+      if (pinEl) pinEl.classList.add('unpin');
+
+      setTimeout(() => {
+        monthStage.classList.remove('visible');
+        stage.classList.remove('hidden');
+        stage.innerHTML = '';
+        dotsEl.innerHTML = '';
+        cardEls.length = 0;
+        dotEls.length = 0;
+
+        const allCards = [];
+        const allDots = [];
+        monthBills.forEach((b, i) => {
+          const card = createCard(b, i);
+          const dot = createDot();
+          allCards.push(card);
+          allDots.push(dot);
+          card.classList.add('scale-pop');
+        });
+
+        sectionLabel.textContent = `${monthKey}的账单`;
+        backBtn.style.display = 'inline-block';
+        current = 0; fracLive = 0;
+
+        const STAGGER = 100;
+        let added = 0;
+        N = allCards.length;
+
+        function addNextCard() {
+          if (added >= allCards.length) {
+            setTimeout(() => {
+              cardEls.forEach(c => c.classList.remove('scale-pop', 'pop-go'));
+              snapTo(0);
+            }, 500);
+            return;
+          }
+          const card = allCards[added];
+          cardEls.push(card);
+          dotEls.push(allDots[added]);
+          cardEls.forEach(el => { el.style.transition = 'none'; });
+          render(0);
+          requestAnimationFrame(() => card.classList.add('pop-go'));
+          added++;
+          setTimeout(addNextCard, STAGGER);
+        }
+        addNextCard();
+      }, 350);
+    }
+
+    function exitToAllView() {
+      viewMode = 'all';
+      clipBtn.classList.remove('active');
+      currentMonthKey = null;
+      monthStage.classList.remove('visible');
+      stage.classList.remove('hidden');
+      stage.innerHTML = '';
+      dotsEl.innerHTML = '';
+      cardEls.length = 0;
+      dotEls.length = 0;
+      N = bills.length;
+      bills.forEach((b, i) => {
+        cardEls.push(createCard(b, i));
+        dotEls.push(createDot());
+      });
+      sectionLabel.textContent = '最近账单';
+      backBtn.style.display = 'none';
+      current = 0; fracLive = 0;
+      snapTo(0);
+    }
+
+    function exitToMonthsView() {
+      cardEls.forEach(card => card.classList.add('anim-collapse'));
+      requestAnimationFrame(() => {
+        cardEls.forEach(card => card.classList.add('collapsed'));
+      });
+      setTimeout(() => {
+        viewMode = 'months';
+        stage.classList.add('hidden');
+        monthStage.classList.add('visible');
+        sectionLabel.textContent = '月份账单';
+        backBtn.style.display = 'none';
+        const idx = monthKeys.indexOf(currentMonthKey);
+        if (idx >= 0) { mCurrent = idx; mFracLive = idx; snapToMonth(idx); }
+        dotsEl.innerHTML = '';
+        monthDotEls = monthKeys.map(() => {
+          const d = document.createElement('div');
+          d.className = 'dot';
+          dotsEl.appendChild(d);
+          return d;
+        });
+        renderMonths(mFracLive);
+        const targetPile = monthPileEls[mCurrent];
+        if (targetPile) {
+          const pinEl = targetPile.querySelector('.pile-pin');
+          if (pinEl) {
+            pinEl.classList.remove('unpin');
+            pinEl.classList.add('repin');
+            setTimeout(() => pinEl.classList.remove('repin'), 550);
+          }
+        }
+      }, 420);
+    }
+
+    clipBtn.addEventListener('click', () => {
+      if (viewMode === 'all') enterMonthsView();
+      else if (viewMode === 'months') exitToAllView();
+      else if (viewMode === 'month-detail') exitToAllView();
+    });
+
+    backBtn.addEventListener('click', () => {
+      if (viewMode === 'month-detail') exitToMonthsView();
+    });
   </script>
 </body>
 
