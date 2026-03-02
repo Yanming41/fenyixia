@@ -2823,17 +2823,17 @@
       memberList.innerHTML = '<div class="member-loading">加载中...</div>';
       try {
         const user = await DB.getCurrentUser();
-        const friends = await DB.getFriends();
-        // Combine current user + friends
-        const members = [];
-        if (user) {
-          // Get user profile from users table
-          const { data: profile } = await DB.sb.from('users').select('id,name,email,emoji,color').eq('id', user.id).single();
-          if (profile) members.push({ ...profile, isSelf: true });
-        }
-        friends.forEach(f => members.push(f));
+        if (!user) { memberList.innerHTML = '<div class="member-loading">请先登录</div>'; return; }
 
-        if (members.length === 0) {
+        // 直接查询 users 表（RLS 会返回所有可见用户）
+        const { data: members, error } = await DB.sb
+          .from('users')
+          .select('id, name, email, emoji, color')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!members || members.length === 0) {
           memberList.innerHTML = '<div class="member-loading">暂无成员</div>';
           return;
         }
@@ -2845,7 +2845,7 @@
               <div class="member-name">${m.name || '未命名'}</div>
               ${m.email ? `<div class="member-email">${m.email}</div>` : ''}
             </div>
-            ${m.isSelf ? '<div class="member-badge">我</div>' : ''}
+            ${m.id === user.id ? '<div class="member-badge">我</div>' : ''}
           </div>
         `).join('');
       } catch (err) {
