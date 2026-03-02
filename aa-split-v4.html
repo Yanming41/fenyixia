@@ -1246,6 +1246,116 @@
         opacity: 0;
       }
     }
+
+    /* ══════════════════════════════════════════
+       Members Panel
+    ══════════════════════════════════════════ */
+    .members-panel {
+      display: none;
+      padding: 0 16px 20px;
+    }
+
+    .members-panel.visible {
+      display: block;
+    }
+
+    .members-panel .section-label {
+      padding: 16px 4px 12px;
+    }
+
+    .member-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--bg3);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg2);
+      transition: background .15s;
+    }
+
+    .member-item:active {
+      background: var(--bg3);
+    }
+
+    .member-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: var(--bg4);
+      flex-shrink: 0;
+    }
+
+    .member-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .member-name {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--label);
+      letter-spacing: -0.3px;
+    }
+
+    .member-email {
+      font-size: 13px;
+      color: var(--label3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .member-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+      background: rgba(48, 209, 88, 0.15);
+      color: var(--accent);
+    }
+
+    .member-loading {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--label3);
+      font-size: 15px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--bg3);
+      color: var(--label);
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s, transform .3s;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 
@@ -1300,19 +1410,30 @@
       <div class="dots" id="dots"></div>
     </div>
 
+    <!-- 成员面板 -->
+    <div class="members-panel" id="members-panel">
+      <div class="section-label">群组成员</div>
+      <div class="member-list" id="member-list">
+        <div class="member-loading">加载中...</div>
+      </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast" id="toast"></div>
+
     <!-- iOS Tab Bar -->
     <div class="bottom-nav">
-      <button class="nb on">
+      <button class="nb on" id="tab-bills">
         <div class="nb-icon">📋</div>账单
       </button>
-      <button class="nb">
+      <button class="nb" id="tab-members">
         <div class="nb-icon">👥</div>成员
       </button>
       <button class="add-btn" id="addBtn">＋</button>
-      <button class="nb">
+      <button class="nb" id="tab-stats">
         <div class="nb-icon">📊</div>统计
       </button>
-      <button class="nb">
+      <button class="nb" id="tab-settings">
         <div class="nb-icon">⚙️</div>设置
       </button>
     </div>
@@ -2658,6 +2779,89 @@
 
     backBtn.addEventListener('click', () => {
       if (viewMode === 'month-detail') exitToMonthsView();
+    });
+
+    /* ══════════════════════════════════════════════════════════════
+       Tab Switching + Members + Toast
+    ══════════════════════════════════════════════════════════════ */
+    const tabBills = document.getElementById('tab-bills');
+    const tabMembers = document.getElementById('tab-members');
+    const tabStats = document.getElementById('tab-stats');
+    const tabSettings = document.getElementById('tab-settings');
+    const membersPanel = document.getElementById('members-panel');
+    const memberList = document.getElementById('member-list');
+    const toastEl = document.getElementById('toast');
+
+    // Content sections that belong to the bills tab
+    const billsSections = [
+      document.querySelector('.summary'),
+      document.querySelector('.carousel-section'),
+    ];
+
+    function showToast(msg, duration = 2000) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), duration);
+    }
+
+    function switchTab(activeTab) {
+      // Update tab buttons
+      [tabBills, tabMembers, tabStats, tabSettings].forEach(t => t.classList.remove('on'));
+      activeTab.classList.add('on');
+
+      // Toggle visibility
+      const isBills = activeTab === tabBills;
+      const isMembers = activeTab === tabMembers;
+      billsSections.forEach(s => { if (s) s.style.display = isBills ? '' : 'none'; });
+      membersPanel.classList.toggle('visible', isMembers);
+    }
+
+    tabBills.addEventListener('click', () => switchTab(tabBills));
+
+    tabMembers.addEventListener('click', async () => {
+      switchTab(tabMembers);
+      memberList.innerHTML = '<div class="member-loading">加载中...</div>';
+      try {
+        const user = await DB.getCurrentUser();
+        const friends = await DB.getFriends();
+        // Combine current user + friends
+        const members = [];
+        if (user) {
+          // Get user profile from users table
+          const { data: profile } = await DB.sb.from('users').select('id,name,email,emoji,color').eq('id', user.id).single();
+          if (profile) members.push({ ...profile, isSelf: true });
+        }
+        friends.forEach(f => members.push(f));
+
+        if (members.length === 0) {
+          memberList.innerHTML = '<div class="member-loading">暂无成员</div>';
+          return;
+        }
+
+        memberList.innerHTML = members.map(m => `
+          <div class="member-item">
+            <div class="member-avatar" style="background:${m.color || 'var(--bg4)'}">${m.emoji || '😀'}</div>
+            <div class="member-info">
+              <div class="member-name">${m.name || '未命名'}</div>
+              ${m.email ? `<div class="member-email">${m.email}</div>` : ''}
+            </div>
+            ${m.isSelf ? '<div class="member-badge">我</div>' : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('[Members] 加载失败:', err);
+        memberList.innerHTML = '<div class="member-loading">加载失败</div>';
+      }
+    });
+
+    tabStats.addEventListener('click', () => {
+      switchTab(tabBills); // stay on bills view
+      showToast('📊 统计功能暂未实现');
+    });
+
+    tabSettings.addEventListener('click', () => {
+      switchTab(tabBills); // stay on bills view
+      showToast('⚙️ 设置功能暂未实现');
     });
   </script>
 </body>
