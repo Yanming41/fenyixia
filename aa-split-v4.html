@@ -1642,6 +1642,14 @@
       </div>
     </div>
 
+    <div class="dbg-section">测试工具</div>
+    <div class="dbg-row">
+      <span class="dbg-label">添加随机账单</span>
+      <button id="dbg-add-random"
+        style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">＋
+        随机卡片</button>
+    </div>
+
     <div class="dbg-section">实时数据</div>
     <div class="dbg-row"><span class="dbg-label">当前帧率</span><span class="dbg-val" id="dbg-fps">--</span></div>
     <div class="dbg-row"><span class="dbg-label">当前 frac</span><span class="dbg-val" id="dbg-frac">0.000</span></div>
@@ -1709,7 +1717,7 @@
       POP_DUR: 280,   // 选中弹跳时长 ms
       popMode: 'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
       INERTIA_DUR: 2000,  // 惯性滑行持续时间 ms
-      INERTIA_RATIO: 0.6,  // 惯性速度比例（乘以滑动速度）
+      INERTIA_RATIO: 0.35, // 惯性速度比例（乘以滑动速度）
       showShadow: true,
       showFPS: false,
       showTexture: true,
@@ -2465,6 +2473,44 @@
         createBtn.textContent = '创建账单';
       }
     }
+
+    // 调试：随机添加卡片
+    const RANDOM_TITLES = ['火锅', '奶茶', '外卖', '超市', '电影', 'KTV', '打车', '水果', '零食', '海底捞', '烧烤', '咖啡', '早餐', '机票', '门票'];
+    const RANDOM_ICONS = ['🍜', '🧋', '🛒', '🎬', '🚕', '🍉', '🍿', '☕', '🍳', '✈️', '🎫', '🍕', '🥗', '🍔', '🎂'];
+    document.getElementById('dbg-add-random').onclick = function () {
+      const title = RANDOM_TITLES[Math.floor(Math.random() * RANDOM_TITLES.length)];
+      const icon = RANDOM_ICONS[Math.floor(Math.random() * RANDOM_ICONS.length)];
+      const amount = Math.floor(Math.random() * 500 + 10);
+      const daysAgo = Math.floor(Math.random() * 90);
+      const d = new Date(); d.setDate(d.getDate() - daysAgo);
+      const date = d.toISOString().slice(0, 10);
+      const color = BILL_COLORS[bills.length % BILL_COLORS.length];
+
+      const bill = { icon, title, description: '随机测试', total_amount: amount, date, color, settled: false, items: [], members: [] };
+      bills.push(bill);
+      N = bills.length;
+      const idx = N - 1;
+
+      const newCard = createCard(bill, idx);
+      cardEls.push(newCard);
+      dotEls.push(createDot());
+
+      newCard.classList.add('scale-pop');
+      cardEls.forEach(el => {
+        el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
+      });
+      render(idx);
+      current = idx;
+      fracLive = idx;
+
+      setTimeout(() => {
+        requestAnimationFrame(() => newCard.classList.add('pop-go'));
+        setTimeout(() => {
+          newCard.classList.remove('scale-pop', 'pop-go');
+          snapTo(idx);
+        }, 500);
+      }, CFG.SNAP_DUR * 0.5);
+    };
 
     document.getElementById('addBtn').onclick = () => overlay.classList.add('on');
     document.getElementById('cancelBtn').onclick = () => overlay.classList.remove('on');
