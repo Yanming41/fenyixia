@@ -1,21 +1,30 @@
 /* ══════════════════════════════════════════════════════════════
    数据
+   ── 新格式：数值存数字，日期存 ISO，成员存对象 ──
+   ── 接入 Supabase 后由 DB.fetchMyBills() 填充 ──
 ══════════════════════════════════════════════════════════════ */
+const DEMO_MEMBERS = [
+  { id: 'a', name: 'Abby',  emoji: '🐱' },
+  { id: 'l', name: 'Lin',   emoji: '🐻' },
+  { id: 'w', name: 'Wendy', emoji: '🦊' },
+  { id: 'm', name: 'May',   emoji: '🐰' },
+];
+
 const bills = [
-  { icon: '🛒', title: '超市采购', desc: '月嫂超市 · 生活用品', amount: '¥ 268', per: '¥ 67', date: '2月19日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon: '🍜', title: '晚饭外卖', desc: '美团 · 沙县小吃', amount: '¥ 112', per: '¥ 28', date: '2月17日', payer: 'Lin 垫付', settled: false, members: ['L', 'W', 'A', 'M'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon: '🏸', title: '羽毛球馆', desc: 'UofT 体育馆 · 2h', amount: '¥ 192', per: '¥ 48', date: '2月15日', payer: 'Abby 垫付', settled: false, members: ['A', 'M', 'L', 'W'], color: 'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
-  { icon: '⚡', title: '月度水电', desc: '物业 · 1月账单', amount: '¥ 712', per: '¥ 178', date: '2月1日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#FF3B30,#FF2D55)' },
-  { icon: '☕', title: '星巴克', desc: 'Starbucks · 下午茶', amount: '¥ 136', per: '¥ 34', date: '1月29日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#007AFF,#5AC8FA)' },
-  { icon: '🎮', title: 'Switch游戏', desc: 'eShop · 双人成行', amount: '¥ 198', per: '¥ 50', date: '1月15日', payer: 'Lin 垫付', settled: true, members: ['L', 'A', 'W', 'M'], color: 'linear-gradient(135deg,#FF2D55,#AF52DE)' },
-  { icon: '🛒', title: '日用囤货', desc: '京东 · 纸巾洗衣液', amount: '¥ 156', per: '¥ 39', date: '12月28日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon: '🍜', title: '火锅聚餐', desc: '海底捞 · 4人套餐', amount: '¥ 488', per: '¥ 122', date: '12月24日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon: '🎮', title: 'KTV', desc: '好乐迪 · 平安夜', amount: '¥ 320', per: '¥ 80', date: '12月24日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#5E5CE6,#007AFF)' },
-  { icon: '⚡', title: '月度水电', desc: '物业 · 12月账单', amount: '¥ 684', per: '¥ 171', date: '12月1日', payer: 'Wendy 垫付', settled: true, members: ['W', 'A', 'L', 'M'], color: 'linear-gradient(135deg,#FF3B30,#FF2D55)' },
-  { icon: '🏸', title: '羽毛球馆', desc: 'UofT 体育馆 · 3h', amount: '¥ 288', per: '¥ 72', date: '11月20日', payer: 'Lin 垫付', settled: true, members: ['L', 'A', 'M', 'W'], color: 'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
-  { icon: '🛒', title: '超市采购', desc: '沃尔玛 · 零食饮料', amount: '¥ 214', per: '¥ 54', date: '11月12日', payer: 'Abby 垫付', settled: true, members: ['A', 'L', 'W', 'M'], color: 'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon: '🚗', title: '打车费', desc: '滴滴 · 机场接人', amount: '¥ 186', per: '¥ 47', date: '10月30日', payer: 'May 垫付', settled: true, members: ['M', 'A', 'L', 'W'], color: 'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon: '🍜', title: '烧烤', desc: '路边摊 · 宵夜', amount: '¥ 176', per: '¥ 44', date: '10月18日', payer: 'Lin 垫付', settled: true, members: ['L', 'W', 'A', 'M'], color: 'linear-gradient(135deg,#FF6B00,#FF3B30)' },
+  { id:'d1', icon:'🛒', title:'超市采购',   description:'月嫂超市 · 生活用品', total_amount:268,  date:'2025-02-19', payer_name:'Abby',  settled:true,  members:DEMO_MEMBERS, per_amount:67,  items:[{name:'生活用品',price:268,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { id:'d2', icon:'🍜', title:'晚饭外卖',   description:'美团 · 沙县小吃',     total_amount:112,  date:'2025-02-17', payer_name:'Lin',   settled:false, members:DEMO_MEMBERS, per_amount:28,  items:[{name:'沙县小吃',price:112,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { id:'d3', icon:'🏸', title:'羽毛球馆',   description:'UofT 体育馆 · 2h',   total_amount:192,  date:'2025-02-15', payer_name:'Abby',  settled:false, members:DEMO_MEMBERS, per_amount:48,  items:[{name:'场地费',price:192,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { id:'d4', icon:'⚡', title:'月度水电',   description:'物业 · 1月账单',      total_amount:712,  date:'2025-02-01', payer_name:'Wendy', settled:true,  members:DEMO_MEMBERS, per_amount:178, items:[{name:'水电费',price:712,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { id:'d5', icon:'☕', title:'星巴克',     description:'Starbucks · 下午茶',  total_amount:136,  date:'2025-01-29', payer_name:'May',   settled:true,  members:DEMO_MEMBERS, per_amount:34,  items:[{name:'咖啡',price:136,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#007AFF,#5AC8FA)' },
+  { id:'d6', icon:'🎮', title:'Switch游戏', description:'eShop · 双人成行',   total_amount:198,  date:'2025-01-15', payer_name:'Lin',   settled:true,  members:DEMO_MEMBERS, per_amount:50,  items:[{name:'游戏',price:198,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF2D55,#AF52DE)' },
+  { id:'d7', icon:'🛒', title:'日用囤货',   description:'京东 · 纸巾洗衣液',  total_amount:156,  date:'2024-12-28', payer_name:'Wendy', settled:true,  members:DEMO_MEMBERS, per_amount:39,  items:[{name:'日用品',price:156,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { id:'d8', icon:'🍜', title:'火锅聚餐',   description:'海底捞 · 4人套餐',   total_amount:488,  date:'2024-12-24', payer_name:'Abby',  settled:true,  members:DEMO_MEMBERS, per_amount:122, items:[{name:'火锅',price:488,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { id:'d9', icon:'🎮', title:'KTV',        description:'好乐迪 · 平安夜',    total_amount:320,  date:'2024-12-24', payer_name:'May',   settled:true,  members:DEMO_MEMBERS, per_amount:80,  items:[{name:'KTV',price:320,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#5E5CE6,#007AFF)' },
+  { id:'d10',icon:'⚡', title:'月度水电',   description:'物业 · 12月账单',     total_amount:684,  date:'2024-12-01', payer_name:'Wendy', settled:true,  members:DEMO_MEMBERS, per_amount:171, items:[{name:'水电费',price:684,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { id:'d11',icon:'🏸', title:'羽毛球馆',   description:'UofT 体育馆 · 3h',   total_amount:288,  date:'2024-11-20', payer_name:'Lin',   settled:true,  members:DEMO_MEMBERS, per_amount:72,  items:[{name:'场地费',price:288,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { id:'d12',icon:'🛒', title:'超市采购',   description:'沃尔玛 · 零食饮料',   total_amount:214,  date:'2024-11-12', payer_name:'Abby',  settled:true,  members:DEMO_MEMBERS, per_amount:54,  items:[{name:'零食饮料',price:214,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { id:'d13',icon:'🚗', title:'打车费',     description:'滴滴 · 机场接人',    total_amount:186,  date:'2024-10-30', payer_name:'May',   settled:true,  members:DEMO_MEMBERS, per_amount:47,  items:[{name:'打车',price:186,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { id:'d14',icon:'🍜', title:'烧烤',       description:'路边摊 · 宵夜',      total_amount:176,  date:'2024-10-18', payer_name:'Lin',   settled:true,  members:DEMO_MEMBERS, per_amount:44,  items:[{name:'烧烤',price:176,qty:1,members:DEMO_MEMBERS}], color:'linear-gradient(135deg,#FF6B00,#FF3B30)' },
 ];
 
 let N = bills.length;
@@ -49,6 +58,24 @@ const CFG = {
 };
 
 /* ══════════════════════════════════════════════════════════════
+   格式化工具
+══════════════════════════════════════════════════════════════ */
+function fmtMoney(n) { return `¥ ${Number.isInteger(n) ? n : n.toFixed(2)}`; }
+function fmtDate(d) { return `${d.getMonth() + 1}月${d.getDate()}日`; }
+
+// ISO 日期 → 中文显示  '2025-02-19' → '2月19日'
+function fmtISODate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// ISO 日期 → 月份 key  '2025-02-19' → '2月'
+function isoToMonthKey(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return `${d.getMonth() + 1}月`;
+}
+
+/* ══════════════════════════════════════════════════════════════
    DOM 构建：卡片 / 指示点
 ══════════════════════════════════════════════════════════════ */
 const stage = document.getElementById('stage');
@@ -58,6 +85,18 @@ function createCard(b, i) {
   const el = document.createElement('div');
   el.className = 'bill-card';
   el.dataset.idx = i;
+  if (b.id) el.dataset.billId = b.id;
+
+  const displayDate   = fmtISODate(b.date);
+  const displayAmount = fmtMoney(b.total_amount);
+  const displayPer    = fmtMoney(b.per_amount);
+
+  // 成员头像：优先用 emoji，fallback 用首字母
+  const memberAvatars = b.members.map(m => {
+    const label = m.emoji || m.name?.[0] || m;
+    return `<div class="cav">${label}</div>`;
+  }).join('');
+
   el.innerHTML = `
     <div class="card-bg" style="background:${b.color}"></div>
     <div class="card-highlight"></div>
@@ -65,16 +104,16 @@ function createCard(b, i) {
     <div class="card-inner">
       <div class="card-header">
         <div class="card-title">${b.title}</div>
-        <div class="card-date">${b.date}</div>
+        <div class="card-date">${displayDate}</div>
       </div>
       <div class="card-divider"></div>
       <div class="card-emoji">${b.icon}</div>
       <div class="card-amount-section">
-        <div class="card-amount-num">${b.amount}</div>
-        <div class="card-per-line">每人均摊 <em>${b.per}</em></div>
+        <div class="card-amount-num">${displayAmount}</div>
+        <div class="card-per-line">每人均摊 <em>${displayPer}</em></div>
       </div>
       <div class="card-bottom-row">
-        <div class="card-avs">${b.members.map(m => `<div class="cav">${m}</div>`).join('')}</div>
+        <div class="card-avs">${memberAvatars}</div>
         <div class="card-pill ${b.settled ? 'ok' : 'ng'}">${b.settled ? '✓ 已结清' : '待结算'}</div>
       </div>
     </div>`;
@@ -645,10 +684,6 @@ const BILL_COLORS = [
   'linear-gradient(135deg,#007AFF,#5AC8FA)',
   'linear-gradient(135deg,#FFD60A,#FF9F0A)',
 ];
-const MEMBER_POOL = ['A', 'L', 'W', 'M', 'E', 'F'];
-
-function fmtDate(d) { return `${d.getMonth() + 1}月${d.getDate()}日`; }
-function fmtMoney(n) { return `¥ ${Number.isInteger(n) ? n : n.toFixed(2)}`; }
 
 function addBill() {
   const inpTitle = document.getElementById('inp-title');
@@ -659,7 +694,7 @@ function addBill() {
   const amount = parseFloat(inpAmount.value);
   const payer = inpPayer.value.trim();
 
-  // 校验：给父行加 err class（行变红 + 抖动）
+  // 校验
   let valid = true;
   [inpTitle, inpAmount, inpPayer].forEach(el => {
     el.classList.remove('err');
@@ -672,21 +707,27 @@ function addBill() {
 
   const icon = document.querySelector('.ip-btn.on').dataset.icon;
   const nPeople = parseInt(document.querySelector('.pp-btn.on').dataset.n);
-  const per = amount / nPeople;
-  const members = MEMBER_POOL.slice(0, nPeople);
+  const perAmount = amount / nPeople;
+  const members = DEMO_MEMBERS.slice(0, nPeople);
   const color = BILL_COLORS[bills.length % BILL_COLORS.length];
+  const today = new Date().toISOString().slice(0, 10);
 
   const bill = {
-    icon, title,
-    desc: `${payer} · ${nPeople}人均摊`,
-    amount: fmtMoney(amount),
-    per: fmtMoney(per),
-    date: fmtDate(new Date()),
-    payer: payer + ' 垫付',
+    id: 'local_' + Date.now(),
+    icon,
+    title,
+    description: `${payer} · ${nPeople}人均摊`,
+    total_amount: amount,
+    per_amount: perAmount,
+    date: today,
+    payer_name: payer,
     settled: false,
-    members, color,
+    members,
+    items: [{ name: title, price: amount, qty: 1, members }],
+    color,
   };
 
+  // TODO: 接入 Supabase 后改为 await DB.createBill(...)
   bills.push(bill);
   const idx = bills.length - 1;
   N = bills.length;
@@ -695,7 +736,6 @@ function addBill() {
   cardEls.push(newCard);
   dotEls.push(createDot());
 
-  // Start new card invisible via scale-pop
   newCard.classList.add('scale-pop');
 
   overlay.classList.remove('on');
@@ -703,7 +743,6 @@ function addBill() {
   document.querySelectorAll('.ip-btn').forEach((b, i) => b.classList.toggle('on', i === 0));
   document.querySelectorAll('.pp-btn').forEach(b => b.classList.toggle('on', b.dataset.n === '4'));
 
-  // Slide carousel to the new card's position
   cardEls.forEach(el => {
     el.style.transition = `transform ${CFG.SNAP_DUR}ms cubic-bezier(.25,.46,.45,.94), opacity ${CFG.SNAP_DUR}ms ease`;
   });
@@ -711,12 +750,10 @@ function addBill() {
   current = idx;
   fracLive = idx;
 
-  // After carousel settles, pop in the new card
   setTimeout(() => {
     requestAnimationFrame(() => {
       newCard.classList.add('pop-go');
     });
-    // Cleanup after pop
     setTimeout(() => {
       newCard.classList.remove('scale-pop', 'pop-go');
       snapTo(idx);
@@ -736,19 +773,23 @@ function addRandomBill() {
   const r = Math.floor(Math.random() * RAND_ICONS.length);
   const amount = Math.round((20 + Math.random() * 480) * 100) / 100;
   const nPeople = 2 + Math.floor(Math.random() * 3);
-  const per = amount / nPeople;
+  const perAmount = amount / nPeople;
+  const members = DEMO_MEMBERS.slice(0, nPeople);
   const color = BILL_COLORS[bills.length % BILL_COLORS.length];
+  const today = new Date().toISOString().slice(0, 10);
 
   const bill = {
+    id: 'rand_' + Date.now(),
     icon: RAND_ICONS[r],
     title: RAND_TITLES[r],
-    desc: `测试 · ${nPeople}人均摊`,
-    amount: fmtMoney(amount),
-    per: fmtMoney(per),
-    date: fmtDate(new Date()),
-    payer: '测试用户 垫付',
+    description: `测试 · ${nPeople}人均摊`,
+    total_amount: amount,
+    per_amount: perAmount,
+    date: today,
+    payer_name: '测试用户',
     settled: false,
-    members: MEMBER_POOL.slice(0, nPeople),
+    members,
+    items: [{ name: RAND_TITLES[r], price: amount, qty: 1, members }],
     color,
   };
 
@@ -802,13 +843,9 @@ const sectionLabel = document.getElementById('section-label');
 function groupBillsByMonth() {
   monthGroups = {};
   bills.forEach(b => {
-    // Extract month from date like '2月19日', '12月28日'
-    const m = b.date.match(/(\d+月)/);
-    if (m) {
-      const key = m[1];
-      if (!monthGroups[key]) monthGroups[key] = [];
-      monthGroups[key].push(b);
-    }
+    const key = isoToMonthKey(b.date); // ISO '2025-02-19' → '2月'
+    if (!monthGroups[key]) monthGroups[key] = [];
+    monthGroups[key].push(b);
   });
   // Sort months descending (most recent first)
   const monthOrder = ['12月', '11月', '10月', '9月', '8月', '7月', '6月', '5月', '4月', '3月', '2月', '1月'];
@@ -824,10 +861,7 @@ function createMonthPile(key, billsInMonth, idx) {
   el.dataset.month = key;
 
   // Calculate total
-  const total = billsInMonth.reduce((sum, b) => {
-    const num = parseFloat(b.amount.replace(/[¥,\s]/g, ''));
-    return sum + (isNaN(num) ? 0 : num);
-  }, 0);
+  const total = billsInMonth.reduce((sum, b) => sum + (b.total_amount || 0), 0);
 
   // Unique icons
   const icons = [...new Set(billsInMonth.map(b => b.icon))].slice(0, 5);
