@@ -584,6 +584,8 @@ html, body {
 </style>
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 
 <div class="bg-canvas">
   <div class="orb orb-1"></div>
@@ -1209,17 +1211,26 @@ function pinDel(type) {
 // ════════════════════════════════════════════
 //  REGISTER FINISH
 // ════════════════════════════════════════════
-function finishRegister() {
-  const userData = { name: userName, email: userEmail, emoji: userEmoji, color: userColor };
-  localStorage.setItem('fx_user', JSON.stringify(userData));
+async function finishRegister() {
+  try {
+    // PIN as password (Supabase requires min 6 chars, so we pad it)
+    const password = 'fx' + pinFirst + 'px';
+    await DB.signUp(userEmail, password, userName, userEmoji, userColor);
 
-  // Set up success screen
-  const sa = document.getElementById('successAvatar');
-  sa.style.background = userColor;
-  document.getElementById('successEmoji').textContent = userEmoji;
-  document.getElementById('welcomeName').textContent = userName;
-  goTo(6);
-  setTimeout(spawnConfetti, 300);
+    // Also keep localStorage for quick access
+    const userData = { name: userName, email: userEmail, emoji: userEmoji, color: userColor };
+    localStorage.setItem('fx_user', JSON.stringify(userData));
+
+    // Set up success screen
+    const sa = document.getElementById('successAvatar');
+    sa.style.background = userColor;
+    document.getElementById('successEmoji').textContent = userEmoji;
+    document.getElementById('welcomeName').textContent = userName;
+    goTo(6);
+    setTimeout(spawnConfetti, 300);
+  } catch (err) {
+    showToast('注册失败: ' + (err.message || err));
+  }
 }
 
 function spawnConfetti() {
@@ -1239,7 +1250,9 @@ function spawnConfetti() {
   }).join('');
 }
 
-function enterApp() { showToast('🎉 欢迎使用分一下！'); }
+function enterApp() {
+  window.location.href = 'aa-split-v4.html';
+}
 
 // ════════════════════════════════════════════
 //  LOGIN
@@ -1258,11 +1271,19 @@ function goToLoginPin() {
   document.getElementById('loginEmailDisplay').textContent = v;
   goTo('lb');
 }
-function checkLoginPin() {
-  // Demo: accept any 4-digit pin
-  showToast('✅ 登录成功！');
-  setTimeout(() => { showToast('跳转到主页…'); }, 1200);
-  pinInput = '';
+async function checkLoginPin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = 'fx' + pinInput + 'px';
+  try {
+    await DB.signIn(email, password);
+    showToast('✅ 登录成功！');
+    pinInput = '';
+    setTimeout(() => { window.location.href = 'aa-split-v4.html'; }, 1200);
+  } catch (err) {
+    showToast('登录失败: ' + (err.message || err));
+    pinInput = '';
+    renderPinDots('pinDotsL', 0, true);
+  }
 }
 
 // ════════════════════════════════════════════

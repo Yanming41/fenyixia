@@ -4,8 +4,8 @@
 ══════════════════════════════════════════════════════════════ */
 
 // ⚠️ 替换为你的 Supabase 项目信息（Settings → API）
-const SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY  = 'YOUR_ANON_KEY';
+const SUPABASE_URL  = 'https://rpqhceaezxlekrnwpvwt.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_d_oOZ3JAZVTHXn9KrVoTlg_ga6XC0a9';
 
 // CDN 引入后 window 上有 supabase 对象
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);

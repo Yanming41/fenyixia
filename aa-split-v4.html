@@ -471,6 +471,8 @@ html, body {
 </style>
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 
 <!-- FPS 计数器 -->
 <div id="fps-counter">FPS: --</div>
@@ -702,17 +704,52 @@ html, body {
 
 <script>
 /* ══════════════════════════════════════════════════════════════
-   数据
+   认证检查
 ══════════════════════════════════════════════════════════════ */
-const bills = [
-  { icon:'🛒', title:'超市采购', desc:'月嫂超市 · 生活用品', amount:'¥ 268', per:'¥ 67',  date:'2月19日', payer:'Abby 垫付',  settled:true,  members:['A','L','W','M'], color:'linear-gradient(135deg,#34C759,#28A745)' },
-  { icon:'🍜', title:'晚饭外卖', desc:'美团 · 沙县小吃',     amount:'¥ 112', per:'¥ 28',  date:'2月17日', payer:'Lin 垫付',   settled:false, members:['L','W','A','M'], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
-  { icon:'🏸', title:'羽毛球馆', desc:'UofT 体育馆 · 2h',   amount:'¥ 192', per:'¥ 48',  date:'2月15日', payer:'Abby 垫付',  settled:false, members:['A','M','L','W'], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
-  { icon:'⚡', title:'月度水电', desc:'物业 · 1月账单',      amount:'¥ 712', per:'¥ 178', date:'2月1日',  payer:'Wendy 垫付', settled:true,  members:['W','A','L','M'], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
-  { icon:'☕', title:'星巴克',   desc:'Starbucks · 下午茶',  amount:'¥ 136', per:'¥ 34',  date:'1月29日', payer:'May 垫付',   settled:true,  members:['M','A','L','W'], color:'linear-gradient(135deg,#007AFF,#5AC8FA)' },
+(async () => {
+  try {
+    const user = await DB.getCurrentUser();
+    if (!user) { window.location.href = 'create-user.html'; return; }
+  } catch(e) { /* Supabase 未连通时继续用 demo 数据 */ }
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   格式化工具
+══════════════════════════════════════════════════════════════ */
+function fmtMoney(n) { return '¥ ' + (Number.isInteger(n) ? n : Number(n).toFixed(2)); }
+function fmtISODate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return (d.getMonth()+1) + '月' + d.getDate() + '日';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   数据（先用 demo，登录后替换为 Supabase 数据）
+══════════════════════════════════════════════════════════════ */
+let bills = [
+  { icon:'🛒', title:'超市采购', description:'月嫂超市 · 生活用品', total_amount:268, per_amount:67,  date:'2025-02-19', payer_name:'Abby', settled:true,  members:[{id:'a',name:'Abby',emoji:'🐱'},{id:'l',name:'Lin',emoji:'🐻'},{id:'w',name:'Wendy',emoji:'🦊'},{id:'m',name:'May',emoji:'🐰'}], color:'linear-gradient(135deg,#34C759,#28A745)' },
+  { icon:'🍜', title:'晚饭外卖', description:'美团 · 沙县小吃',     total_amount:112, per_amount:28,  date:'2025-02-17', payer_name:'Lin',  settled:false, members:[{id:'l',name:'Lin',emoji:'🐻'},{id:'w',name:'Wendy',emoji:'🦊'},{id:'a',name:'Abby',emoji:'🐱'},{id:'m',name:'May',emoji:'🐰'}], color:'linear-gradient(135deg,#FF9500,#FF6B00)' },
+  { icon:'🏸', title:'羽毛球馆', description:'UofT 体育馆 · 2h',   total_amount:192, per_amount:48,  date:'2025-02-15', payer_name:'Abby', settled:false, members:[{id:'a',name:'Abby',emoji:'🐱'},{id:'m',name:'May',emoji:'🐰'},{id:'l',name:'Lin',emoji:'🐻'},{id:'w',name:'Wendy',emoji:'🦊'}], color:'linear-gradient(135deg,#AF52DE,#5E5CE6)' },
+  { icon:'⚡', title:'月度水电', description:'物业 · 1月账单',      total_amount:712, per_amount:178, date:'2025-02-01', payer_name:'Wendy',settled:true,  members:[{id:'w',name:'Wendy',emoji:'🦊'},{id:'a',name:'Abby',emoji:'🐱'},{id:'l',name:'Lin',emoji:'🐻'},{id:'m',name:'May',emoji:'🐰'}], color:'linear-gradient(135deg,#FF3B30,#FF2D55)' },
+  { icon:'☕', title:'星巴克',   description:'Starbucks · 下午茶',  total_amount:136, per_amount:34,  date:'2025-01-29', payer_name:'May',  settled:true,  members:[{id:'m',name:'May',emoji:'🐰'},{id:'a',name:'Abby',emoji:'🐱'},{id:'l',name:'Lin',emoji:'🐻'},{id:'w',name:'Wendy',emoji:'🦊'}], color:'linear-gradient(135deg,#007AFF,#5AC8FA)' },
 ];
 
 let N = bills.length;
+
+/* 登录后从 Supabase 加载真实数据 */
+(async () => {
+  try {
+    const user = await DB.getCurrentUser();
+    if (!user) return;
+    const remoteBills = await DB.fetchMyBills();
+    if (remoteBills.length > 0) {
+      bills = remoteBills;
+      N = bills.length;
+      // 重建轮播
+      if (typeof rebuildCarousel === 'function') rebuildCarousel(bills);
+    }
+  } catch(e) { console.warn('Supabase 数据加载失败，使用 demo 数据:', e); }
+})();
 
 /* ══════════════════════════════════════════════════════════════
    动画参数
@@ -759,15 +796,15 @@ function createCard(b, i) {
     <div class="card-inner">
       <div class="card-top">
         <div class="card-icon-box">${b.icon}</div>
-        <div class="card-date-label">${b.date}</div>
+        <div class="card-date-label">${fmtISODate(b.date)}</div>
       </div>
       <div class="card-amount-section">
         <div class="card-label-title">${b.title}</div>
-        <div class="card-amount-num">${b.amount}</div>
-        <div class="card-per-line">每人均摊 <em>${b.per}</em></div>
+        <div class="card-amount-num">${fmtMoney(b.total_amount)}</div>
+        <div class="card-per-line">每人均摊 <em>${fmtMoney(b.per_amount)}</em></div>
       </div>
       <div class="card-bottom-row">
-        <div class="card-avs">${b.members.map(m => `<div class="cav">${m}</div>`).join('')}</div>
+        <div class="card-avs">${(b.members||[]).map(m => `<div class="cav">${typeof m === 'string' ? m : m.emoji}</div>`).join('')}</div>
         <div class="card-pill ${b.settled ? 'ok' : 'ng'}">${b.settled ? '✓ 已结清' : '待结算'}</div>
       </div>
     </div>`;
@@ -782,8 +819,20 @@ function createDot() {
   return d;
 }
 
-const cardEls = bills.map((b, i) => createCard(b, i));
-const dotEls  = bills.map(() => createDot());
+let cardEls = bills.map((b, i) => createCard(b, i));
+let dotEls  = bills.map(() => createDot());
+
+function rebuildCarousel(billList) {
+  stage.innerHTML = '';
+  dotsEl.innerHTML = '';
+  bills = billList;
+  N = bills.length;
+  cardEls = bills.map((b, i) => createCard(b, i));
+  dotEls  = bills.map(() => createDot());
+  current = 0;
+  fracLive = 0;
+  if (typeof snapTo === 'function') snapTo(0);
+}
 
 /* ══════════════════════════════════════════════════════════════
    滑动音效引擎
@@ -1338,10 +1387,14 @@ const BILL_COLORS = [
   'linear-gradient(135deg,#007AFF,#5AC8FA)',
   'linear-gradient(135deg,#FFD60A,#FF9F0A)',
 ];
-const MEMBER_POOL = ['A','L','W','M','E','F'];
-
-function fmtDate(d) { return `${d.getMonth() + 1}月${d.getDate()}日`; }
-function fmtMoney(n) { return `¥ ${Number.isInteger(n) ? n : n.toFixed(2)}`; }
+const DEMO_MEMBERS = [
+  { id: 'a', name: 'Abby', emoji: '🐱' },
+  { id: 'l', name: 'Lin',  emoji: '🐻' },
+  { id: 'w', name: 'Wendy',emoji: '🦊' },
+  { id: 'm', name: 'May',  emoji: '🐰' },
+  { id: 'e', name: 'Eve',  emoji: '🐼' },
+  { id: 'f', name: 'Fay',  emoji: '🐯' },
+];
 
 function addBill() {
   const inpTitle  = document.getElementById('inp-title');
@@ -1366,20 +1419,22 @@ function addBill() {
   const icon    = document.querySelector('.ip-btn.on').dataset.icon;
   const nPeople = parseInt(document.querySelector('.pp-btn.on').dataset.n);
   const per     = amount / nPeople;
-  const members = MEMBER_POOL.slice(0, nPeople);
+  const members = DEMO_MEMBERS.slice(0, nPeople);
   const color   = BILL_COLORS[bills.length % BILL_COLORS.length];
+  const today   = new Date().toISOString().slice(0, 10);
 
   const bill = {
     icon, title,
-    desc:    `${payer} · ${nPeople}人均摊`,
-    amount:  fmtMoney(amount),
-    per:     fmtMoney(per),
-    date:    fmtDate(new Date()),
-    payer:   payer + ' 垫付',
-    settled: false,
+    description: `${payer} · ${nPeople}人均摊`,
+    total_amount: amount,
+    per_amount:   per,
+    date:         today,
+    payer_name:   payer,
+    settled:      false,
     members, color,
   };
 
+  // TODO: 接入 Supabase 后改为 await DB.createBill(...)
   bills.push(bill);
   const idx = bills.length - 1;
   N = bills.length;
