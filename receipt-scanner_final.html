@@ -182,6 +182,11 @@
   .members-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; color: var(--text); font-size: 12px; outline: none; }
   .members-input:focus { border-color: var(--accent); }
 
+  .rotate-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+  .rotate-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 18px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .rotate-btn:active { background: var(--border); transform: scale(0.95); }
+  .rotate-label { font-size: 11px; color: var(--text3); }
+
   .preview-actions { display: flex; gap: 10px; margin-top: 12px; }
 
   /* Buttons */
@@ -277,6 +282,11 @@
       <div class="preview-overlay"></div>
       <div class="preview-type-badge badge-physical" id="previewTypeBadge">🧾 实体小票</div>
     </div>
+    <div class="rotate-bar">
+      <button class="rotate-btn" onclick="rotateImage(-90)" title="逆时针旋转">↺</button>
+      <span class="rotate-label" id="rotateLabel">旋转图片</span>
+      <button class="rotate-btn" onclick="rotateImage(90)" title="顺时针旋转">↻</button>
+    </div>
     <div class="members-row">
       <span class="members-label">👥 成员：</span>
       <input class="members-input" type="text" id="membersInput" placeholder="A, L, W, M（逗号分隔）" value="A, L, W, M" />
@@ -370,6 +380,8 @@ let originalImage = null;   // HTMLImageElement (full res)
 let receiptType   = 'physical';
 let resultData    = null;
 let jsonVisible   = false;
+let rotationDeg   = 0;      // current rotation in degrees (0, 90, 180, 270)
+let baseBlob      = null;   // pre-rotation image blob (crop result or original file)
 
 // Crop state — corners stored in FULL IMAGE pixel coords
 let corners  = [];
@@ -741,6 +753,7 @@ function confirmCrop() {
 
   out.toBlob(blob => {
     croppedBlob = blob;
+    baseBlob = blob;
     closeCropOverlay();
     showPreview(URL.createObjectURL(blob), true);
   }, 'image/jpeg', 0.92);
@@ -769,11 +782,53 @@ function showPreview(src, wasCropped) {
 }
 
 function resetAll() {
-  currentFile = null; croppedBlob = null; originalImage = null;
-  corners = []; dragging = -1; canvasRect = null;
+  currentFile = null; croppedBlob = null; baseBlob = null; originalImage = null;
+  corners = []; dragging = -1; canvasRect = null; rotationDeg = 0;
   document.getElementById('previewSection').classList.remove('show');
   document.getElementById('fileInput').value = '';
   hideResult(); hideError();
+}
+
+// ════════════════════════════════════════════
+//  IMAGE ROTATION
+// ════════════════════════════════════════════
+function rotateImage(deg) {
+  rotationDeg = (rotationDeg + deg + 360) % 360;
+  const label = document.getElementById('rotateLabel');
+  label.textContent = rotationDeg === 0 ? '旋转图片' : `已旋转 ${rotationDeg}°`;
+
+  // Apply visual rotation to preview image
+  const img = document.getElementById('previewImg');
+  img.style.transform = `rotate(${rotationDeg}deg)`;
+
+  // Rebuild the rotated blob so scanReceipt sends the correct orientation
+  // Always rotate from baseBlob (pre-rotation source) to avoid compounding
+  const source = baseBlob || currentFile;
+  if (!source) return;
+
+  if (rotationDeg === 0) {
+    // No rotation — restore original
+    croppedBlob = baseBlob; // null if no crop, scanReceipt falls back to currentFile
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const tmpImg = new Image();
+    tmpImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const swap = rotationDeg === 90 || rotationDeg === 270;
+      canvas.width  = swap ? tmpImg.height : tmpImg.width;
+      canvas.height = swap ? tmpImg.width  : tmpImg.height;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(rotationDeg * Math.PI / 180);
+      ctx.drawImage(tmpImg, -tmpImg.width / 2, -tmpImg.height / 2);
+      canvas.toBlob(blob => { croppedBlob = blob; }, 'image/jpeg', 0.92);
+    };
+    tmpImg.src = reader.result;
+  };
+  reader.readAsDataURL(source);
 }
 
 // ════════════════════════════════════════════
