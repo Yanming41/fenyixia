@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>小票扫描器 · 分一下</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -43,18 +44,13 @@
   .logo span { color: var(--text3); font-weight: 400; }
   .badge { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; padding: 4px 10px; border-radius: 20px; }
 
-  /* API */
-  .api-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
-  .api-label { font-size: 11px; color: var(--text2); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 9px; display: flex; align-items: center; gap: 7px; }
-  .api-label::before { content: ''; width: 5px; height: 5px; background: var(--accent); border-radius: 50%; }
-  .api-input-row { display: flex; gap: 8px; }
-  .api-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; color: var(--text); font-size: 13px; font-family: 'Space Mono', monospace; outline: none; }
-  .api-input:focus { border-color: var(--accent); }
-  .api-input::placeholder { color: var(--text3); }
-  .api-save-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 10px; padding: 10px 15px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-  .api-status { font-size: 11px; margin-top: 7px; height: 15px; }
-  .api-status.ok { color: var(--success); }
-  .api-status.err { color: var(--error); }
+  /* Back button */
+  .back-link { background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; font-family: 'Noto Sans SC', sans-serif; padding: 0; display: flex; align-items: center; gap: 4px; }
+  .back-link:active { opacity: 0.7; }
+
+  /* Save toast */
+  .save-toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--surface); border: 1px solid var(--success); color: var(--success); font-size: 14px; font-weight: 700; padding: 14px 24px; border-radius: 14px; z-index: 200; opacity: 0; transition: all 0.3s ease; pointer-events: none; }
+  .save-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
   /* Type selector */
   .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
@@ -229,6 +225,8 @@
   .item-qty { color: var(--text3); text-align: center; }
   .item-price { font-family: 'Space Mono', monospace; color: var(--text2); text-align: right; }
   .item-price.discount { color: var(--success); }
+  .btn-save { background: var(--success); color: #fff; font-weight: 700; }
+  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
   .result-actions { display: flex; gap: 10px; margin-top: 14px; align-items: center; }
   .json-toggle { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 11px; padding: 6px 11px; border-radius: 8px; cursor: pointer; font-family: 'Space Mono', monospace; white-space: nowrap; }
   .json-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 10px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text2); white-space: pre; overflow-x: auto; line-height: 1.7; display: none; max-height: 300px; overflow-y: auto; }
@@ -246,17 +244,9 @@
 <!-- ── Main scrollable view ── -->
 <div class="main-view">
   <div class="header">
+    <button class="back-link" onclick="window.location.href='aa-split-v4.html'">← 返回</button>
     <div class="logo">分一下<span>.scan</span></div>
-    <div class="badge">小票识别 · Beta</div>
-  </div>
-
-  <div class="api-section">
-    <div class="api-label">Anthropic API Key</div>
-    <div class="api-input-row">
-      <input class="api-input" type="password" id="apiKey" placeholder="sk-ant-api03-..." />
-      <button class="api-save-btn" onclick="saveApiKey()">保存</button>
-    </div>
-    <div class="api-status" id="apiStatus"></div>
+    <div class="badge">小票识别</div>
   </div>
 
   <div class="type-selector">
@@ -329,12 +319,18 @@
       <div class="items-list" id="itemsList"></div>
     </div>
     <div class="result-actions">
-      <button class="btn btn-primary" onclick="copyJSON()">📋 复制 JSON</button>
+      <button class="btn btn-save" id="saveBillBtn" onclick="saveToBill()">保存为账单</button>
+      <button class="btn btn-secondary" onclick="resetAll()">重新扫描</button>
+    </div>
+    <div class="result-actions" style="margin-top:8px">
       <button class="json-toggle" onclick="toggleJSON()">{ } 原始数据</button>
     </div>
     <div class="json-block" id="jsonBlock"></div>
   </div>
 </div>
+
+<!-- Save toast -->
+<div class="save-toast" id="saveToast"></div>
 
 <!-- ══════════════════════════════════════════
      FULLSCREEN CROP OVERLAY
@@ -358,7 +354,13 @@
   </div>
 </div>
 
+<script src="supabase.js"></script>
 <script>
+// ════════════════════════════════════════════
+//  SUPABASE CONFIG
+// ════════════════════════════════════════════
+const EDGE_FN_URL = 'https://rpqhceaezxlekrnwpvwt.supabase.co/functions/v1/scan-receipt';
+
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
@@ -383,11 +385,6 @@ let displayScale  = 1;     // fullImagePx * displayScale = canvasCSSPx
 //  INIT
 // ════════════════════════════════════════════
 window.addEventListener('load', () => {
-  const saved = sessionStorage.getItem('anthropic_key');
-  if (saved) {
-    document.getElementById('apiKey').value = saved;
-    setApiStatus('✓ 已保存', 'ok');
-  }
   cvs  = document.getElementById('cropCanvas');
   cctx = cvs.getContext('2d');
   initCropEvents();
@@ -399,21 +396,6 @@ window.addEventListener('resize', () => {
     drawOverlay();
   }
 });
-
-// ════════════════════════════════════════════
-//  API KEY
-// ════════════════════════════════════════════
-function saveApiKey() {
-  const key = document.getElementById('apiKey').value.trim();
-  if (!key.startsWith('sk-ant-')) { setApiStatus('⚠ 格式不对，请检查 Key', 'err'); return; }
-  sessionStorage.setItem('anthropic_key', key);
-  setApiStatus('✓ 已保存（仅本次会话）', 'ok');
-}
-function getApiKey() { return sessionStorage.getItem('anthropic_key') || document.getElementById('apiKey').value.trim(); }
-function setApiStatus(msg, cls) {
-  const el = document.getElementById('apiStatus');
-  el.textContent = msg; el.className = 'api-status ' + cls;
-}
 
 // ════════════════════════════════════════════
 //  TYPE SELECTOR
@@ -847,11 +829,9 @@ ${tpl}
 }
 
 // ════════════════════════════════════════════
-//  SCAN
+//  SCAN (via Supabase Edge Function)
 // ════════════════════════════════════════════
 async function scanReceipt() {
-  const apiKey = getApiKey();
-  if (!apiKey || !apiKey.startsWith('sk-ant-')) { showError('请先填写有效的 Anthropic API Key'); return; }
   if (!currentFile) { showError('请先上传图片'); return; }
 
   const members = document.getElementById('membersInput').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -865,25 +845,18 @@ async function scanReceipt() {
     const mime = croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg');
     const prompt = buildPrompt(receiptType, members, n);
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    // 通过 Edge Function 调用 Claude（API Key 安全存放在服务器端）
+    const res = await fetch(EDGE_FN_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: mime, data: b64 } },
-          { type: 'text', text: prompt }
-        ]}]
+        image_base64: b64,
+        media_type: mime,
+        prompt: prompt,
       })
     });
 
-    if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||`API 错误 ${res.status}`); }
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error||`API 错误 ${res.status}`); }
     const data = await res.json();
     let txt = data.content.map(c=>c.text||'').join('').trim();
     txt = txt.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim();
@@ -897,6 +870,92 @@ async function scanReceipt() {
   } finally {
     setLoading(false);
   }
+}
+
+// ════════════════════════════════════════════
+//  SAVE TO BILL (上传图片 + 存扫描记录 + 创建账单)
+// ════════════════════════════════════════════
+async function saveToBill() {
+  if (!resultData) return;
+
+  const btn = document.getElementById('saveBillBtn');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+
+  try {
+    const user = await DB.getCurrentUser();
+    if (!user) {
+      showError('请先登录');
+      btn.disabled = false;
+      btn.textContent = '保存为账单';
+      return;
+    }
+
+    // 1. 上传图片到 Storage
+    const imageBlob = croppedBlob || currentFile;
+    const ext = croppedBlob ? 'jpg' : (currentFile.name.split('.').pop() || 'jpg');
+    const imagePath = `${user.id}/${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await DB.sb
+      .storage
+      .from('receipt-images')
+      .upload(imagePath, imageBlob, {
+        contentType: croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg'),
+      });
+    if (uploadErr) throw new Error('图片上传失败: ' + uploadErr.message);
+
+    // 2. 解析日期 → ISO 格式
+    const dateStr = resultData.date || '';
+    const dateMatch = dateStr.match(/(\d+)月(\d+)日/);
+    const isoDate = dateMatch
+      ? `${new Date().getFullYear()}-${String(dateMatch[1]).padStart(2,'0')}-${String(dateMatch[2]).padStart(2,'0')}`
+      : new Date().toISOString().slice(0, 10);
+
+    // 3. 创建账单 (bills + bill_items)
+    const items = (resultData.items || []).map(item => ({
+      name: item.name,
+      price: Number(item.price),
+      qty: item.qty || 1,
+      member_ids: [user.id],
+    }));
+
+    const ICON_COLORS = DB.ICON_COLORS || {};
+    const billId = await DB.createBill({
+      icon: resultData.icon || '🧾',
+      title: resultData.title || '扫描账单',
+      description: resultData.desc || resultData.merchant || '',
+      date: isoDate,
+      color: ICON_COLORS[resultData.icon] || 'linear-gradient(135deg,#8E8E93,#636366)',
+      items: items,
+    });
+
+    // 4. 保存扫描记录 (receipt_scans)
+    await DB.sb.from('receipt_scans').insert({
+      user_id: user.id,
+      image_path: imagePath,
+      scan_result: resultData,
+      bill_id: billId,
+    });
+
+    // 5. 成功提示并跳转
+    showToast('账单已保存');
+    setTimeout(() => {
+      window.location.href = 'aa-split-v4.html';
+    }, 1200);
+
+  } catch (err) {
+    console.error('保存失败:', err);
+    showError('保存失败: ' + (err.message || '请重试'));
+    btn.disabled = false;
+    btn.textContent = '保存为账单';
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('saveToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ════════════════════════════════════════════
@@ -955,15 +1014,6 @@ function showError(msg){const b=document.getElementById('errorBox');b.textConten
 function hideError(){document.getElementById('errorBox').classList.remove('show');}
 function hideResult(){document.getElementById('resultSection').classList.remove('show');resultData=null;}
 function toggleJSON(){jsonVisible=!jsonVisible;document.getElementById('jsonBlock').classList.toggle('show',jsonVisible);}
-async function copyJSON(){
-  if(!resultData)return;
-  const d={...resultData};delete d.rawTotal;
-  try{
-    await navigator.clipboard.writeText(JSON.stringify(d,null,2));
-    const btn=event.target;btn.textContent='✓ 已复制！';
-    setTimeout(()=>btn.textContent='📋 复制 JSON',1800);
-  }catch{showError('复制失败，请手动复制');}
-}
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function syntaxHL(json){
   json=json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
