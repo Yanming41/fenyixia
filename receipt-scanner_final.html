@@ -664,6 +664,75 @@
       color: var(--success);
     }
 
+    /* 行内编辑 */
+    .item-row.editing {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+
+    .item-edit-input {
+      background: var(--bg);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 4px 8px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .item-edit-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(240, 192, 64, 0.2);
+    }
+
+    .item-edit-input.qty-input {
+      width: 44px;
+      text-align: center;
+    }
+
+    .item-edit-input.price-input {
+      width: 80px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .item-edit-actions {
+      display: flex;
+      gap: 6px;
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .item-edit-actions button {
+      font-size: 11px;
+      padding: 3px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .item-edit-ok {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .item-edit-cancel {
+      background: var(--surface);
+      color: var(--text2);
+      border: 1px solid var(--border) !important;
+    }
+
+    .item-edit-delete {
+      background: rgba(224, 107, 107, 0.15);
+      color: var(--error);
+      margin-right: auto;
+    }
+
     .btn-save {
       background: var(--success);
       color: #fff;
@@ -1794,9 +1863,94 @@ ${tpl}
 
     function updatePerAmount() {
       if (!resultData) return;
-      const total = resultData.rawTotal || 0;
+      const total = resultData.items.reduce((s, i) => s + (Number(i.price) * (i.qty || 1)), 0);
+      resultData.rawTotal = total;
       const n = selectedMembers.length || 1;
       document.getElementById('resPer').textContent = `每人 CA$ ${(total / n).toFixed(2)}`;
+      document.getElementById('resAmount').textContent = `CA$ ${total.toFixed(2)}`;
+    }
+
+    // ════════════════════════════════════════════
+    //  INLINE ITEM EDITING
+    // ════════════════════════════════════════════
+    let editingIdx = null;
+
+    function startEditItem(idx) {
+      if (editingIdx === idx) return;
+      if (editingIdx !== null) cancelEditItem();
+      editingIdx = idx;
+      const item = resultData.items[idx];
+      const row = document.querySelector(`.item-row[data-item-idx="${idx}"]`);
+      if (!row || !item) return;
+
+      row.classList.add('editing');
+      // 保存原始赋值元素
+      const assignEl = row.querySelector('.item-assigned');
+      const assignHtml = assignEl ? assignEl.outerHTML : '';
+
+      row.innerHTML = `
+        <input class="item-edit-input" id="edit-name-${idx}" value="${escHtml(item.name || '')}" placeholder="商品名称" />
+        <input class="item-edit-input qty-input" id="edit-qty-${idx}" type="number" min="1" value="${item.qty || 1}" />
+        <input class="item-edit-input price-input" id="edit-price-${idx}" type="number" step="0.01" value="${Number(item.price).toFixed(2)}" />
+        ${assignHtml}
+        <div class="item-edit-actions">
+          <button class="item-edit-delete" onclick="deleteEditItem(${idx})">删除</button>
+          <button class="item-edit-cancel" onclick="cancelEditItem()">取消</button>
+          <button class="item-edit-ok" onclick="confirmEditItem(${idx})">确定</button>
+        </div>`;
+
+      row.querySelector(`#edit-name-${idx}`).focus();
+    }
+
+    function confirmEditItem(idx) {
+      const name = document.getElementById(`edit-name-${idx}`).value.trim();
+      const qty = parseInt(document.getElementById(`edit-qty-${idx}`).value) || 1;
+      const price = parseFloat(document.getElementById(`edit-price-${idx}`).value) || 0;
+
+      if (!name) { cancelEditItem(); return; }
+
+      resultData.items[idx].name = name;
+      resultData.items[idx].qty = qty;
+      resultData.items[idx].price = price;
+      editingIdx = null;
+      rerenderItems();
+    }
+
+    function cancelEditItem() {
+      editingIdx = null;
+      rerenderItems();
+    }
+
+    function deleteEditItem(idx) {
+      resultData.items.splice(idx, 1);
+      // 重建 itemAssignments 索引
+      const newAssign = {};
+      resultData.items.forEach((_, i) => {
+        const oldIdx = i >= idx ? i + 1 : i;
+        newAssign[i] = itemAssignments[oldIdx] || new Set(selectedMembers.map(m => m.id));
+      });
+      itemAssignments = newAssign;
+      editingIdx = null;
+      rerenderItems();
+    }
+
+    function rerenderItems() {
+      const list = document.getElementById('itemsList');
+      list.innerHTML = `
+        <div class="items-header has-assign"><span>商品 / 服务</span><span>数量</span><span>金额</span><span>分摊</span></div>
+        ${resultData.items.map((item, idx) => {
+          const disc = Number(item.price) < 0;
+          return `<div class="item-row has-assign" data-item-idx="${idx}" onclick="startEditItem(${idx})">
+            <span class="item-name">${escHtml(item.name || '')}</span>
+            <span class="item-qty">×${item.qty || 1}</span>
+            <span class="item-price${disc ? ' discount' : ''}">
+              ${disc ? '-CA$' : 'CA$'}${Math.abs(Number(item.price)).toFixed(2)}
+            </span>
+            <span class="item-assigned" data-item-idx="${idx}"></span>
+          </div>`;
+        }).join('')}`;
+      renderAllItemAssignments();
+      updatePerAmount();
     }
 
     // ════════════════════════════════════════════
@@ -1957,7 +2111,7 @@ ${tpl}
       <div class="items-header has-assign"><span>商品 / 服务</span><span>数量</span><span>金额</span><span>分摊</span></div>
       ${d.items.map((item, idx) => {
           const disc = Number(item.price) < 0;
-          return `<div class="item-row has-assign" data-item-idx="${idx}">
+          return `<div class="item-row has-assign" data-item-idx="${idx}" onclick="startEditItem(${idx})">
           <span class="item-name">${escHtml(item.name || '')}</span>
           <span class="item-qty">×${item.qty || 1}</span>
           <span class="item-price${disc ? ' discount' : ''}">
