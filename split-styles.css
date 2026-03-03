@@ -346,6 +346,13 @@
       border: 1px solid rgba(255, 255, 255, 0.25);
     }
 
+    .card-role-tag.paid {
+      background: rgba(90, 200, 250, 0.3);
+      color: #fff;
+      border: 1px solid rgba(90, 200, 250, 0.5);
+      box-shadow: 0 0 10px rgba(90, 200, 250, 0.2);
+    }
+
     /* 金额区域 */
     .card-amount-section {
       flex: 1;
@@ -549,6 +556,12 @@
       background: rgba(255, 69, 58, 0.12);
       color: #FF6961;
       border: 0.5px solid rgba(255, 69, 58, 0.3);
+    }
+
+    .detail-role-banner.paid {
+      background: rgba(48, 209, 88, 0.15);
+      color: #4CD964;
+      border: 0.5px solid rgba(48, 209, 88, 0.3);
     }
 
     .detail-role-banner .role-amount {
@@ -1910,23 +1923,25 @@
     /* Toast */
     .toast {
       position: fixed;
-      top: 60px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: var(--bg3);
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(0, 0, 0, 0.88);
       color: var(--label);
-      padding: 12px 24px;
-      border-radius: 12px;
+      padding: 16px 28px;
+      border-radius: 14px;
       font-size: 15px;
       font-weight: 500;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .3s, transform .3s;
-      z-index: 9999;
+      transition: opacity .25s, transform .25s;
+      z-index: 10001;
+      max-width: 300px;
+      text-align: center;
     }
 
     .toast.show {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translate(-50%, -50%) scale(1);
     }

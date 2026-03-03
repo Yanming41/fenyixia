@@ -47,6 +47,7 @@ let N = bills.length;
     console.log('[Load] 正在从 Supabase 拉取账单...');
     const remoteBills = await DB.fetchMyBills();
     console.log('[Load] 拉取到', remoteBills.length, '条账单:', remoteBills);
+    await markBillsWithProofs(remoteBills);
     // 用动画重建轮播
     rebuildCarousel(remoteBills, true);
   } catch (e) {
@@ -112,6 +113,10 @@ function createCard(b, i) {
     roleTagHtml = '<div class="card-role-tag collect">💰 待收款</div>';
     heroLabel = `向 ${otherCount} 人收`;
     heroAmount = collectTotal;
+  } else if (b._hasMeProof) {
+    roleTagHtml = '<div class="card-role-tag paid">✓ 已付款</div>';
+    heroLabel = `已支付`;
+    heroAmount = myShare;
   } else {
     roleTagHtml = '<div class="card-role-tag pay">📤 待付款</div>';
     heroLabel = `你要付`;
@@ -154,6 +159,20 @@ function createDot() {
 
 let cardEls = bills.map((b, i) => createCard(b, i));
 let dotEls = bills.map(() => createDot());
+
+async function markBillsWithProofs(billList) {
+  if (!currentUserId) return;
+  try {
+    const { data } = await DB.sb
+      .from('payment_proofs')
+      .select('bill_id, user_id');
+    if (!data) return;
+    const proofSet = new Set(data.map(p => `${p.bill_id}_${p.user_id}`));
+    billList.forEach(b => {
+      b._hasMeProof = proofSet.has(`${b.id}_${currentUserId}`);
+    });
+  } catch (e) { console.error('markBillsWithProofs:', e); }
+}
 
 function updateSummary(billList) {
   let total = 0, collect = 0, owe = 0;
@@ -1287,6 +1306,7 @@ const billsSections = [
 ];
 
 function showToast(msg, duration = 2000) {
+  document.body.appendChild(toastEl);   // 确保在 DOM 最顶层，不被 overlay 遮挡
   toastEl.textContent = msg;
   toastEl.classList.add('show');
   setTimeout(() => toastEl.classList.remove('show'), duration);
@@ -1386,6 +1406,11 @@ function openDetail(bill) {
       <span>💰 你垫付了这笔账单，向 ${otherMembers.length} 人收款</span>
       <span class="role-amount">${fmtMoney(collectTotal)}</span>
     </div>`;
+  } else if (bill._hasMeProof || bill.settled) {
+    bannerHtml = `<div class="detail-role-banner paid">
+      <span>✅ 已完成付款给 ${bill.payer_emoji} ${bill.payer_name}</span>
+      <span class="role-amount">${fmtMoney(myShare)}</span>
+    </div>`;
   } else {
     bannerHtml = `<div class="detail-role-banner pay">
       <span>📤 你需要向 ${bill.payer_emoji} ${bill.payer_name} 支付</span>
@@ -1441,7 +1466,7 @@ function openDetail(bill) {
     // 付款人：付款(上传凭证) + 异议!
     const payBtn = bill.settled
       ? `<button class="detail-btn-settled" disabled>✓ 已结清</button>`
-      : `<button class="detail-btn-pay" onclick="openPayProof('${bill.id}')">💳 付款</button>`;
+      : `<button class="detail-btn-pay" onclick="openPayProof('${bill.id}', ${myShare})">💳 付款</button>`;
     actionsHtml = `
       <div class="proof-section" id="proofSection">
         <div class="proof-section-title">💳 我的付款凭证</div>
@@ -1557,8 +1582,12 @@ async function uploadProofFile(billId, input) {
   try {
     showToast('上传中...');
     await DB.uploadPaymentProof(billId, file);
-    showToast('✓ 凭证已上传');
+    showToast('✓ 凭证已上传，等待对方确认');
     loadProofList(billId);
+    // 刷新卡片状态为"已付款"
+    const remoteBills = await DB.fetchMyBills();
+    await markBillsWithProofs(remoteBills);
+    rebuildCarousel(remoteBills);
   } catch (e) {
     showToast('上传失败: ' + e.message);
     console.error(e);
@@ -1566,9 +1595,14 @@ async function uploadProofFile(billId, input) {
   input.value = '';
 }
 
-function openPayProof(billId) {
-  const input = document.getElementById('proofFileInput');
-  if (input) input.click();
+async function openPayProof(billId, amount) {
+  const amountStr = Number(amount).toFixed(2);
+  try {
+    await navigator.clipboard.writeText(amountStr);
+    showToast(`📋 已复制 $${amountStr} 到剪贴板, 上传e-Transfer截屏完成付款🙂‍↕️`);
+  } catch (e) {
+    showToast(`付款金额: $${amountStr}（请手动复制）`);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
