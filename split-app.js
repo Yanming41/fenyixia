@@ -449,7 +449,7 @@ function onDragEnd(x) {
       ? clickedCard
       : Math.max(0, Math.min(N - 1, clickedCard));
 
-    // 点击当前卡片 → 弹跳动画
+    // 点击当前卡片 → 弹跳动画 → 打开详情
     if (target === current && cardEls[current]) {
       const card = cardEls[current];
       card.style.transition = 'transform .15s cubic-bezier(.34,1.56,.64,1)';
@@ -457,6 +457,7 @@ function onDragEnd(x) {
       setTimeout(() => {
         card.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
         snapTo(current);
+        if (bills[current]) openDetail(bills[current]);
       }, 120);
     } else {
       snapTo(target);
@@ -1305,3 +1306,144 @@ tabSettings.addEventListener('click', () => {
   switchTab(tabBills); // stay on bills view
   showToast('⚙️ 设置功能暂未实现');
 });
+
+/* ══════════════════════════════════════════════════════════════
+   账单详情 Detail Sheet
+══════════════════════════════════════════════════════════════ */
+const detailOverlay = document.getElementById('detailOverlay');
+
+function openDetail(bill) {
+  const el = document.getElementById('detailContent');
+  const isPayer = currentUserId && bill.payer_id === currentUserId;
+
+  // 计算每人分摊
+  const memberShares = {};
+  (bill.members || []).forEach(m => { memberShares[m.id] = 0; });
+  (bill.items || []).forEach(item => {
+    const n = (item.members || []).length || 1;
+    const share = (item.price * (item.qty || 1)) / n;
+    (item.members || []).forEach(m => {
+      memberShares[m.id] = (memberShares[m.id] || 0) + share;
+    });
+  });
+
+  // 应收/应付金额
+  const otherMembers = (bill.members || []).filter(m => m.id !== bill.payer_id);
+  const collectTotal = otherMembers.reduce((s, m) => s + (memberShares[m.id] || 0), 0);
+  const myShare = memberShares[currentUserId] || 0;
+
+  // 角色横幅
+  let bannerHtml;
+  if (isPayer) {
+    bannerHtml = `<div class="detail-role-banner collect">
+      <span>💰 你垫付了这笔账单，向 ${otherMembers.length} 人收款</span>
+      <span class="role-amount">${fmtMoney(collectTotal)}</span>
+    </div>`;
+  } else {
+    bannerHtml = `<div class="detail-role-banner pay">
+      <span>📤 你需要向 ${bill.payer_emoji} ${bill.payer_name} 支付</span>
+      <span class="role-amount">${fmtMoney(myShare)}</span>
+    </div>`;
+  }
+
+  // 商品列表
+  const itemsHtml = (bill.items || []).map(item => {
+    const isMine = (item.members || []).some(m => m.id === currentUserId);
+    const avatarsHtml = (item.members || []).map(m =>
+      `<div class="cav">${m.emoji || '😀'}</div>`
+    ).join('');
+    const total = item.price * (item.qty || 1);
+    return `<div class="detail-item-row${isMine ? ' mine' : ''}">
+      <span class="detail-item-name">${escText(item.name)}</span>
+      <span class="detail-item-qty">×${item.qty || 1}</span>
+      <span class="detail-item-price">${fmtMoney(total)}</span>
+      <div class="detail-item-avatars">${avatarsHtml}</div>
+    </div>`;
+  }).join('');
+
+  // 分摊汇总
+  const summaryHtml = (bill.members || []).map(m => {
+    const isMe = m.id === currentUserId;
+    const isP = m.id === bill.payer_id;
+    const share = memberShares[m.id] || 0;
+    return `<div class="detail-summary-row${isMe ? ' me' : ''}">
+      <div class="detail-summary-avatar" style="background:${m.color || 'var(--bg4)'}">${m.emoji || '😀'}</div>
+      <div class="detail-summary-name">${escText(m.name || '未知')} ${isP ? '<span class="detail-summary-label">(垫付人)</span>' : ''}</div>
+      <div class="detail-summary-amount">${fmtMoney(share)}</div>
+    </div>`;
+  }).join('');
+
+  // 操作按钮
+  const settleBtn = bill.settled
+    ? `<button class="detail-btn-settled" onclick="toggleDetailSettled('${bill.id}', true)">↩ 取消结清</button>`
+    : `<button class="detail-btn-settle" onclick="toggleDetailSettled('${bill.id}', false)">✓ 标记已结清</button>`;
+
+  el.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-icon">${bill.icon}</div>
+      <div class="detail-title-col">
+        <div class="detail-title">${escText(bill.title)}</div>
+        <div class="detail-desc">${escText(bill.description)}</div>
+      </div>
+      <div class="detail-amount-col">
+        <div class="detail-total">${fmtMoney(bill.total_amount)}</div>
+        <div class="detail-per">共 ${(bill.members || []).length} 人</div>
+      </div>
+    </div>
+    ${bannerHtml}
+    <div class="detail-meta">
+      <span class="detail-meta-pill">📅 ${fmtISODate(bill.date)}</span>
+      <span class="detail-meta-pill">${bill.settled ? '✅ 已结清' : '⏳ 待结算'}</span>
+    </div>
+    <div class="detail-items-header">
+      <span>商品 / 服务</span><span>数量</span><span>金额</span><span>分摊</span>
+    </div>
+    ${itemsHtml}
+    <div class="detail-summary">
+      <div class="detail-summary-title">每人分摊明细</div>
+      ${summaryHtml}
+    </div>
+    <div class="detail-actions">
+      ${settleBtn}
+      <button class="detail-btn-delete" onclick="deleteDetailBill('${bill.id}')">🗑</button>
+    </div>`;
+
+  detailOverlay.classList.add('on');
+}
+
+function closeDetail(e) {
+  if (e && e.target !== detailOverlay) return;
+  detailOverlay.classList.remove('on');
+}
+
+detailOverlay.addEventListener('click', closeDetail);
+
+async function toggleDetailSettled(billId, currentSettled) {
+  try {
+    await DB.toggleSettled(billId, !currentSettled);
+    detailOverlay.classList.remove('on');
+    const remoteBills = await DB.fetchMyBills();
+    rebuildCarousel(remoteBills);
+    showToast(currentSettled ? '已取消结清' : '✓ 已标记结清');
+  } catch (e) {
+    showToast('操作失败: ' + e.message);
+  }
+}
+
+async function deleteDetailBill(billId) {
+  if (!confirm('确定删除这条账单？删除后不可恢复。')) return;
+  try {
+    await DB.deleteBill(billId);
+    detailOverlay.classList.remove('on');
+    const remoteBills = await DB.fetchMyBills();
+    rebuildCarousel(remoteBills);
+    showToast('已删除');
+  } catch (e) {
+    showToast('删除失败: ' + e.message);
+  }
+}
+
+function escText(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}

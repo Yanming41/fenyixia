@@ -441,6 +441,279 @@
     }
 
     /* ══════════════════════════════════════════
+   账单详情 Sheet
+══════════════════════════════════════════ */
+    .detail-sheet {
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-content {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 16px 32px;
+    }
+
+    /* 顶部：图标 + 标题 + 金额 */
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 0 16px;
+    }
+
+    .detail-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--bg4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .detail-title-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .detail-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--label);
+      line-height: 1.2;
+    }
+
+    .detail-desc {
+      font-size: 12px;
+      color: var(--label2);
+      margin-top: 2px;
+    }
+
+    .detail-amount-col {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .detail-total {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--orange);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .detail-per {
+      font-size: 11px;
+      color: var(--label2);
+      margin-top: 2px;
+    }
+
+    /* 角色横幅 */
+    .detail-role-banner {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .detail-role-banner.collect {
+      background: rgba(48, 209, 88, 0.12);
+      color: #4CD964;
+      border: 0.5px solid rgba(48, 209, 88, 0.3);
+    }
+
+    .detail-role-banner.pay {
+      background: rgba(255, 69, 58, 0.12);
+      color: #FF6961;
+      border: 0.5px solid rgba(255, 69, 58, 0.3);
+    }
+
+    .detail-role-banner .role-amount {
+      font-size: 18px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    /* 元信息 */
+    .detail-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      color: var(--label2);
+    }
+
+    .detail-meta-pill {
+      background: var(--bg3);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    /* 商品列表 */
+    .detail-items-header {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 11px;
+      color: var(--label3);
+      border-bottom: 0.5px solid var(--sep);
+    }
+
+    .detail-item-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 0.5px solid var(--sep);
+      font-size: 13px;
+      color: var(--label);
+      transition: background .2s;
+    }
+
+    .detail-item-row.mine {
+      background: rgba(255, 159, 10, 0.08);
+      border-left: 3px solid var(--orange);
+      padding-left: 10px;
+      margin-left: -13px;
+      padding-right: 0;
+      border-radius: 4px 0 0 4px;
+    }
+
+    .detail-item-name {
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .detail-item-qty {
+      font-size: 12px;
+      color: var(--label2);
+      text-align: right;
+    }
+
+    .detail-item-price {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      min-width: 55px;
+    }
+
+    .detail-item-avatars {
+      display: flex;
+      gap: -3px;
+    }
+
+    .detail-item-avatars .cav {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+      margin-right: -4px;
+      background: var(--bg4);
+      border-color: var(--bg2);
+    }
+
+    /* 分摊汇总 */
+    .detail-summary {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 0.5px solid var(--sep);
+    }
+
+    .detail-summary-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--label2);
+      margin-bottom: 8px;
+    }
+
+    .detail-summary-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--label);
+    }
+
+    .detail-summary-row.me {
+      background: rgba(255, 159, 10, 0.08);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 0 -10px;
+    }
+
+    .detail-summary-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .detail-summary-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .detail-summary-label {
+      font-size: 10px;
+      color: var(--label3);
+      font-weight: 400;
+    }
+
+    .detail-summary-amount {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 操作按钮 */
+    .detail-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-bottom: 16px;
+    }
+
+    .detail-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .detail-btn-settle {
+      background: rgba(48, 209, 88, 0.18);
+      color: #4CD964;
+    }
+
+    .detail-btn-settled {
+      background: var(--bg3);
+      color: var(--label2);
+    }
+
+    .detail-btn-delete {
+      background: rgba(255, 69, 58, 0.12);
+      color: #FF6961;
+      flex: 0 0 auto !important;
+      padding: 12px 20px !important;
+    }
+
+    /* ══════════════════════════════════════════
    指示点 (iOS 风格)
 ══════════════════════════════════════════ */
     .dots {

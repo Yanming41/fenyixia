@@ -1556,12 +1556,20 @@ ${tpl}
 
 【最重要】金额规则：
 - amount 和 rawTotal 必须取小票上的 TOTAL（最终应付总额），绝不能用 SUBTOTAL
-- 如果小票有 HST / GST / PST / TAX 行，TOTAL = SUBTOTAL + 所有税
-- 把 HST/税 作为单独一条 item 加入 items 数组，name 写 "HST 13%" 或对应税种
+- TOTAL = SUBTOTAL + 所有税（HST/GST/PST）
+
+【安省HST (13%) 规则 — 税直接算入商品单价，不单独列税行】：
+- 基础食品免税(0%): 生鲜蔬果、肉蛋奶、面包、米面、食用油、咖啡豆/茶叶、调味料/香料、烘焙原料、麦片、罐头蔬菜/水果、冷冻未加工食品、黄油、奶酪
+- 需收13%HST: 薯片/零食、糖果巧克力、碳酸饮料(含气泡水)、果汁含量<25%的饮料、单份饮料(<600mL)、能量棒/蛋白棒/格兰诺拉棒、爆米花(已爆)、咸味坚果、冰淇淋(单份<500mL)、甜点烘焙品(少于6个单份)、所有热食/外卖/堂食、非冷冻三明治/沙拉/熟食拼盘
+- 小票上通常用 H 或 * 标记应税商品，请注意识别
+- 对于应税商品：price = 原价 × 1.13（含税），name 末尾加 " (含税)"
+- 对于免税商品：price = 原价，不加标注
+- items 数组中【不要】单独列 HST/TAX 行，税已分摊到各应税商品的 price 里
+- 所有 items 的 price×qty 之和应等于 rawTotal
 
 【商品名称规则】：
 - 北美超市小票的商品名通常是大写英文缩写，你必须猜出完整英文名并附上中文翻译
-- name 格式固定为："英文全称 (中文)"
+- name 格式固定为："英文全称 (中文翻译)"，应税商品额外加 "(含税)"
 - 常见缩写示例：
   NN = No Name, PC = President's Choice, CH = Club House, GV = Great Value
   KD = Kraft Dinner, BN = Brand Name, SC = Selection, IRR = Irregular
@@ -1571,7 +1579,6 @@ ${tpl}
 - 如果缩写无法确认，保留原文并在括号里给出最佳猜测的中文
 
 【其他要点】：
-- items 中 price 填单价（含税价，即分摊了 HST 后的单价），qty×price=行总价
 - 日期统一转为"M月D日"
 - 提取所有商品行，一条不漏，包括折扣行（price 为负数）
 - 返回纯 JSON，不要有任何其他文字`;
@@ -1584,12 +1591,16 @@ ${tpl}
 
 【最重要】金额规则：
 - amount 和 rawTotal 必须取最终支付总额 TOTAL，不能用 SUBTOTAL
-- 如果有 HST / GST / Tax 行，加入 items 数组作为单独条目
 - TOTAL = 所有费用 + 税 + 小费（如有）
 
+【安省HST (13%) — 税直接算入商品单价】：
+- 对于应税的服务费、配送费、食品：price = 原价 × 1.13，name 末尾加 " (含税)"
+- 小费不收税，保留原价
+- items 数组中【不要】单独列 HST/TAX 行，税分摊到各应税项的 price 里
+
 【识别要点】：
-- 打车类（Uber/Lyft）：title="打车"，desc="平台·起点→终点"，items 分解各费用（车费、服务费、税、小费），折扣负数，category=transport
-- 外卖类（DoorDash/Uber Eats）：merchant=餐厅名，desc="平台·餐厅名"，每道菜名写"英文全称 (中文翻译)"+配送费+服务费+税+小费，折扣负数，category=dining
+- 打车类（Uber/Lyft）：title 用具体名称如"Uber打车"，desc="平台·起点→终点"，items 分解各费用（车费、服务费、税→含入price、小费），折扣负数，category=transport
+- 外卖类（DoorDash/Uber Eats）：title 用"餐厅名+外卖"如"海底捞外卖"，desc="平台·餐厅名"，每道菜名写"英文全称 (中文翻译)"+配送费+服务费（税含入各项price），小费单列，折扣负数，category=dining
 - 所有英文菜名/商品名都附上中文翻译，格式："English Name (中文)"
 - 返回纯 JSON，不要有任何其他文字`;
       }
