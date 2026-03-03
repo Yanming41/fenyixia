@@ -1,11 +1,22 @@
 /* ══════════════════════════════════════════════════════════════
        认证检查
     ══════════════════════════════════════════════════════════════ */
+let currentUserId = null;
 (async () => {
   try {
     const user = await DB.getCurrentUser();
     console.log('[Auth] 当前用户:', user ? user.id : '未登录');
     if (!user) { window.location.href = 'create-user.html'; return; }
+    currentUserId = user.id;
+    // 加载头像和名字
+    const { data: profile } = await DB.sb
+      .from('users').select('name, emoji, color').eq('id', user.id).single();
+    if (profile) {
+      const wrap = document.getElementById('headerAvatar');
+      if (wrap) wrap.innerHTML = `
+        <div class="av" style="background:${profile.color || 'linear-gradient(135deg,#30D158,#0A84FF)'}">${profile.emoji || '😀'}</div>
+        <div class="av-name">${profile.name || '我'}</div>`;
+    }
   } catch (e) {
     console.error('[Auth] Supabase 认证失败:', e);
   }
@@ -81,6 +92,15 @@ function createCard(b, i) {
   const el = document.createElement('div');
   el.className = 'bill-card';
   el.dataset.idx = i;
+
+  // 判断角色：我是垫付人 → 收款；我是分摊人 → 待付款
+  const isPayer = currentUserId && b.payer_id === currentUserId;
+  const roleTag = isPayer
+    ? '<div class="card-role-tag collect">收款</div>'
+    : '<div class="card-role-tag pay">待付款</div>';
+  const perLabel = isPayer ? '每人均摊' : '我应付';
+  const perAmount = isPayer ? b.per_amount : (b.my_share || b.per_amount);
+
   el.innerHTML = `
     <div class="card-bg" style="background:${b.color}"></div>
     <div class="card-highlight"></div>
@@ -88,12 +108,15 @@ function createCard(b, i) {
     <div class="card-inner">
       <div class="card-top">
         <div class="card-icon-box">${b.icon}</div>
-        <div class="card-date-label">${fmtISODate(b.date)}</div>
+        <div class="card-top-right">
+          <div class="card-date-label">${fmtISODate(b.date)}</div>
+          ${roleTag}
+        </div>
       </div>
       <div class="card-amount-section">
         <div class="card-label-title">${b.title}</div>
         <div class="card-amount-num">${fmtMoney(b.total_amount)}</div>
-        <div class="card-per-line">每人均摊 <em>${fmtMoney(b.per_amount)}</em></div>
+        <div class="card-per-line">${perLabel} <em>${fmtMoney(perAmount)}</em></div>
       </div>
       <div class="card-bottom-row">
         <div class="card-avs">${(b.members || []).map(m => `<div class="cav">${typeof m === 'string' ? m : m.emoji}</div>`).join('')}</div>

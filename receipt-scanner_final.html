@@ -1,891 +1,1536 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>小票扫描器 · 分一下</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小票扫描器 · 分一下</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap');
 
-  :root {
-    --bg: #0f0e0c;
-    --surface: #1a1916;
-    --surface2: #242220;
-    --border: #2e2c28;
-    --accent: #f0c040;
-    --accent2: #e8956d;
-    --text: #f0ede8;
-    --text2: #8c8880;
-    --text3: #5a5852;
-    --success: #6dbd8a;
-    --error: #e06b6b;
-    --radius: 16px;
-  }
+    :root {
+      --bg: #0f0e0c;
+      --surface: #1a1916;
+      --surface2: #242220;
+      --border: #2e2c28;
+      --accent: #f0c040;
+      --accent2: #e8956d;
+      --text: #f0ede8;
+      --text2: #8c8880;
+      --text3: #5a5852;
+      --success: #6dbd8a;
+      --error: #e06b6b;
+      --radius: 16px;
+    }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-  body {
-    font-family: 'Noto Sans SC', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-  /* ── Main scroll view ── */
-  .main-view {
-    max-width: 520px;
-    margin: 0 auto;
-    padding: 24px 20px 48px;
-  }
+    /* ── Main scroll view ── */
+    .main-view {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px 20px 48px;
+    }
 
-  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-  .logo { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
-  .logo span { color: var(--text3); font-weight: 400; }
-  .badge { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; padding: 4px 10px; border-radius: 20px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
 
-  /* Back button */
-  .back-link { background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; font-family: 'Noto Sans SC', sans-serif; padding: 0; display: flex; align-items: center; gap: 4px; }
-  .back-link:active { opacity: 0.7; }
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
 
-  /* Save toast */
-  .save-toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--surface); border: 1px solid var(--success); color: var(--success); font-size: 14px; font-weight: 700; padding: 14px 24px; border-radius: 14px; z-index: 200; opacity: 0; transition: all 0.3s ease; pointer-events: none; }
-  .save-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .logo span {
+      color: var(--text3);
+      font-weight: 400;
+    }
 
-  /* Type selector */
-  .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-  .type-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; text-align: center; user-select: none; transition: all 0.2s; }
-  .type-card.active-physical { border-color: var(--accent); background: rgba(240,192,64,0.06); }
-  .type-card.active-digital  { border-color: #7ec8e3; background: rgba(126,200,227,0.06); }
-  .type-icon { font-size: 26px; margin-bottom: 7px; display: block; }
-  .type-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
-  .type-hint { font-size: 11px; color: var(--text3); line-height: 1.5; }
-  .type-card.active-physical .type-label { color: var(--accent); }
-  .type-card.active-digital  .type-label { color: #7ec8e3; }
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
 
-  /* Upload zone */
-  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 38px 20px; text-align: center; cursor: pointer; position: relative; overflow: hidden; background: var(--surface); transition: all 0.2s; }
-  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(240,192,64,0.04); }
-  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .upload-icon { font-size: 38px; margin-bottom: 10px; display: block; }
-  .upload-title { font-size: 15px; font-weight: 500; margin-bottom: 5px; }
-  .upload-hint { font-size: 12px; color: var(--text3); line-height: 1.6; }
+    /* Back button */
+    .back-link {
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'Noto Sans SC', sans-serif;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
 
-  /* ══════════════════════════════════════════
+    .back-link:active {
+      opacity: 0.7;
+    }
+
+    /* Save toast */
+    .save-toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--surface);
+      border: 1px solid var(--success);
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 14px 24px;
+      border-radius: 14px;
+      z-index: 200;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .save-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Type selector */
+    .type-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .type-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      text-align: center;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .type-card.active-physical {
+      border-color: var(--accent);
+      background: rgba(240, 192, 64, 0.06);
+    }
+
+    .type-card.active-digital {
+      border-color: #7ec8e3;
+      background: rgba(126, 200, 227, 0.06);
+    }
+
+    .type-icon {
+      font-size: 26px;
+      margin-bottom: 7px;
+      display: block;
+    }
+
+    .type-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .type-hint {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.5;
+    }
+
+    .type-card.active-physical .type-label {
+      color: var(--accent);
+    }
+
+    .type-card.active-digital .type-label {
+      color: #7ec8e3;
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 38px 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: var(--surface);
+      transition: all 0.2s;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(240, 192, 64, 0.04);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-icon {
+      font-size: 38px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .upload-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.6;
+    }
+
+    /* ══════════════════════════════════════════
      FULLSCREEN CROP OVERLAY
   ══════════════════════════════════════════ */
-  .crop-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: #000;
-    flex-direction: column;
-  }
-  .crop-overlay.show { display: flex; }
+    .crop-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #000;
+      flex-direction: column;
+    }
 
-  /* Canvas fills available space, letter-boxed */
-  .crop-canvas-area {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+    .crop-overlay.show {
+      display: flex;
+    }
 
-  #cropCanvas {
-    display: block;
-    /* size set by JS to fit screen while keeping aspect ratio */
-    touch-action: none;
-    cursor: crosshair;
-  }
+    /* Canvas fills available space, letter-boxed */
+    .crop-canvas-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  /* Top bar */
-  .crop-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    padding-top: max(14px, env(safe-area-inset-top));
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(8px);
-    flex-shrink: 0;
-    z-index: 2;
-  }
+    #cropCanvas {
+      display: block;
+      /* size set by JS to fit screen while keeping aspect ratio */
+      touch-action: none;
+      cursor: crosshair;
+    }
 
-  .crop-topbar-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text);
-  }
+    /* Top bar */
+    .crop-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+      z-index: 2;
+    }
 
-  .crop-topbar-hint {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 2px;
-  }
+    .crop-topbar-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
 
-  .crop-cancel-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: var(--text2);
-    font-size: 13px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-family: 'Noto Sans SC', sans-serif;
-  }
+    .crop-topbar-hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
 
-  /* Bottom bar */
-  .crop-bottombar {
-    display: flex;
-    gap: 10px;
-    padding: 16px 18px;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(8px);
-    flex-shrink: 0;
-  }
+    .crop-cancel-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: var(--text2);
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: 'Noto Sans SC', sans-serif;
+    }
 
-  .crop-btn {
-    flex: 1;
-    padding: 15px;
-    border-radius: 14px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    font-family: 'Noto Sans SC', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-  }
+    /* Bottom bar */
+    .crop-bottombar {
+      display: flex;
+      gap: 10px;
+      padding: 16px 18px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
 
-  .crop-btn-confirm { background: var(--accent); color: var(--bg); }
-  .crop-btn-skip    { background: rgba(126,200,227,0.15); color: #7ec8e3; border: 1px solid rgba(126,200,227,0.3); }
+    .crop-btn {
+      flex: 1;
+      padding: 15px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      font-family: 'Noto Sans SC', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
 
-  /* ── Preview ── */
-  .preview-section { margin-top: 18px; display: none; }
-  .preview-section.show { display: block; }
-  .preview-img-wrap { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; }
-  /* Preserve natural aspect ratio - no fixed height */
-  .preview-img-wrap img { width: 100%; height: auto; display: block; max-height: 55vh; object-fit: contain; }
-  .preview-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,14,12,0.75) 0%, transparent 50%); pointer-events: none; }
-  .preview-type-badge { position: absolute; top: 10px; left: 10px; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 700; }
-  .badge-physical { background: rgba(240,192,64,0.2); color: var(--accent); border: 1px solid rgba(240,192,64,0.4); }
-  .badge-digital  { background: rgba(126,200,227,0.2); color: #7ec8e3; border: 1px solid rgba(126,200,227,0.4); }
+    .crop-btn-confirm {
+      background: var(--accent);
+      color: var(--bg);
+    }
 
-  .members-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
-  .members-label { font-size: 12px; color: var(--text3); white-space: nowrap; }
-  .members-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; color: var(--text); font-size: 12px; outline: none; }
-  .members-input:focus { border-color: var(--accent); }
+    .crop-btn-skip {
+      background: rgba(126, 200, 227, 0.15);
+      color: #7ec8e3;
+      border: 1px solid rgba(126, 200, 227, 0.3);
+    }
 
-  .rotate-bar { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface); }
-  .rotate-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 18px; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .rotate-btn:active { background: var(--border); transform: scale(0.95); }
-  .rotate-label { font-size: 11px; color: var(--text3); }
+    /* ── Preview ── */
+    .preview-section {
+      margin-top: 18px;
+      display: none;
+    }
 
-  .preview-actions { display: flex; gap: 10px; margin-top: 12px; }
+    .preview-section.show {
+      display: block;
+    }
 
-  /* Buttons */
-  .btn { flex: 1; padding: 15px; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: 'Noto Sans SC', sans-serif; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.15s; }
-  .btn-primary { background: var(--accent); color: var(--bg); font-weight: 700; }
-  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+    .preview-img-wrap {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #000;
+    }
 
-  /* Loading */
-  .loading-bar { height: 3px; background: var(--border); border-radius: 2px; margin: 14px 0; overflow: hidden; display: none; }
-  .loading-bar.show { display: block; }
-  .loading-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); animation: loading 1.5s ease-in-out infinite; width: 40%; }
-  @keyframes loading { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
-  .loading-text { text-align: center; font-size: 13px; color: var(--text2); display: none; margin: 4px 0; }
-  .loading-text.show { display: block; }
+    /* Preserve natural aspect ratio - no fixed height */
+    .preview-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-height: 55vh;
+      object-fit: contain;
+    }
 
-  /* Result */
-  .result-section { margin-top: 22px; display: none; animation: fadeUp 0.35s ease; }
-  .result-section.show { display: block; }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-  .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .result-header-icon { font-size: 20px; }
-  .result-header-title { font-size: 15px; font-weight: 700; color: var(--success); }
-  .result-header-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .card-preview { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .card-top { padding: 18px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
-  .card-emoji { font-size: 32px; line-height: 1; flex-shrink: 0; }
-  .card-info { flex: 1; min-width: 0; }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-desc { font-size: 12px; color: var(--text2); }
-  .card-amount-col { text-align: right; flex-shrink: 0; }
-  .card-amount { font-family: 'Space Mono', monospace; font-size: 19px; font-weight: 700; color: var(--accent); }
-  .card-per { font-size: 11px; color: var(--text3); margin-top: 2px; }
-  .card-meta { padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--text3); border-bottom: 1px solid var(--border); }
-  .card-meta span { display: flex; align-items: center; gap: 4px; }
-  .items-header { padding: 10px 18px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); background: var(--surface2); display: grid; grid-template-columns: 1fr auto auto; gap: 14px; }
-  .item-row { padding: 9px 18px; display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; border-top: 1px solid var(--border); font-size: 13px; }
-  .item-row:active { background: var(--surface2); }
-  .item-name { color: var(--text); }
-  .item-qty { color: var(--text3); text-align: center; }
-  .item-price { font-family: 'Space Mono', monospace; color: var(--text2); text-align: right; }
-  .item-price.discount { color: var(--success); }
-  .btn-save { background: var(--success); color: #fff; font-weight: 700; }
-  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
-  .result-actions { display: flex; gap: 10px; margin-top: 14px; align-items: center; }
-  .json-toggle { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 11px; padding: 6px 11px; border-radius: 8px; cursor: pointer; font-family: 'Space Mono', monospace; white-space: nowrap; }
-  .json-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-top: 10px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text2); white-space: pre; overflow-x: auto; line-height: 1.7; display: none; max-height: 300px; overflow-y: auto; }
-  .json-block.show { display: block; }
-  .json-key{color:var(--accent2)} .json-str{color:var(--success)} .json-num{color:var(--accent)} .json-bool{color:#7ec8e3}
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(15, 14, 12, 0.75) 0%, transparent 50%);
+      pointer-events: none;
+    }
 
-  .error-box { background: rgba(224,107,107,0.08); border: 1px solid rgba(224,107,107,0.3); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--error); margin-top: 14px; display: none; white-space: pre-wrap; line-height: 1.6; }
-  .error-box.show { display: block; }
+    .preview-type-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
 
-  /* ── Assign Section ── */
-  .assign-section { border-top: 1px solid var(--border); padding: 14px 18px; }
-  .assign-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 10px; }
+    .badge-physical {
+      background: rgba(240, 192, 64, 0.2);
+      color: var(--accent);
+      border: 1px solid rgba(240, 192, 64, 0.4);
+    }
 
-  .assign-member-list { display: flex; flex-wrap: wrap; gap: 10px; }
-  .assign-member-bubble { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; user-select: none; transition: all 0.2s; opacity: 0.4; }
-  .assign-member-bubble.selected { opacity: 1; }
-  .assign-member-bubble.locked { opacity: 1; }
-  .assign-bubble-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--surface2); border: 2.5px solid transparent; transition: all 0.2s; }
-  .assign-member-bubble.selected .assign-bubble-avatar { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,192,64,0.15); }
-  .assign-member-bubble.locked .assign-bubble-avatar { border-color: var(--success); box-shadow: 0 0 0 3px rgba(109,189,138,0.15); }
-  .assign-bubble-name { font-size: 10px; color: var(--text3); max-width: 50px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .assign-member-bubble.selected .assign-bubble-name { color: var(--text2); }
+    .badge-digital {
+      background: rgba(126, 200, 227, 0.2);
+      color: #7ec8e3;
+      border: 1px solid rgba(126, 200, 227, 0.4);
+    }
 
-  .assign-dock { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-  .assign-dock-avatars { display: flex; gap: 10px; flex-wrap: wrap; }
-  .assign-drag-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: grab; user-select: none; touch-action: none; transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s; }
 
-  .assign-drag-ghost { position: fixed; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 999; pointer-events: none; transform: translate(-50%,-50%) scale(1.2); box-shadow: 0 8px 28px rgba(0,0,0,0.5); opacity: 0.95; }
+    .rotate-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
 
-  .item-row.drop-hover { background: rgba(240,192,64,0.08) !important; box-shadow: inset 0 0 0 1.5px var(--accent); border-radius: 4px; }
+    .rotate-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
 
-  .item-assigned { display: flex; align-items: center; gap: 0; min-width: 20px; }
-  .item-assigned-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-left: -5px; border: 1.5px solid var(--surface); flex-shrink: 0; cursor: pointer; transition: transform 0.15s; }
-  .item-assigned-avatar:first-child { margin-left: 0; }
-  .item-assigned-avatar:active { transform: scale(1.3); }
+    .rotate-btn:active {
+      background: var(--border);
+      transform: scale(0.95);
+    }
 
-  .item-row.has-assign { grid-template-columns: 1fr auto auto minmax(40px, auto); }
-  .items-header.has-assign { grid-template-columns: 1fr auto auto minmax(40px, auto); }
+    .rotate-label {
+      font-size: 11px;
+      color: var(--text3);
+    }
 
-  ::-webkit-scrollbar{width:4px;height:4px} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-</style>
+    .preview-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    /* Buttons */
+    .btn {
+      flex: 1;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: 'Noto Sans SC', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 700;
+    }
+
+    .btn-primary:active {
+      opacity: 0.85;
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text2);
+      border: 1px solid var(--border);
+    }
+
+    /* Loading */
+    .loading-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 14px 0;
+      overflow: hidden;
+      display: none;
+    }
+
+    .loading-bar.show {
+      display: block;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      animation: loading 1.5s ease-in-out infinite;
+      width: 40%;
+    }
+
+    @keyframes loading {
+      0% {
+        transform: translateX(-100%)
+      }
+
+      100% {
+        transform: translateX(350%)
+      }
+    }
+
+    .loading-text {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text2);
+      display: none;
+      margin: 4px 0;
+    }
+
+    .loading-text.show {
+      display: block;
+    }
+
+    /* Result */
+    .result-section {
+      margin-top: 22px;
+      display: none;
+      animation: fadeUp 0.35s ease;
+    }
+
+    .result-section.show {
+      display: block;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .result-header-icon {
+      font-size: 20px;
+    }
+
+    .result-header-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .result-header-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .card-preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-top {
+      padding: 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+    }
+
+    .card-emoji {
+      font-size: 32px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .card-amount-col {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .card-amount {
+      font-family: 'Space Mono', monospace;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .card-per {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .card-meta {
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .items-header {
+      padding: 10px 18px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text3);
+      background: var(--surface2);
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+    }
+
+    .item-row {
+      padding: 9px 18px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .item-row:active {
+      background: var(--surface2);
+    }
+
+    .item-name {
+      color: var(--text);
+    }
+
+    .item-qty {
+      color: var(--text3);
+      text-align: center;
+    }
+
+    .item-price {
+      font-family: 'Space Mono', monospace;
+      color: var(--text2);
+      text-align: right;
+    }
+
+    .item-price.discount {
+      color: var(--success);
+    }
+
+    .btn-save {
+      background: var(--success);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .btn-save:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .result-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    .json-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text3);
+      font-size: 11px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .json-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text2);
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.7;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .json-block.show {
+      display: block;
+    }
+
+    .json-key {
+      color: var(--accent2)
+    }
+
+    .json-str {
+      color: var(--success)
+    }
+
+    .json-num {
+      color: var(--accent)
+    }
+
+    .json-bool {
+      color: #7ec8e3
+    }
+
+    .error-box {
+      background: rgba(224, 107, 107, 0.08);
+      border: 1px solid rgba(224, 107, 107, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+      color: var(--error);
+      margin-top: 14px;
+      display: none;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .error-box.show {
+      display: block;
+    }
+
+    /* ── Assign Section ── */
+    .assign-section {
+      border-top: 1px solid var(--border);
+      padding: 14px 18px;
+    }
+
+    .assign-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
+    .assign-member-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .assign-member-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+      opacity: 0.4;
+    }
+
+    .assign-member-bubble.selected {
+      opacity: 1;
+    }
+
+    .assign-member-bubble.locked {
+      opacity: 1;
+    }
+
+    .assign-bubble-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: var(--surface2);
+      border: 2.5px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .assign-member-bubble.selected .assign-bubble-avatar {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(240, 192, 64, 0.15);
+    }
+
+    .assign-member-bubble.locked .assign-bubble-avatar {
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(109, 189, 138, 0.15);
+    }
+
+    .assign-bubble-name {
+      font-size: 10px;
+      color: var(--text3);
+      max-width: 50px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .assign-member-bubble.selected .assign-bubble-name {
+      color: var(--text2);
+    }
+
+    .assign-dock {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .assign-dock-avatars {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .assign-drag-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+
+    .assign-drag-ghost {
+      position: fixed;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      z-index: 999;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(1.2);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+      opacity: 0.95;
+    }
+
+    .item-row.drop-hover {
+      background: rgba(240, 192, 64, 0.08) !important;
+      box-shadow: inset 0 0 0 1.5px var(--accent);
+      border-radius: 4px;
+    }
+
+    .item-assigned {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-width: 20px;
+    }
+
+    .item-assigned-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      margin-left: -5px;
+      border: 1.5px solid var(--surface);
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    .item-assigned-avatar:first-child {
+      margin-left: 0;
+    }
+
+    .item-assigned-avatar:active {
+      transform: scale(1.3);
+    }
+
+    .item-row.has-assign {
+      grid-template-columns: 1fr auto auto minmax(40px, auto);
+    }
+
+    .items-header.has-assign {
+      grid-template-columns: 1fr auto auto minmax(40px, auto);
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- ── Main scrollable view ── -->
-<div class="main-view">
-  <div class="header">
-    <button class="back-link" onclick="window.location.href='aa-split-v4.html'">← 返回</button>
-    <div class="logo">分一下<span>.scan</span></div>
-    <div class="badge">小票识别</div>
-  </div>
+  <!-- ── Main scrollable view ── -->
+  <div class="main-view">
+    <div class="header">
+      <button class="back-link" onclick="window.location.href='aa-split-v4.html'">← 返回</button>
+      <div class="logo">分一下<span>.scan</span></div>
+      <div class="badge">小票识别</div>
+    </div>
 
-  <div class="type-selector">
-    <div class="type-card active-physical" id="typePhysical" onclick="selectType('physical')">
-      <span class="type-icon">🧾</span>
-      <div class="type-label">实体小票</div>
-      <div class="type-hint">超市、餐厅、加油站<br>手机拍摄纸质收据</div>
-    </div>
-    <div class="type-card" id="typeDigital" onclick="selectType('digital')">
-      <span class="type-icon">📱</span>
-      <div class="type-label">App 截图</div>
-      <div class="type-hint">Uber · Lyft · DoorDash<br>Uber Eats · 外卖订单</div>
-    </div>
-  </div>
-
-  <div class="upload-zone" id="uploadZone"
-       ondragover="handleDragOver(event)" ondragleave="handleDragLeave()"
-       ondrop="handleDrop(event)">
-    <input type="file" accept="image/*" onchange="handleFile(event)" id="fileInput" />
-    <span class="upload-icon" id="uploadIcon">🧾</span>
-    <div class="upload-title" id="uploadTitle">拍照或上传实体小票</div>
-    <div class="upload-hint" id="uploadHint">支持 JPG、PNG、HEIC · 点击选择 / 拖拽</div>
-  </div>
-
-  <div class="preview-section" id="previewSection">
-    <div class="preview-img-wrap">
-      <img id="previewImg" src="" alt="预览" />
-      <div class="preview-overlay"></div>
-      <div class="preview-type-badge badge-physical" id="previewTypeBadge">🧾 实体小票</div>
-    </div>
-    <div class="rotate-bar">
-      <button class="rotate-btn" onclick="rotateImage(-90)" title="逆时针旋转">↺</button>
-      <span class="rotate-label" id="rotateLabel">旋转图片</span>
-      <button class="rotate-btn" onclick="rotateImage(90)" title="顺时针旋转">↻</button>
-    </div>
-    <div class="members-row">
-      <span class="members-label">👥 成员：</span>
-      <input class="members-input" type="text" id="membersInput" placeholder="A, L, W, M（逗号分隔）" value="A, L, W, M" />
-    </div>
-    <div class="preview-actions">
-      <button class="btn btn-primary" id="scanBtn" onclick="scanReceipt()">✨ 开始识别</button>
-      <button class="btn btn-secondary" onclick="resetAll()">重新上传</button>
-    </div>
-  </div>
-
-  <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
-  <div class="loading-text" id="loadingText">正在识别，请稍候…</div>
-  <div class="error-box" id="errorBox"></div>
-
-  <div class="result-section" id="resultSection">
-    <div class="result-header">
-      <span class="result-header-icon">✅</span>
-      <div>
-        <div class="result-header-title">识别成功</div>
-        <div class="result-header-sub" id="resultSubtitle"></div>
+    <div class="type-selector">
+      <div class="type-card active-physical" id="typePhysical" onclick="selectType('physical')">
+        <span class="type-icon">🧾</span>
+        <div class="type-label">实体小票</div>
+        <div class="type-hint">超市、餐厅、加油站<br>手机拍摄纸质收据</div>
+      </div>
+      <div class="type-card" id="typeDigital" onclick="selectType('digital')">
+        <span class="type-icon">📱</span>
+        <div class="type-label">App 截图</div>
+        <div class="type-hint">Uber · Lyft · DoorDash<br>Uber Eats · 外卖订单</div>
       </div>
     </div>
-    <div class="card-preview">
-      <div class="card-top">
-        <div class="card-emoji" id="resIcon">🛒</div>
-        <div class="card-info">
-          <div class="card-title" id="resTitle">—</div>
-          <div class="card-desc" id="resDesc">—</div>
-        </div>
-        <div class="card-amount-col">
-          <div class="card-amount" id="resAmount">—</div>
-          <div class="card-per" id="resPer"></div>
-        </div>
+
+    <div class="upload-zone" id="uploadZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave()"
+      ondrop="handleDrop(event)">
+      <input type="file" accept="image/*" onchange="handleFile(event)" id="fileInput" />
+      <span class="upload-icon" id="uploadIcon">🧾</span>
+      <div class="upload-title" id="uploadTitle">拍照或上传实体小票</div>
+      <div class="upload-hint" id="uploadHint">支持 JPG、PNG、HEIC · 点击选择 / 拖拽</div>
+    </div>
+
+    <div class="preview-section" id="previewSection">
+      <div class="preview-img-wrap">
+        <img id="previewImg" src="" alt="预览" />
+        <div class="preview-overlay"></div>
+        <div class="preview-type-badge badge-physical" id="previewTypeBadge">🧾 实体小票</div>
       </div>
-      <div class="card-meta">
-        <span>📅 <span id="resDate">—</span></span>
-        <span>🏪 <span id="resMerchant">—</span></span>
-        <span>🏷️ <span id="resCategory">—</span></span>
+      <div class="rotate-bar">
+        <button class="rotate-btn" onclick="rotateImage(-90)" title="逆时针旋转">↺</button>
+        <span class="rotate-label" id="rotateLabel">旋转图片</span>
+        <button class="rotate-btn" onclick="rotateImage(90)" title="顺时针旋转">↻</button>
       </div>
-      <div class="items-list" id="itemsList"></div>
-      <!-- Member Assignment Section -->
-      <div class="assign-section" id="assignSection" style="display:none">
-        <div class="assign-member-picker">
-          <div class="assign-label">选择成员</div>
-          <div class="assign-member-list" id="assignMemberList"></div>
-        </div>
-        <div class="assign-dock">
-          <div class="assign-label">拖动头像到商品行分配</div>
-          <div class="assign-dock-avatars" id="assignDockAvatars"></div>
-        </div>
+      <div class="preview-actions">
+        <button class="btn btn-primary" id="scanBtn" onclick="scanReceipt()">✨ 开始识别</button>
+        <button class="btn btn-secondary" onclick="resetAll()">重新上传</button>
       </div>
     </div>
-    <div class="result-actions">
-      <button class="btn btn-save" id="saveBillBtn" onclick="saveToBill()">保存为账单</button>
-      <button class="btn btn-secondary" onclick="resetAll()">重新扫描</button>
+
+    <div class="loading-bar" id="loadingBar">
+      <div class="loading-bar-fill"></div>
     </div>
-    <div class="result-actions" style="margin-top:8px">
-      <button class="json-toggle" onclick="toggleJSON()">{ } 原始数据</button>
+    <div class="loading-text" id="loadingText">正在识别，请稍候…</div>
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="result-section" id="resultSection">
+      <div class="result-header">
+        <span class="result-header-icon">✅</span>
+        <div>
+          <div class="result-header-title">识别成功</div>
+          <div class="result-header-sub" id="resultSubtitle"></div>
+        </div>
+      </div>
+      <div class="card-preview">
+        <div class="card-top">
+          <div class="card-emoji" id="resIcon">🛒</div>
+          <div class="card-info">
+            <div class="card-title" id="resTitle">—</div>
+            <div class="card-desc" id="resDesc">—</div>
+          </div>
+          <div class="card-amount-col">
+            <div class="card-amount" id="resAmount">—</div>
+            <div class="card-per" id="resPer"></div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <span>📅 <span id="resDate">—</span></span>
+          <span>🏪 <span id="resMerchant">—</span></span>
+          <span>🏷️ <span id="resCategory">—</span></span>
+        </div>
+        <div class="items-list" id="itemsList"></div>
+        <!-- Member Assignment Section -->
+        <div class="assign-section" id="assignSection" style="display:none">
+          <div class="assign-member-picker">
+            <div class="assign-label">选择成员</div>
+            <div class="assign-member-list" id="assignMemberList"></div>
+          </div>
+          <div class="assign-dock">
+            <div class="assign-label">拖动头像到商品行分配</div>
+            <div class="assign-dock-avatars" id="assignDockAvatars"></div>
+          </div>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="btn btn-save" id="saveBillBtn" onclick="saveToBill()">保存为账单</button>
+        <button class="btn btn-secondary" onclick="resetAll()">重新扫描</button>
+      </div>
+      <div class="result-actions" style="margin-top:8px">
+        <button class="json-toggle" onclick="toggleJSON()">{ } 原始数据</button>
+      </div>
+      <div class="json-block" id="jsonBlock"></div>
     </div>
-    <div class="json-block" id="jsonBlock"></div>
   </div>
-</div>
 
-<!-- Save toast -->
-<div class="save-toast" id="saveToast"></div>
+  <!-- Save toast -->
+  <div class="save-toast" id="saveToast"></div>
 
-<!-- ══════════════════════════════════════════
+  <!-- ══════════════════════════════════════════
      FULLSCREEN CROP OVERLAY
 ══════════════════════════════════════════ -->
-<div class="crop-overlay" id="cropOverlay">
-  <div class="crop-topbar">
-    <div>
-      <div class="crop-topbar-title">调整裁剪区域</div>
-      <div class="crop-topbar-hint">拖动蓝色角点 · 精准框选小票</div>
+  <div class="crop-overlay" id="cropOverlay">
+    <div class="crop-topbar">
+      <div>
+        <div class="crop-topbar-title">调整裁剪区域</div>
+        <div class="crop-topbar-hint">拖动蓝色角点 · 精准框选小票</div>
+      </div>
+      <button class="crop-cancel-btn" onclick="cancelCrop()">取消</button>
     </div>
-    <button class="crop-cancel-btn" onclick="cancelCrop()">取消</button>
+
+    <div class="crop-canvas-area" id="cropCanvasArea">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+
+    <div class="crop-bottombar">
+      <button class="crop-btn crop-btn-skip" onclick="skipCrop()">跳过裁剪</button>
+      <button class="crop-btn crop-btn-confirm" onclick="confirmCrop()">✂️ 裁剪并继续</button>
+    </div>
   </div>
 
-  <div class="crop-canvas-area" id="cropCanvasArea">
-    <canvas id="cropCanvas"></canvas>
-  </div>
+  <script src="supabase.js"></script>
+  <script>
+    // ════════════════════════════════════════════
+    //  SUPABASE CONFIG
+    // ════════════════════════════════════════════
+    const EDGE_FN_URL = 'https://rpqhceaezxlekrnwpvwt.supabase.co/functions/v1/scan-receipt';
 
-  <div class="crop-bottombar">
-    <button class="crop-btn crop-btn-skip" onclick="skipCrop()">跳过裁剪</button>
-    <button class="crop-btn crop-btn-confirm" onclick="confirmCrop()">✂️ 裁剪并继续</button>
-  </div>
-</div>
+    // ════════════════════════════════════════════
+    //  STATE
+    // ════════════════════════════════════════════
+    let currentFile = null;
+    let croppedBlob = null;
+    let originalImage = null;   // HTMLImageElement (full res)
+    let receiptType = 'physical';
+    let resultData = null;
+    let jsonVisible = false;
+    let rotationDeg = 0;      // current rotation in degrees (0, 90, 180, 270)
+    let baseBlob = null;   // pre-rotation image blob (crop result or original file)
 
-<script src="supabase.js"></script>
-<script>
-// ════════════════════════════════════════════
-//  SUPABASE CONFIG
-// ════════════════════════════════════════════
-const EDGE_FN_URL = 'https://rpqhceaezxlekrnwpvwt.supabase.co/functions/v1/scan-receipt';
+    // Member assignment state
+    let friendsList = [];    // [{id, name, emoji, color}] from Supabase
+    let assignCurrentUser = null; // {id, name, emoji, color}
+    let selectedMembers = [];    // subset of friends + current user
+    let itemAssignments = {};    // { itemIndex: Set<memberId> }
+    let dragState = null;  // { memberId, ghostEl, sourceEl }
 
-// ════════════════════════════════════════════
-//  STATE
-// ════════════════════════════════════════════
-let currentFile   = null;
-let croppedBlob   = null;
-let originalImage = null;   // HTMLImageElement (full res)
-let receiptType   = 'physical';
-let resultData    = null;
-let jsonVisible   = false;
-let rotationDeg   = 0;      // current rotation in degrees (0, 90, 180, 270)
-let baseBlob      = null;   // pre-rotation image blob (crop result or original file)
+    // Crop state — corners stored in FULL IMAGE pixel coords
+    let corners = [];
+    let dragging = -1;
+    const HIT_R = 28;   // hit radius in CSS px (bigger for touch)
 
-// Member assignment state
-let friendsList      = [];    // [{id, name, emoji, color}] from Supabase
-let assignCurrentUser = null; // {id, name, emoji, color}
-let selectedMembers  = [];    // subset of friends + current user
-let itemAssignments  = {};    // { itemIndex: Set<memberId> }
-let dragState        = null;  // { memberId, ghostEl, sourceEl }
+    // Canvas display info (recomputed on resize)
+    let cvs, cctx;
+    let canvasRect = null;  // bounding rect of canvas element
+    let displayScale = 1;     // fullImagePx * displayScale = canvasCSSPx
 
-// Crop state — corners stored in FULL IMAGE pixel coords
-let corners  = [];
-let dragging = -1;
-const HIT_R  = 28;   // hit radius in CSS px (bigger for touch)
+    // ════════════════════════════════════════════
+    //  INIT
+    // ════════════════════════════════════════════
+    window.addEventListener('load', () => {
+      cvs = document.getElementById('cropCanvas');
+      cctx = cvs.getContext('2d');
+      initCropEvents();
+    });
 
-// Canvas display info (recomputed on resize)
-let cvs, cctx;
-let canvasRect    = null;  // bounding rect of canvas element
-let displayScale  = 1;     // fullImagePx * displayScale = canvasCSSPx
-
-// ════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════
-window.addEventListener('load', () => {
-  cvs  = document.getElementById('cropCanvas');
-  cctx = cvs.getContext('2d');
-  initCropEvents();
-});
-
-window.addEventListener('resize', () => {
-  if (document.getElementById('cropOverlay').classList.contains('show') && originalImage) {
-    layoutCanvas(originalImage);
-    drawOverlay();
-  }
-});
-
-// ════════════════════════════════════════════
-//  TYPE SELECTOR
-// ════════════════════════════════════════════
-function selectType(t) {
-  receiptType = t;
-  document.getElementById('typePhysical').className = 'type-card' + (t==='physical'?' active-physical':'');
-  document.getElementById('typeDigital').className  = 'type-card' + (t==='digital' ?' active-digital' :'');
-  if (t === 'physical') {
-    document.getElementById('uploadIcon').textContent  = '🧾';
-    document.getElementById('uploadTitle').textContent = '拍照或上传实体小票';
-    document.getElementById('uploadHint').textContent  = '支持 JPG、PNG、HEIC · 点击选择 / 拖拽';
-  } else {
-    document.getElementById('uploadIcon').textContent  = '📱';
-    document.getElementById('uploadTitle').textContent = '上传 App 订单截图';
-    document.getElementById('uploadHint').textContent  = 'Uber / Lyft / DoorDash / Uber Eats 等';
-  }
-}
-
-// ════════════════════════════════════════════
-//  FILE HANDLING
-// ════════════════════════════════════════════
-function handleFile(e) { const f = e.target.files[0]; if (f) loadImage(f); }
-function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
-function handleDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
-function handleDrop(e) {
-  e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith('image/')) loadImage(f);
-}
-
-function loadImage(file) {
-  currentFile = file; croppedBlob = null; originalImage = null;
-  hideResult(); hideError();
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      originalImage = img;
-      if (receiptType === 'physical') {
-        openCropOverlay(img);
-      } else {
-        showPreview(ev.target.result, false);
+    window.addEventListener('resize', () => {
+      if (document.getElementById('cropOverlay').classList.contains('show') && originalImage) {
+        layoutCanvas(originalImage);
+        drawOverlay();
       }
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+    });
 
-// ════════════════════════════════════════════
-//  EDGE DETECTION  (improved: brightness-based)
-// ════════════════════════════════════════════
-function detectReceiptCorners(img) {
-  // Work on a small downscaled copy for speed
-  const SCALE = Math.min(1, 600 / Math.max(img.width, img.height));
-  const W = Math.round(img.width  * SCALE);
-  const H = Math.round(img.height * SCALE);
-
-  const off = document.createElement('canvas');
-  off.width = W; off.height = H;
-  const oc = off.getContext('2d');
-  oc.drawImage(img, 0, 0, W, H);
-  const px = oc.getImageData(0, 0, W, H).data;
-
-  // Brightness map
-  const bright = new Float32Array(W * H);
-  for (let i = 0; i < W * H; i++)
-    bright[i] = 0.299*px[i*4] + 0.587*px[i*4+1] + 0.114*px[i*4+2];
-
-  // ── Strategy: find the largest contiguous bright region ──
-  // Receipts are usually white/light on a darker background.
-  // We threshold at ~60% brightness, then find bounding box of
-  // the CENTRAL bright blob (ignoring tiny specks at edges).
-
-  // Compute median brightness to set adaptive threshold
-  const sorted = Array.from(bright).sort((a,b)=>a-b);
-  const medianBright = sorted[Math.floor(sorted.length * 0.7)]; // 70th percentile
-  const threshold = Math.min(medianBright * 0.75, 160);
-
-  // Mark bright pixels
-  const mask = new Uint8Array(W * H);
-  for (let i = 0; i < W * H; i++)
-    mask[i] = bright[i] > threshold ? 1 : 0;
-
-  // Find bounding box of bright pixels, but only consider pixels
-  // that are also in the "interior" of bright regions (not single specks).
-  // Simple trick: erode mask slightly by checking neighbourhood.
-  const margin = Math.floor(Math.min(W, H) * 0.03);
-  let x0 = W, y0 = H, x1 = 0, y1 = 0, found = false;
-
-  for (let y = margin; y < H - margin; y++) {
-    for (let x = margin; x < W - margin; x++) {
-      if (!mask[y*W+x]) continue;
-      // Check that at least 5 of 8 neighbours are also bright (connectivity filter)
-      let nb = 0;
-      for (let dy = -2; dy <= 2; dy++)
-        for (let dx = -2; dx <= 2; dx++)
-          if (dx||dy) nb += mask[(y+dy)*W+(x+dx)] || 0;
-      if (nb < 8) continue; // skip isolated bright pixels
-
-      if (x < x0) x0 = x; if (x > x1) x1 = x;
-      if (y < y0) y0 = y; if (y > y1) y1 = y;
-      found = true;
+    // ════════════════════════════════════════════
+    //  TYPE SELECTOR
+    // ════════════════════════════════════════════
+    function selectType(t) {
+      receiptType = t;
+      document.getElementById('typePhysical').className = 'type-card' + (t === 'physical' ? ' active-physical' : '');
+      document.getElementById('typeDigital').className = 'type-card' + (t === 'digital' ? ' active-digital' : '');
+      if (t === 'physical') {
+        document.getElementById('uploadIcon').textContent = '🧾';
+        document.getElementById('uploadTitle').textContent = '拍照或上传实体小票';
+        document.getElementById('uploadHint').textContent = '支持 JPG、PNG、HEIC · 点击选择 / 拖拽';
+      } else {
+        document.getElementById('uploadIcon').textContent = '📱';
+        document.getElementById('uploadTitle').textContent = '上传 App 订单截图';
+        document.getElementById('uploadHint').textContent = 'Uber / Lyft / DoorDash / Uber Eats 等';
+      }
     }
-  }
 
-  // Scale back to full image coordinates
-  const s = 1 / SCALE;
-  const pad = 12; // small inward padding
+    // ════════════════════════════════════════════
+    //  FILE HANDLING
+    // ════════════════════════════════════════════
+    function handleFile(e) { const f = e.target.files[0]; if (f) loadImage(f); }
+    function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+    function handleDragLeave() { document.getElementById('uploadZone').classList.remove('drag-over'); }
+    function handleDrop(e) {
+      e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('image/')) loadImage(f);
+    }
 
-  if (!found || (x1-x0) < W*0.25 || (y1-y0) < H*0.25) {
-    // Fallback: 8% inset
-    const p = 0.08;
-    return [
-      [img.width*p,       img.height*p],
-      [img.width*(1-p),   img.height*p],
-      [img.width*(1-p),   img.height*(1-p)],
-      [img.width*p,       img.height*(1-p)]
-    ];
-  }
+    function loadImage(file) {
+      currentFile = file; croppedBlob = null; originalImage = null;
+      hideResult(); hideError();
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          originalImage = img;
+          if (receiptType === 'physical') {
+            openCropOverlay(img);
+          } else {
+            showPreview(ev.target.result, false);
+          }
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
 
-  return [
-    [(x0+pad)*s, (y0+pad)*s],
-    [(x1-pad)*s, (y0+pad)*s],
-    [(x1-pad)*s, (y1-pad)*s],
-    [(x0+pad)*s, (y1-pad)*s]
-  ];
-}
+    // ════════════════════════════════════════════
+    //  EDGE DETECTION  (improved: brightness-based)
+    // ════════════════════════════════════════════
+    function detectReceiptCorners(img) {
+      // Work on a small downscaled copy for speed
+      const SCALE = Math.min(1, 600 / Math.max(img.width, img.height));
+      const W = Math.round(img.width * SCALE);
+      const H = Math.round(img.height * SCALE);
 
-// ════════════════════════════════════════════
-//  CROP OVERLAY  (fullscreen)
-// ════════════════════════════════════════════
-function openCropOverlay(img) {
-  document.getElementById('cropOverlay').classList.add('show');
-  // Prevent body scroll while crop is open
-  document.body.style.overflow = 'hidden';
+      const off = document.createElement('canvas');
+      off.width = W; off.height = H;
+      const oc = off.getContext('2d');
+      oc.drawImage(img, 0, 0, W, H);
+      const px = oc.getImageData(0, 0, W, H).data;
 
-  // Small delay to let overlay render, then size canvas
-  requestAnimationFrame(() => {
-    layoutCanvas(img);
-    corners = detectReceiptCorners(img);
-    drawOverlay();
-  });
-}
+      // Brightness map
+      const bright = new Float32Array(W * H);
+      for (let i = 0; i < W * H; i++)
+        bright[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2];
 
-function closeCropOverlay() {
-  document.getElementById('cropOverlay').classList.remove('show');
-  document.body.style.overflow = '';
-}
+      // ── Strategy: find the largest contiguous bright region ──
+      // Receipts are usually white/light on a darker background.
+      // We threshold at ~60% brightness, then find bounding box of
+      // the CENTRAL bright blob (ignoring tiny specks at edges).
 
-function cancelCrop() {
-  closeCropOverlay();
-  resetAll();
-}
+      // Compute median brightness to set adaptive threshold
+      const sorted = Array.from(bright).sort((a, b) => a - b);
+      const medianBright = sorted[Math.floor(sorted.length * 0.7)]; // 70th percentile
+      const threshold = Math.min(medianBright * 0.75, 160);
 
-// Size the canvas to fill the available area while preserving aspect ratio
-function layoutCanvas(img) {
-  const area = document.getElementById('cropCanvasArea');
-  const aW = area.clientWidth;
-  const aH = area.clientHeight;
+      // Mark bright pixels
+      const mask = new Uint8Array(W * H);
+      for (let i = 0; i < W * H; i++)
+        mask[i] = bright[i] > threshold ? 1 : 0;
 
-  const imgAspect = img.width / img.height;
-  const areaAspect = aW / aH;
+      // Find bounding box of bright pixels, but only consider pixels
+      // that are also in the "interior" of bright regions (not single specks).
+      // Simple trick: erode mask slightly by checking neighbourhood.
+      const margin = Math.floor(Math.min(W, H) * 0.03);
+      let x0 = W, y0 = H, x1 = 0, y1 = 0, found = false;
 
-  let cW, cH;
-  if (imgAspect > areaAspect) {
-    // Image is wider → fit by width
-    cW = aW;
-    cH = Math.round(aW / imgAspect);
-  } else {
-    // Image is taller → fit by height
-    cH = aH;
-    cW = Math.round(aH * imgAspect);
-  }
+      for (let y = margin; y < H - margin; y++) {
+        for (let x = margin; x < W - margin; x++) {
+          if (!mask[y * W + x]) continue;
+          // Check that at least 5 of 8 neighbours are also bright (connectivity filter)
+          let nb = 0;
+          for (let dy = -2; dy <= 2; dy++)
+            for (let dx = -2; dx <= 2; dx++)
+              if (dx || dy) nb += mask[(y + dy) * W + (x + dx)] || 0;
+          if (nb < 8) continue; // skip isolated bright pixels
 
-  // Canvas internal resolution = display size × device pixel ratio (for sharpness)
-  const dpr = window.devicePixelRatio || 1;
-  cvs.width  = cW * dpr;
-  cvs.height = cH * dpr;
-  cvs.style.width  = cW + 'px';
-  cvs.style.height = cH + 'px';
-  cctx.scale(dpr, dpr);  // scale context so we draw in CSS px units
+          if (x < x0) x0 = x; if (x > x1) x1 = x;
+          if (y < y0) y0 = y; if (y > y1) y1 = y;
+          found = true;
+        }
+      }
 
-  // displayScale: multiply full-image coord by this to get CSS px on canvas
-  displayScale = cW / img.width;
+      // Scale back to full image coordinates
+      const s = 1 / SCALE;
+      const pad = 12; // small inward padding
 
-  canvasRect = null; // will be refreshed on next pointer event
-}
+      if (!found || (x1 - x0) < W * 0.25 || (y1 - y0) < H * 0.25) {
+        // Fallback: 8% inset
+        const p = 0.08;
+        return [
+          [img.width * p, img.height * p],
+          [img.width * (1 - p), img.height * p],
+          [img.width * (1 - p), img.height * (1 - p)],
+          [img.width * p, img.height * (1 - p)]
+        ];
+      }
 
-function getCanvasRect() {
-  if (!canvasRect) canvasRect = cvs.getBoundingClientRect();
-  return canvasRect;
-}
+      return [
+        [(x0 + pad) * s, (y0 + pad) * s],
+        [(x1 - pad) * s, (y0 + pad) * s],
+        [(x1 - pad) * s, (y1 - pad) * s],
+        [(x0 + pad) * s, (y1 - pad) * s]
+      ];
+    }
 
-// Draw the overlay: dim outside, highlight inside, quad border, handles
-function drawOverlay() {
-  const W = cvs.width  / (window.devicePixelRatio || 1);
-  const H = cvs.height / (window.devicePixelRatio || 1);
+    // ════════════════════════════════════════════
+    //  CROP OVERLAY  (fullscreen)
+    // ════════════════════════════════════════════
+    function openCropOverlay(img) {
+      document.getElementById('cropOverlay').classList.add('show');
+      // Prevent body scroll while crop is open
+      document.body.style.overflow = 'hidden';
 
-  cctx.clearRect(0, 0, W, H);
+      // Small delay to let overlay render, then size canvas
+      requestAnimationFrame(() => {
+        layoutCanvas(img);
+        corners = detectReceiptCorners(img);
+        drawOverlay();
+      });
+    }
 
-  // Draw image scaled to canvas CSS size
-  cctx.drawImage(originalImage, 0, 0, W, H);
+    function closeCropOverlay() {
+      document.getElementById('cropOverlay').classList.remove('show');
+      document.body.style.overflow = '';
+    }
 
-  // Map corners (full-image px) → canvas CSS px
-  const pts = corners.map(c => [c[0]*displayScale, c[1]*displayScale]);
+    function cancelCrop() {
+      closeCropOverlay();
+      resetAll();
+    }
 
-  // Dim outside the quad
-  cctx.save();
-  cctx.fillStyle = 'rgba(0,0,0,0.55)';
-  cctx.fillRect(0, 0, W, H);
-  cctx.globalCompositeOperation = 'destination-out';
-  cctx.beginPath();
-  cctx.moveTo(pts[0][0], pts[0][1]);
-  pts.forEach(p => cctx.lineTo(p[0], p[1]));
-  cctx.closePath();
-  cctx.fill();
-  cctx.restore();
+    // Size the canvas to fill the available area while preserving aspect ratio
+    function layoutCanvas(img) {
+      const area = document.getElementById('cropCanvasArea');
+      const aW = area.clientWidth;
+      const aH = area.clientHeight;
 
-  // Redraw image inside quad (un-dimmed)
-  cctx.save();
-  cctx.beginPath();
-  cctx.moveTo(pts[0][0], pts[0][1]);
-  pts.forEach(p => cctx.lineTo(p[0], p[1]));
-  cctx.closePath();
-  cctx.clip();
-  cctx.drawImage(originalImage, 0, 0, W, H);
-  cctx.restore();
+      const imgAspect = img.width / img.height;
+      const areaAspect = aW / aH;
 
-  // Quad border
-  cctx.beginPath();
-  cctx.moveTo(pts[0][0], pts[0][1]);
-  pts.forEach(p => cctx.lineTo(p[0], p[1]));
-  cctx.closePath();
-  cctx.strokeStyle = '#f0c040';
-  cctx.lineWidth = 2.5;
-  cctx.stroke();
+      let cW, cH;
+      if (imgAspect > areaAspect) {
+        // Image is wider → fit by width
+        cW = aW;
+        cH = Math.round(aW / imgAspect);
+      } else {
+        // Image is taller → fit by height
+        cH = aH;
+        cW = Math.round(aH * imgAspect);
+      }
 
-  // Edge lines dashed
-  cctx.setLineDash([6, 4]);
-  cctx.strokeStyle = 'rgba(240,192,64,0.4)';
-  cctx.lineWidth = 1;
-  cctx.beginPath();
-  cctx.moveTo(pts[0][0], pts[0][1]);
-  pts.forEach(p => cctx.lineTo(p[0], p[1]));
-  cctx.closePath();
-  cctx.stroke();
-  cctx.setLineDash([]);
+      // Canvas internal resolution = display size × device pixel ratio (for sharpness)
+      const dpr = window.devicePixelRatio || 1;
+      cvs.width = cW * dpr;
+      cvs.height = cH * dpr;
+      cvs.style.width = cW + 'px';
+      cvs.style.height = cH + 'px';
+      cctx.scale(dpr, dpr);  // scale context so we draw in CSS px units
 
-  // Corner handles
-  pts.forEach(([x, y]) => {
-    // Outer ring
-    cctx.beginPath();
-    cctx.arc(x, y, 14, 0, Math.PI*2);
-    cctx.fillStyle = 'rgba(126,200,227,0.25)';
-    cctx.fill();
-    // Inner dot
-    cctx.beginPath();
-    cctx.arc(x, y, 8, 0, Math.PI*2);
-    cctx.fillStyle = '#7ec8e3';
-    cctx.fill();
-    cctx.strokeStyle = '#fff';
-    cctx.lineWidth = 2;
-    cctx.stroke();
-  });
-}
+      // displayScale: multiply full-image coord by this to get CSS px on canvas
+      displayScale = cW / img.width;
 
-// ── Pointer events ─────────────────────────────────────
-function initCropEvents() {
-  cvs.addEventListener('mousedown',  onDown);
-  cvs.addEventListener('mousemove',  onMove);
-  cvs.addEventListener('mouseup',    onUp);
-  cvs.addEventListener('mouseleave', onUp);
-  cvs.addEventListener('touchstart', e=>{e.preventDefault(); canvasRect=null; onDown(e.touches[0]);}, {passive:false});
-  cvs.addEventListener('touchmove',  e=>{e.preventDefault(); onMove(e.touches[0]);}, {passive:false});
-  cvs.addEventListener('touchend',   e=>{e.preventDefault(); onUp();}, {passive:false});
-}
+      canvasRect = null; // will be refreshed on next pointer event
+    }
 
-// Convert pointer event → full-image pixel coords
-function ptrToImgCoords(e) {
-  const r = getCanvasRect();
-  // CSS px within canvas
-  const cx = e.clientX - r.left;
-  const cy = e.clientY - r.top;
-  // Full image px
-  return [cx / displayScale, cy / displayScale];
-}
+    function getCanvasRect() {
+      if (!canvasRect) canvasRect = cvs.getBoundingClientRect();
+      return canvasRect;
+    }
 
-// Convert pointer event → canvas CSS px (for hit testing)
-function ptrToCSSCoords(e) {
-  const r = getCanvasRect();
-  return [e.clientX - r.left, e.clientY - r.top];
-}
+    // Draw the overlay: dim outside, highlight inside, quad border, handles
+    function drawOverlay() {
+      const W = cvs.width / (window.devicePixelRatio || 1);
+      const H = cvs.height / (window.devicePixelRatio || 1);
 
-function onDown(e) {
-  if (!corners.length) return;
-  canvasRect = null; // refresh rect
-  const [cx, cy] = ptrToCSSCoords(e);
-  dragging = -1;
-  for (let i = 0; i < 4; i++) {
-    const hx = corners[i][0] * displayScale;
-    const hy = corners[i][1] * displayScale;
-    const dx = cx - hx, dy = cy - hy;
-    if (Math.sqrt(dx*dx + dy*dy) < HIT_R) { dragging = i; break; }
-  }
-}
+      cctx.clearRect(0, 0, W, H);
 
-function onMove(e) {
-  if (dragging < 0) return;
-  const [ix, iy] = ptrToImgCoords(e);
-  corners[dragging] = [
-    Math.max(0, Math.min(originalImage.width,  ix)),
-    Math.max(0, Math.min(originalImage.height, iy))
-  ];
-  drawOverlay();
-}
+      // Draw image scaled to canvas CSS size
+      cctx.drawImage(originalImage, 0, 0, W, H);
 
-function onUp() { dragging = -1; }
+      // Map corners (full-image px) → canvas CSS px
+      const pts = corners.map(c => [c[0] * displayScale, c[1] * displayScale]);
 
-// ── Crop confirm ───────────────────────────────────────
-function confirmCrop() {
-  if (!corners.length || !originalImage) return;
+      // Dim outside the quad
+      cctx.save();
+      cctx.fillStyle = 'rgba(0,0,0,0.55)';
+      cctx.fillRect(0, 0, W, H);
+      cctx.globalCompositeOperation = 'destination-out';
+      cctx.beginPath();
+      cctx.moveTo(pts[0][0], pts[0][1]);
+      pts.forEach(p => cctx.lineTo(p[0], p[1]));
+      cctx.closePath();
+      cctx.fill();
+      cctx.restore();
 
-  // Work in FULL image resolution
-  const xs = corners.map(c=>c[0]), ys = corners.map(c=>c[1]);
-  const x0 = Math.max(0, Math.min(...xs));
-  const y0 = Math.max(0, Math.min(...ys));
-  const x1 = Math.min(originalImage.width,  Math.max(...xs));
-  const y1 = Math.min(originalImage.height, Math.max(...ys));
-  const cw = x1 - x0, ch = y1 - y0;
+      // Redraw image inside quad (un-dimmed)
+      cctx.save();
+      cctx.beginPath();
+      cctx.moveTo(pts[0][0], pts[0][1]);
+      pts.forEach(p => cctx.lineTo(p[0], p[1]));
+      cctx.closePath();
+      cctx.clip();
+      cctx.drawImage(originalImage, 0, 0, W, H);
+      cctx.restore();
 
-  const out = document.createElement('canvas');
-  out.width = cw; out.height = ch;
-  const oc = out.getContext('2d');
+      // Quad border
+      cctx.beginPath();
+      cctx.moveTo(pts[0][0], pts[0][1]);
+      pts.forEach(p => cctx.lineTo(p[0], p[1]));
+      cctx.closePath();
+      cctx.strokeStyle = '#f0c040';
+      cctx.lineWidth = 2.5;
+      cctx.stroke();
 
-  // Clip to quad, draw full-res image offset
-  oc.beginPath();
-  oc.moveTo(corners[0][0]-x0, corners[0][1]-y0);
-  corners.forEach(c => oc.lineTo(c[0]-x0, c[1]-y0));
-  oc.closePath(); oc.clip();
-  oc.drawImage(originalImage, -x0, -y0);
+      // Edge lines dashed
+      cctx.setLineDash([6, 4]);
+      cctx.strokeStyle = 'rgba(240,192,64,0.4)';
+      cctx.lineWidth = 1;
+      cctx.beginPath();
+      cctx.moveTo(pts[0][0], pts[0][1]);
+      pts.forEach(p => cctx.lineTo(p[0], p[1]));
+      cctx.closePath();
+      cctx.stroke();
+      cctx.setLineDash([]);
 
-  out.toBlob(blob => {
-    croppedBlob = blob;
-    baseBlob = blob;
-    closeCropOverlay();
-    showPreview(URL.createObjectURL(blob), true);
-  }, 'image/jpeg', 0.92);
-}
+      // Corner handles
+      pts.forEach(([x, y]) => {
+        // Outer ring
+        cctx.beginPath();
+        cctx.arc(x, y, 14, 0, Math.PI * 2);
+        cctx.fillStyle = 'rgba(126,200,227,0.25)';
+        cctx.fill();
+        // Inner dot
+        cctx.beginPath();
+        cctx.arc(x, y, 8, 0, Math.PI * 2);
+        cctx.fillStyle = '#7ec8e3';
+        cctx.fill();
+        cctx.strokeStyle = '#fff';
+        cctx.lineWidth = 2;
+        cctx.stroke();
+      });
+    }
 
-function skipCrop() {
-  croppedBlob = null;
-  closeCropOverlay();
-  const reader = new FileReader();
-  reader.onload = e => showPreview(e.target.result, false);
-  reader.readAsDataURL(currentFile);
-}
+    // ── Pointer events ─────────────────────────────────────
+    function initCropEvents() {
+      cvs.addEventListener('mousedown', onDown);
+      cvs.addEventListener('mousemove', onMove);
+      cvs.addEventListener('mouseup', onUp);
+      cvs.addEventListener('mouseleave', onUp);
+      cvs.addEventListener('touchstart', e => { e.preventDefault(); canvasRect = null; onDown(e.touches[0]); }, { passive: false });
+      cvs.addEventListener('touchmove', e => { e.preventDefault(); onMove(e.touches[0]); }, { passive: false });
+      cvs.addEventListener('touchend', e => { e.preventDefault(); onUp(); }, { passive: false });
+    }
 
-// ── Preview ────────────────────────────────────────────
-function showPreview(src, wasCropped) {
-  document.getElementById('previewImg').src = src;
-  const badge = document.getElementById('previewTypeBadge');
-  if (receiptType === 'physical') {
-    badge.textContent = wasCropped ? '🧾 实体小票 · 已裁剪' : '🧾 实体小票';
-    badge.className = 'preview-type-badge badge-physical';
-  } else {
-    badge.textContent = '📱 App 截图';
-    badge.className = 'preview-type-badge badge-digital';
-  }
-  document.getElementById('previewSection').classList.add('show');
-}
+    // Convert pointer event → full-image pixel coords
+    function ptrToImgCoords(e) {
+      const r = getCanvasRect();
+      // CSS px within canvas
+      const cx = e.clientX - r.left;
+      const cy = e.clientY - r.top;
+      // Full image px
+      return [cx / displayScale, cy / displayScale];
+    }
 
-function resetAll() {
-  currentFile = null; croppedBlob = null; baseBlob = null; originalImage = null;
-  corners = []; dragging = -1; canvasRect = null; rotationDeg = 0;
-  document.getElementById('previewSection').classList.remove('show');
-  document.getElementById('fileInput').value = '';
-  hideResult(); hideError();
-}
+    // Convert pointer event → canvas CSS px (for hit testing)
+    function ptrToCSSCoords(e) {
+      const r = getCanvasRect();
+      return [e.clientX - r.left, e.clientY - r.top];
+    }
 
-// ════════════════════════════════════════════
-//  IMAGE ROTATION
-// ════════════════════════════════════════════
-function rotateImage(deg) {
-  rotationDeg = (rotationDeg + deg + 360) % 360;
-  const label = document.getElementById('rotateLabel');
-  label.textContent = rotationDeg === 0 ? '旋转图片' : `已旋转 ${rotationDeg}°`;
+    function onDown(e) {
+      if (!corners.length) return;
+      canvasRect = null; // refresh rect
+      const [cx, cy] = ptrToCSSCoords(e);
+      dragging = -1;
+      for (let i = 0; i < 4; i++) {
+        const hx = corners[i][0] * displayScale;
+        const hy = corners[i][1] * displayScale;
+        const dx = cx - hx, dy = cy - hy;
+        if (Math.sqrt(dx * dx + dy * dy) < HIT_R) { dragging = i; break; }
+      }
+    }
 
-  // Apply visual rotation to preview image
-  const img = document.getElementById('previewImg');
-  img.style.transform = `rotate(${rotationDeg}deg)`;
+    function onMove(e) {
+      if (dragging < 0) return;
+      const [ix, iy] = ptrToImgCoords(e);
+      corners[dragging] = [
+        Math.max(0, Math.min(originalImage.width, ix)),
+        Math.max(0, Math.min(originalImage.height, iy))
+      ];
+      drawOverlay();
+    }
 
-  // Rebuild the rotated blob so scanReceipt sends the correct orientation
-  // Always rotate from baseBlob (pre-rotation source) to avoid compounding
-  const source = baseBlob || currentFile;
-  if (!source) return;
+    function onUp() { dragging = -1; }
 
-  if (rotationDeg === 0) {
-    // No rotation — restore original
-    croppedBlob = baseBlob; // null if no crop, scanReceipt falls back to currentFile
-    return;
-  }
+    // ── Crop confirm ───────────────────────────────────────
+    function confirmCrop() {
+      if (!corners.length || !originalImage) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const tmpImg = new Image();
-    tmpImg.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const swap = rotationDeg === 90 || rotationDeg === 270;
-      canvas.width  = swap ? tmpImg.height : tmpImg.width;
-      canvas.height = swap ? tmpImg.width  : tmpImg.height;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(rotationDeg * Math.PI / 180);
-      ctx.drawImage(tmpImg, -tmpImg.width / 2, -tmpImg.height / 2);
-      canvas.toBlob(blob => { croppedBlob = blob; }, 'image/jpeg', 0.92);
-    };
-    tmpImg.src = reader.result;
-  };
-  reader.readAsDataURL(source);
-}
+      // Work in FULL image resolution
+      const xs = corners.map(c => c[0]), ys = corners.map(c => c[1]);
+      const x0 = Math.max(0, Math.min(...xs));
+      const y0 = Math.max(0, Math.min(...ys));
+      const x1 = Math.min(originalImage.width, Math.max(...xs));
+      const y1 = Math.min(originalImage.height, Math.max(...ys));
+      const cw = x1 - x0, ch = y1 - y0;
 
-// ════════════════════════════════════════════
-//  PROMPTS
-// ════════════════════════════════════════════
-function buildPrompt(type, members, n) {
-  const tpl = `{
+      const out = document.createElement('canvas');
+      out.width = cw; out.height = ch;
+      const oc = out.getContext('2d');
+
+      // Clip to quad, draw full-res image offset
+      oc.beginPath();
+      oc.moveTo(corners[0][0] - x0, corners[0][1] - y0);
+      corners.forEach(c => oc.lineTo(c[0] - x0, c[1] - y0));
+      oc.closePath(); oc.clip();
+      oc.drawImage(originalImage, -x0, -y0);
+
+      out.toBlob(blob => {
+        croppedBlob = blob;
+        baseBlob = blob;
+        closeCropOverlay();
+        showPreview(URL.createObjectURL(blob), true);
+      }, 'image/jpeg', 0.92);
+    }
+
+    function skipCrop() {
+      croppedBlob = null;
+      closeCropOverlay();
+      const reader = new FileReader();
+      reader.onload = e => showPreview(e.target.result, false);
+      reader.readAsDataURL(currentFile);
+    }
+
+    // ── Preview ────────────────────────────────────────────
+    function showPreview(src, wasCropped) {
+      document.getElementById('previewImg').src = src;
+      const badge = document.getElementById('previewTypeBadge');
+      if (receiptType === 'physical') {
+        badge.textContent = wasCropped ? '🧾 实体小票 · 已裁剪' : '🧾 实体小票';
+        badge.className = 'preview-type-badge badge-physical';
+      } else {
+        badge.textContent = '📱 App 截图';
+        badge.className = 'preview-type-badge badge-digital';
+      }
+      document.getElementById('previewSection').classList.add('show');
+    }
+
+    function resetAll() {
+      currentFile = null; croppedBlob = null; baseBlob = null; originalImage = null;
+      corners = []; dragging = -1; canvasRect = null; rotationDeg = 0;
+      document.getElementById('previewSection').classList.remove('show');
+      document.getElementById('fileInput').value = '';
+      hideResult(); hideError();
+    }
+
+    // ════════════════════════════════════════════
+    //  IMAGE ROTATION
+    // ════════════════════════════════════════════
+    function rotateImage(deg) {
+      rotationDeg = (rotationDeg + deg + 360) % 360;
+      const label = document.getElementById('rotateLabel');
+      label.textContent = rotationDeg === 0 ? '旋转图片' : `已旋转 ${rotationDeg}°`;
+
+      // Apply visual rotation to preview image
+      const img = document.getElementById('previewImg');
+      img.style.transform = `rotate(${rotationDeg}deg)`;
+
+      // Rebuild the rotated blob so scanReceipt sends the correct orientation
+      // Always rotate from baseBlob (pre-rotation source) to avoid compounding
+      const source = baseBlob || currentFile;
+      if (!source) return;
+
+      if (rotationDeg === 0) {
+        // No rotation — restore original
+        croppedBlob = baseBlob; // null if no crop, scanReceipt falls back to currentFile
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const tmpImg = new Image();
+        tmpImg.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const swap = rotationDeg === 90 || rotationDeg === 270;
+          canvas.width = swap ? tmpImg.height : tmpImg.width;
+          canvas.height = swap ? tmpImg.width : tmpImg.height;
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(rotationDeg * Math.PI / 180);
+          ctx.drawImage(tmpImg, -tmpImg.width / 2, -tmpImg.height / 2);
+          canvas.toBlob(blob => { croppedBlob = blob; }, 'image/jpeg', 0.92);
+        };
+        tmpImg.src = reader.result;
+      };
+      reader.readAsDataURL(source);
+    }
+
+    // ════════════════════════════════════════════
+    //  PROMPTS
+    // ════════════════════════════════════════════
+    function buildPrompt(type, members, n) {
+      const tpl = `{
   "icon": "<最合适的消费类别 emoji>",
-  "title": "<消费场所/类型简短标题>",
+  "title": "<商户名+消费类型，如'海底捞外卖'、'Costco采购'，优先用商户名而非泛泛分类>",
   "desc": "<商户名 · 消费描述>",
   "amount": "¥ {实际TOTAL金额}",
   "per": "¥ {TOTAL÷${n}的结果}",
@@ -900,8 +1545,8 @@ function buildPrompt(type, members, n) {
   "rawTotal": <TOTAL 数字，必须是含税最终金额>
 }`;
 
-  if (type === 'physical') {
-    return `你是专业的实体小票 OCR 识别助手，处理超市、餐厅等纸质收据照片。
+      if (type === 'physical') {
+        return `你是专业的实体小票 OCR 识别助手，处理超市、餐厅等纸质收据照片。
 
 图片可能有透视变形、光线不均、折痕，请仔细识别所有可见文字。
 
@@ -930,8 +1575,8 @@ ${tpl}
 - 日期统一转为"M月D日"
 - 提取所有商品行，一条不漏，包括折扣行（price 为负数）
 - 返回纯 JSON，不要有任何其他文字`;
-  } else {
-    return `你是专业的 App 订单截图识别助手，处理打车、外卖等数字收据截图。
+      } else {
+        return `你是专业的 App 订单截图识别助手，处理打车、外卖等数字收据截图。
 
 严格按以下 JSON 格式输出，不含任何额外文字或 markdown：
 
@@ -947,388 +1592,408 @@ ${tpl}
 - 外卖类（DoorDash/Uber Eats）：merchant=餐厅名，desc="平台·餐厅名"，每道菜名写"英文全称 (中文翻译)"+配送费+服务费+税+小费，折扣负数，category=dining
 - 所有英文菜名/商品名都附上中文翻译，格式："English Name (中文)"
 - 返回纯 JSON，不要有任何其他文字`;
-  }
-}
+      }
+    }
 
-// ════════════════════════════════════════════
-//  MEMBER ASSIGNMENT
-// ════════════════════════════════════════════
-async function initAssignSection() {
-  try {
-    assignCurrentUser = await DB.getCurrentUser();
-    if (!assignCurrentUser) return;
+    // ════════════════════════════════════════════
+    //  MEMBER ASSIGNMENT
+    // ════════════════════════════════════════════
+    async function initAssignSection() {
+      try {
+        assignCurrentUser = await DB.getCurrentUser();
+        if (!assignCurrentUser) return;
 
-    const { data: profile } = await DB.sb
-      .from('users')
-      .select('id, name, emoji, color')
-      .eq('id', assignCurrentUser.id)
-      .single();
-    if (profile) assignCurrentUser = { ...assignCurrentUser, ...profile };
+        const { data: profile } = await DB.sb
+          .from('users')
+          .select('id, name, emoji, color')
+          .eq('id', assignCurrentUser.id)
+          .single();
+        if (profile) assignCurrentUser = { ...assignCurrentUser, ...profile };
 
-    friendsList = await DB.getFriends() || [];
-    selectedMembers = [assignCurrentUser];
-    resetAssignments();
-    renderMemberPicker();
-    renderDock();
-    renderAllItemAssignments();
-    document.getElementById('assignSection').style.display = '';
-  } catch (e) {
-    console.error('initAssignSection error:', e);
-  }
-}
+        // 直接查 users 表拿所有成员（和主页成员列表一致），不依赖 friendships
+        const { data: allUsers } = await DB.sb
+          .from('users')
+          .select('id, name, emoji, color')
+          .neq('id', assignCurrentUser.id)
+          .order('created_at', { ascending: true });
+        friendsList = allUsers || [];
+        selectedMembers = [assignCurrentUser];
+        resetAssignments();
+        renderMemberPicker();
+        renderDock();
+        renderAllItemAssignments();
+        document.getElementById('assignSection').style.display = '';
+      } catch (e) {
+        console.error('initAssignSection error:', e);
+      }
+    }
 
-function resetAssignments() {
-  itemAssignments = {};
-  if (!resultData || !resultData.items) return;
-  const ids = selectedMembers.map(m => m.id);
-  resultData.items.forEach((_, idx) => { itemAssignments[idx] = new Set(ids); });
-}
+    function resetAssignments() {
+      itemAssignments = {};
+      if (!resultData || !resultData.items) return;
+      const ids = selectedMembers.map(m => m.id);
+      resultData.items.forEach((_, idx) => { itemAssignments[idx] = new Set(ids); });
+    }
 
-function renderMemberPicker() {
-  const el = document.getElementById('assignMemberList');
-  const all = [assignCurrentUser, ...friendsList];
-  el.innerHTML = all.map(m => {
-    const isSel = selectedMembers.some(s => s.id === m.id);
-    const isMe = m.id === assignCurrentUser.id;
-    const cls = 'assign-member-bubble' + (isSel ? ' selected' : '') + (isMe ? ' locked' : '');
-    return `<div class="${cls}" data-mid="${m.id}" onclick="toggleMemberSel('${m.id}')">
-      <div class="assign-bubble-avatar" style="background:${m.color||'var(--surface2)'}">${m.emoji||'😀'}</div>
-      <div class="assign-bubble-name">${escHtml(m.name||'我')}</div>
+    function renderMemberPicker() {
+      const el = document.getElementById('assignMemberList');
+      const all = [assignCurrentUser, ...friendsList];
+      el.innerHTML = all.map(m => {
+        const isSel = selectedMembers.some(s => s.id === m.id);
+        const cls = 'assign-member-bubble' + (isSel ? ' selected' : '');
+        return `<div class="${cls}" data-mid="${m.id}" onclick="toggleMemberSel('${m.id}')">
+      <div class="assign-bubble-avatar" style="background:${m.color || 'var(--surface2)'}">${m.emoji || '😀'}</div>
+      <div class="assign-bubble-name">${escHtml(m.name || '我')}</div>
     </div>`;
-  }).join('');
-}
-
-function toggleMemberSel(mid) {
-  if (assignCurrentUser && mid === assignCurrentUser.id) return;
-  const idx = selectedMembers.findIndex(m => m.id === mid);
-  if (idx >= 0) {
-    selectedMembers.splice(idx, 1);
-    Object.values(itemAssignments).forEach(s => s.delete(mid));
-  } else {
-    const member = friendsList.find(f => f.id === mid);
-    if (member) {
-      selectedMembers.push(member);
-      Object.values(itemAssignments).forEach(s => s.add(mid));
-    }
-  }
-  renderMemberPicker();
-  renderDock();
-  renderAllItemAssignments();
-  updatePerAmount();
-}
-
-function renderDock() {
-  const el = document.getElementById('assignDockAvatars');
-  el.innerHTML = selectedMembers.map(m =>
-    `<div class="assign-drag-avatar" data-mid="${m.id}" style="background:${m.color||'var(--surface2)'}">${m.emoji||'😀'}</div>`
-  ).join('');
-  el.querySelectorAll('.assign-drag-avatar').forEach(av => {
-    av.addEventListener('mousedown', onAssignDragStart);
-    av.addEventListener('touchstart', onAssignDragStart, { passive: false });
-  });
-}
-
-// ── Drag-and-drop ──
-function onAssignDragStart(e) {
-  e.preventDefault();
-  const t = e.touches ? e.touches[0] : e;
-  const src = e.currentTarget;
-  const mid = src.dataset.mid;
-
-  const ghost = document.createElement('div');
-  ghost.className = 'assign-drag-ghost';
-  ghost.style.background = src.style.background;
-  ghost.textContent = src.textContent;
-  ghost.style.left = t.clientX + 'px';
-  ghost.style.top = t.clientY + 'px';
-  document.body.appendChild(ghost);
-
-  src.style.transform = 'scale(0.75)';
-  src.style.opacity = '0.35';
-
-  dragState = { memberId: mid, ghostEl: ghost, sourceEl: src };
-  document.addEventListener('mousemove', onAssignDragMove);
-  document.addEventListener('mouseup', onAssignDragEnd);
-  document.addEventListener('touchmove', onAssignDragMove, { passive: false });
-  document.addEventListener('touchend', onAssignDragEnd);
-}
-
-function onAssignDragMove(e) {
-  if (!dragState) return;
-  e.preventDefault();
-  const t = e.touches ? e.touches[0] : e;
-  dragState.ghostEl.style.left = t.clientX + 'px';
-  dragState.ghostEl.style.top = t.clientY + 'px';
-
-  document.querySelectorAll('.item-row').forEach(row => {
-    const r = row.getBoundingClientRect();
-    const over = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
-    row.classList.toggle('drop-hover', over);
-  });
-}
-
-function onAssignDragEnd(e) {
-  if (!dragState) return;
-  const t = e.changedTouches ? e.changedTouches[0] : e;
-
-  // Find hovered row
-  let targetIdx = -1;
-  document.querySelectorAll('.item-row').forEach(row => {
-    if (row.classList.contains('drop-hover')) {
-      targetIdx = parseInt(row.dataset.itemIdx);
-      row.classList.remove('drop-hover');
-    }
-  });
-
-  if (targetIdx >= 0) {
-    toggleItemMember(targetIdx, dragState.memberId);
-  }
-
-  // Animate ghost disappearing
-  const ghost = dragState.ghostEl;
-  ghost.style.transition = 'transform 0.2s, opacity 0.2s';
-  ghost.style.transform = 'translate(-50%,-50%) scale(0.3)';
-  ghost.style.opacity = '0';
-  setTimeout(() => ghost.remove(), 200);
-
-  dragState.sourceEl.style.transform = '';
-  dragState.sourceEl.style.opacity = '';
-
-  document.removeEventListener('mousemove', onAssignDragMove);
-  document.removeEventListener('mouseup', onAssignDragEnd);
-  document.removeEventListener('touchmove', onAssignDragMove);
-  document.removeEventListener('touchend', onAssignDragEnd);
-  dragState = null;
-}
-
-function toggleItemMember(idx, mid) {
-  const set = itemAssignments[idx];
-  if (!set) return;
-  if (set.has(mid)) {
-    if (set.size <= 1) return; // can't remove last member
-    set.delete(mid);
-  } else {
-    set.add(mid);
-  }
-  renderItemAssignment(idx);
-  updatePerAmount();
-}
-
-function renderAllItemAssignments() {
-  document.querySelectorAll('.item-assigned').forEach(el => {
-    renderItemAssignment(parseInt(el.dataset.itemIdx));
-  });
-}
-
-function renderItemAssignment(idx) {
-  const el = document.querySelector(`.item-assigned[data-item-idx="${idx}"]`);
-  if (!el) return;
-  const memberIds = itemAssignments[idx] || new Set();
-  el.innerHTML = [...memberIds].map(mid => {
-    const m = selectedMembers.find(s => s.id === mid) || assignCurrentUser || {};
-    return `<div class="item-assigned-avatar" onclick="toggleItemMember(${idx},'${mid}')" style="background:${m.color||'var(--surface2)'}" title="${escHtml(m.name||'')}">${m.emoji||'😀'}</div>`;
-  }).join('');
-}
-
-function updatePerAmount() {
-  if (!resultData) return;
-  const total = resultData.rawTotal || 0;
-  const n = selectedMembers.length || 1;
-  document.getElementById('resPer').textContent = `每人 ¥ ${(total / n).toFixed(2)}`;
-}
-
-// ════════════════════════════════════════════
-//  SCAN (via Supabase Edge Function)
-// ════════════════════════════════════════════
-async function scanReceipt() {
-  if (!currentFile) { showError('请先上传图片'); return; }
-
-  const members = document.getElementById('membersInput').value.split(',').map(s=>s.trim()).filter(Boolean);
-  const n = members.length || 4;
-
-  setLoading(true); hideResult(); hideError();
-
-  try {
-    const src  = croppedBlob || currentFile;
-    const b64  = await toBase64(src);
-    const mime = croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg');
-    const prompt = buildPrompt(receiptType, members, n);
-
-    // 通过 Edge Function 调用 Claude（API Key 安全存放在服务器端）
-    const res = await fetch(EDGE_FN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image_base64: b64,
-        media_type: mime,
-        prompt: prompt,
-      })
-    });
-
-    if (!res.ok) { const e=await res.json(); throw new Error(e.error||`API 错误 ${res.status}`); }
-    const data = await res.json();
-    let txt = data.content.map(c=>c.text||'').join('').trim();
-    txt = txt.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim();
-    const parsed = JSON.parse(txt);
-    resultData = parsed;
-    renderResult(parsed);
-
-  } catch(err) {
-    console.error(err);
-    showError(err.message.includes('JSON') ? `JSON 解析失败\n${err.message}` : `识别失败：${err.message}`);
-  } finally {
-    setLoading(false);
-  }
-}
-
-// ════════════════════════════════════════════
-//  SAVE TO BILL (上传图片 + 存扫描记录 + 创建账单)
-// ════════════════════════════════════════════
-async function saveToBill() {
-  if (!resultData) return;
-
-  const btn = document.getElementById('saveBillBtn');
-  btn.disabled = true;
-  btn.textContent = '保存中…';
-
-  try {
-    const user = await DB.getCurrentUser();
-    if (!user) {
-      showError('请先登录');
-      btn.disabled = false;
-      btn.textContent = '保存为账单';
-      return;
+      }).join('');
     }
 
-    // 1. 上传图片到 Storage
-    const imageBlob = croppedBlob || currentFile;
-    const ext = croppedBlob ? 'jpg' : (currentFile.name.split('.').pop() || 'jpg');
-    const imagePath = `${user.id}/${Date.now()}.${ext}`;
+    function toggleMemberSel(mid) {
+      const idx = selectedMembers.findIndex(m => m.id === mid);
+      if (idx >= 0) {
+        if (selectedMembers.length <= 1) return; // 至少保留一个成员
+        selectedMembers.splice(idx, 1);
+        Object.values(itemAssignments).forEach(s => s.delete(mid));
+      } else {
+        const all = [assignCurrentUser, ...friendsList];
+        const member = all.find(f => f.id === mid);
+        if (member) {
+          selectedMembers.push(member);
+          Object.values(itemAssignments).forEach(s => s.add(mid));
+        }
+      }
+      renderMemberPicker();
+      renderDock();
+      renderAllItemAssignments();
+      updatePerAmount();
+    }
 
-    const { error: uploadErr } = await DB.sb
-      .storage
-      .from('receipt-images')
-      .upload(imagePath, imageBlob, {
-        contentType: croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg'),
+    function renderDock() {
+      const el = document.getElementById('assignDockAvatars');
+      el.innerHTML = selectedMembers.map(m =>
+        `<div class="assign-drag-avatar" data-mid="${m.id}" style="background:${m.color || 'var(--surface2)'}">${m.emoji || '😀'}</div>`
+      ).join('');
+      el.querySelectorAll('.assign-drag-avatar').forEach(av => {
+        av.addEventListener('mousedown', onAssignDragStart);
+        av.addEventListener('touchstart', onAssignDragStart, { passive: false });
       });
-    if (uploadErr) throw new Error('图片上传失败: ' + uploadErr.message);
+    }
 
-    // 2. 解析日期 → ISO 格式
-    const dateStr = resultData.date || '';
-    const dateMatch = dateStr.match(/(\d+)月(\d+)日/);
-    const isoDate = dateMatch
-      ? `${new Date().getFullYear()}-${String(dateMatch[1]).padStart(2,'0')}-${String(dateMatch[2]).padStart(2,'0')}`
-      : new Date().toISOString().slice(0, 10);
+    // ── Drag-and-drop ──
+    function onAssignDragStart(e) {
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      const src = e.currentTarget;
+      const mid = src.dataset.mid;
 
-    // 3. 创建账单 (bills + bill_items)
-    const items = (resultData.items || []).map(item => ({
-      name: item.name,
-      price: Number(item.price),
-      qty: item.qty || 1,
-      member_ids: [user.id],
-    }));
+      const ghost = document.createElement('div');
+      ghost.className = 'assign-drag-ghost';
+      ghost.style.background = src.style.background;
+      ghost.textContent = src.textContent;
+      ghost.style.left = t.clientX + 'px';
+      ghost.style.top = t.clientY + 'px';
+      document.body.appendChild(ghost);
 
-    const ICON_COLORS = DB.ICON_COLORS || {};
-    const billId = await DB.createBill({
-      icon: resultData.icon || '🧾',
-      title: resultData.title || '扫描账单',
-      description: resultData.desc || resultData.merchant || '',
-      date: isoDate,
-      color: ICON_COLORS[resultData.icon] || 'linear-gradient(135deg,#8E8E93,#636366)',
-      items: items,
-    });
+      src.style.transform = 'scale(0.75)';
+      src.style.opacity = '0.35';
 
-    // 4. 保存扫描记录 (receipt_scans)
-    await DB.sb.from('receipt_scans').insert({
-      user_id: user.id,
-      image_path: imagePath,
-      scan_result: resultData,
-      bill_id: billId,
-    });
+      dragState = { memberId: mid, ghostEl: ghost, sourceEl: src };
+      document.addEventListener('mousemove', onAssignDragMove);
+      document.addEventListener('mouseup', onAssignDragEnd);
+      document.addEventListener('touchmove', onAssignDragMove, { passive: false });
+      document.addEventListener('touchend', onAssignDragEnd);
+    }
 
-    // 5. 成功提示并跳转
-    showToast('账单已保存');
-    setTimeout(() => {
-      window.location.href = 'aa-split-v4.html';
-    }, 1200);
+    function onAssignDragMove(e) {
+      if (!dragState) return;
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      dragState.ghostEl.style.left = t.clientX + 'px';
+      dragState.ghostEl.style.top = t.clientY + 'px';
 
-  } catch (err) {
-    console.error('保存失败:', err);
-    showError('保存失败: ' + (err.message || '请重试'));
-    btn.disabled = false;
-    btn.textContent = '保存为账单';
-  }
-}
+      document.querySelectorAll('.item-row').forEach(row => {
+        const r = row.getBoundingClientRect();
+        const over = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+        row.classList.toggle('drop-hover', over);
+      });
+    }
 
-function showToast(msg) {
-  const t = document.getElementById('saveToast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+    function onAssignDragEnd(e) {
+      if (!dragState) return;
+      const t = e.changedTouches ? e.changedTouches[0] : e;
 
-// ════════════════════════════════════════════
-//  RENDER
-// ════════════════════════════════════════════
-function renderResult(d) {
-  document.getElementById('resIcon').textContent     = d.icon || '🛒';
-  document.getElementById('resTitle').textContent    = d.title || '消费';
-  document.getElementById('resDesc').textContent     = d.desc || '';
-  document.getElementById('resAmount').textContent   = d.amount || '—';
-  document.getElementById('resPer').textContent      = d.per ? `每人 ${d.per}` : '';
-  document.getElementById('resDate').textContent     = d.date || '—';
-  document.getElementById('resMerchant').textContent = d.merchant || '—';
-  document.getElementById('resCategory').textContent = d.category || '—';
+      // Find hovered row
+      let targetIdx = -1;
+      document.querySelectorAll('.item-row').forEach(row => {
+        if (row.classList.contains('drop-hover')) {
+          targetIdx = parseInt(row.dataset.itemIdx);
+          row.classList.remove('drop-hover');
+        }
+      });
 
-  const list = document.getElementById('itemsList');
-  if (d.items && d.items.length) {
-    list.innerHTML = `
-      <div class="items-header"><span>商品 / 服务</span><span>数量</span><span>金额</span></div>
-      ${d.items.map(item => {
-        const disc = Number(item.price) < 0;
-        return `<div class="item-row">
-          <span class="item-name">${escHtml(item.name||'')}</span>
-          <span class="item-qty">×${item.qty||1}</span>
-          <span class="item-price${disc?' discount':''}">
-            ${disc?'-¥':'¥'}${Math.abs(Number(item.price)).toFixed(2)}
+      if (targetIdx >= 0) {
+        toggleItemMember(targetIdx, dragState.memberId);
+      }
+
+      // Animate ghost disappearing
+      const ghost = dragState.ghostEl;
+      ghost.style.transition = 'transform 0.2s, opacity 0.2s';
+      ghost.style.transform = 'translate(-50%,-50%) scale(0.3)';
+      ghost.style.opacity = '0';
+      setTimeout(() => ghost.remove(), 200);
+
+      dragState.sourceEl.style.transform = '';
+      dragState.sourceEl.style.opacity = '';
+
+      document.removeEventListener('mousemove', onAssignDragMove);
+      document.removeEventListener('mouseup', onAssignDragEnd);
+      document.removeEventListener('touchmove', onAssignDragMove);
+      document.removeEventListener('touchend', onAssignDragEnd);
+      dragState = null;
+    }
+
+    function toggleItemMember(idx, mid) {
+      const set = itemAssignments[idx];
+      if (!set) return;
+      if (set.has(mid)) {
+        if (set.size <= 1) return; // can't remove last member
+        set.delete(mid);
+      } else {
+        set.add(mid);
+      }
+      renderItemAssignment(idx);
+      updatePerAmount();
+    }
+
+    function renderAllItemAssignments() {
+      document.querySelectorAll('.item-assigned').forEach(el => {
+        renderItemAssignment(parseInt(el.dataset.itemIdx));
+      });
+    }
+
+    function renderItemAssignment(idx) {
+      const el = document.querySelector(`.item-assigned[data-item-idx="${idx}"]`);
+      if (!el) return;
+      const memberIds = itemAssignments[idx] || new Set();
+      el.innerHTML = [...memberIds].map(mid => {
+        const m = selectedMembers.find(s => s.id === mid) || assignCurrentUser || {};
+        return `<div class="item-assigned-avatar" onclick="toggleItemMember(${idx},'${mid}')" style="background:${m.color || 'var(--surface2)'}" title="${escHtml(m.name || '')}">${m.emoji || '😀'}</div>`;
+      }).join('');
+    }
+
+    function updatePerAmount() {
+      if (!resultData) return;
+      const total = resultData.rawTotal || 0;
+      const n = selectedMembers.length || 1;
+      document.getElementById('resPer').textContent = `每人 ¥ ${(total / n).toFixed(2)}`;
+    }
+
+    // ════════════════════════════════════════════
+    //  SCAN (via Supabase Edge Function)
+    // ════════════════════════════════════════════
+    async function scanReceipt() {
+      if (!currentFile) { showError('请先上传图片'); return; }
+
+      const members = selectedMembers.length > 0
+        ? selectedMembers.map(m => m.name || m.emoji || '?')
+        : ['我'];
+      const n = members.length || 1;
+
+      setLoading(true); hideResult(); hideError();
+
+      try {
+        const src = croppedBlob || currentFile;
+        const b64 = await toBase64(src);
+        const mime = croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg');
+        const prompt = buildPrompt(receiptType, members, n);
+
+        // 通过 Edge Function 调用 Claude（API Key 安全存放在服务器端）
+        const res = await fetch(EDGE_FN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: b64,
+            media_type: mime,
+            prompt: prompt,
+          })
+        });
+
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || `API 错误 ${res.status}`); }
+        const data = await res.json();
+        let txt = data.content.map(c => c.text || '').join('').trim();
+        txt = txt.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        const parsed = JSON.parse(txt);
+        resultData = parsed;
+        renderResult(parsed);
+
+      } catch (err) {
+        console.error(err);
+        showError(err.message.includes('JSON') ? `JSON 解析失败\n${err.message}` : `识别失败：${err.message}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ════════════════════════════════════════════
+    //  SAVE TO BILL (上传图片 + 存扫描记录 + 创建账单)
+    // ════════════════════════════════════════════
+    async function saveToBill() {
+      if (!resultData) return;
+
+      const btn = document.getElementById('saveBillBtn');
+      btn.disabled = true;
+      btn.textContent = '保存中…';
+
+      try {
+        const user = await DB.getCurrentUser();
+        if (!user) {
+          showError('请先登录');
+          btn.disabled = false;
+          btn.textContent = '保存为账单';
+          return;
+        }
+
+        // 1. 上传图片到 Storage
+        const imageBlob = croppedBlob || currentFile;
+        const ext = croppedBlob ? 'jpg' : (currentFile.name.split('.').pop() || 'jpg');
+        const imagePath = `${user.id}/${Date.now()}.${ext}`;
+
+        const { error: uploadErr } = await DB.sb
+          .storage
+          .from('receipt-images')
+          .upload(imagePath, imageBlob, {
+            contentType: croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg'),
+          });
+        if (uploadErr) throw new Error('图片上传失败: ' + uploadErr.message);
+
+        // 2. 解析日期 → ISO 格式
+        const dateStr = resultData.date || '';
+        const dateMatch = dateStr.match(/(\d+)月(\d+)日/);
+        const isoDate = dateMatch
+          ? `${new Date().getFullYear()}-${String(dateMatch[1]).padStart(2, '0')}-${String(dateMatch[2]).padStart(2, '0')}`
+          : new Date().toISOString().slice(0, 10);
+
+        // 3. 创建账单 (bills + bill_items)
+        const items = (resultData.items || []).map((item, idx) => {
+          // Use itemAssignments if available, otherwise fall back to current user only
+          const assignedSet = itemAssignments[idx];
+          const memberIds = assignedSet && assignedSet.size > 0
+            ? [...assignedSet]
+            : [user.id];
+          return {
+            name: item.name,
+            price: Number(item.price),
+            qty: item.qty || 1,
+            member_ids: memberIds,
+          };
+        });
+
+        const ICON_COLORS = DB.ICON_COLORS || {};
+        const billId = await DB.createBill({
+          icon: resultData.icon || '🧾',
+          title: resultData.title || '扫描账单',
+          description: resultData.desc || resultData.merchant || '',
+          date: isoDate,
+          color: ICON_COLORS[resultData.icon] || 'linear-gradient(135deg,#8E8E93,#636366)',
+          items: items,
+        });
+
+        // 4. 保存扫描记录 (receipt_scans)
+        await DB.sb.from('receipt_scans').insert({
+          user_id: user.id,
+          image_path: imagePath,
+          scan_result: resultData,
+          bill_id: billId,
+        });
+
+        // 5. 成功提示并跳转
+        showToast('账单已保存');
+        setTimeout(() => {
+          window.location.href = 'aa-split-v4.html';
+        }, 1200);
+
+      } catch (err) {
+        console.error('保存失败:', err);
+        showError('保存失败: ' + (err.message || '请重试'));
+        btn.disabled = false;
+        btn.textContent = '保存为账单';
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('saveToast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ════════════════════════════════════════════
+    //  RENDER
+    // ════════════════════════════════════════════
+    function renderResult(d) {
+      document.getElementById('resIcon').textContent = d.icon || '🛒';
+      document.getElementById('resTitle').textContent = d.title || '消费';
+      document.getElementById('resDesc').textContent = d.desc || '';
+      document.getElementById('resAmount').textContent = d.amount || '—';
+      document.getElementById('resPer').textContent = d.per ? `每人 ${d.per}` : '';
+      document.getElementById('resDate').textContent = d.date || '—';
+      document.getElementById('resMerchant').textContent = d.merchant || '—';
+      document.getElementById('resCategory').textContent = d.category || '—';
+
+      const list = document.getElementById('itemsList');
+      if (d.items && d.items.length) {
+        list.innerHTML = `
+      <div class="items-header has-assign"><span>商品 / 服务</span><span>数量</span><span>金额</span><span>分摊</span></div>
+      ${d.items.map((item, idx) => {
+          const disc = Number(item.price) < 0;
+          return `<div class="item-row has-assign" data-item-idx="${idx}">
+          <span class="item-name">${escHtml(item.name || '')}</span>
+          <span class="item-qty">×${item.qty || 1}</span>
+          <span class="item-price${disc ? ' discount' : ''}">
+            ${disc ? '-¥' : '¥'}${Math.abs(Number(item.price)).toFixed(2)}
           </span>
+          <span class="item-assigned" data-item-idx="${idx}"></span>
         </div>`;
-      }).join('')}`;
-  } else { list.innerHTML = ''; }
+        }).join('')}`;
+      } else { list.innerHTML = ''; }
 
-  document.getElementById('jsonBlock').innerHTML = syntaxHL(JSON.stringify(d, null, 2));
-  const tl = receiptType==='physical' ? '🧾 实体小票' : '📱 App截图';
-  document.getElementById('resultSubtitle').textContent =
-    `${tl} · ${(d.items||[]).length} 条明细 · 成员 ${(d.members||[]).join(' / ')}`;
-  document.getElementById('resultSection').classList.add('show');
-}
+      document.getElementById('jsonBlock').innerHTML = syntaxHL(JSON.stringify(d, null, 2));
+      const tl = receiptType === 'physical' ? '🧾 实体小票' : '📱 App截图';
+      document.getElementById('resultSubtitle').textContent =
+        `${tl} · ${(d.items || []).length} 条明细 · 成员 ${(d.members || []).join(' / ')}`;
+      document.getElementById('resultSection').classList.add('show');
 
-// ════════════════════════════════════════════
-//  HELPERS
-// ════════════════════════════════════════════
-function toBase64(blob) {
-  return new Promise((res,rej)=>{
-    const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(blob);
-  });
-}
-function setLoading(on) {
-  document.getElementById('loadingBar').classList.toggle('show',on);
-  const lt=document.getElementById('loadingText');
-  lt.classList.toggle('show',on);
-  lt.textContent=receiptType==='physical'?'正在识别小票，请稍候…':'正在解析订单截图，请稍候…';
-  const btn=document.getElementById('scanBtn');
-  btn.disabled=on; btn.textContent=on?'识别中…':'✨ 开始识别';
-}
-function showError(msg){const b=document.getElementById('errorBox');b.textContent=msg;b.classList.add('show');}
-function hideError(){document.getElementById('errorBox').classList.remove('show');}
-function hideResult(){document.getElementById('resultSection').classList.remove('show');resultData=null;}
-function toggleJSON(){jsonVisible=!jsonVisible;document.getElementById('jsonBlock').classList.toggle('show',jsonVisible);}
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function syntaxHL(json){
-  json=json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-    m=>{let c='json-num';if(/^"/.test(m))c=/:$/.test(m)?'json-key':'json-str';else if(/true|false/.test(m))c='json-bool';return`<span class="${c}">${m}</span>`;});
-}
-</script>
+      // Initialize member assignment section (drag-and-drop)
+      initAssignSection();
+    }
+
+    // ════════════════════════════════════════════
+    //  HELPERS
+    // ════════════════════════════════════════════
+    function toBase64(blob) {
+      return new Promise((res, rej) => {
+        const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(blob);
+      });
+    }
+    function setLoading(on) {
+      document.getElementById('loadingBar').classList.toggle('show', on);
+      const lt = document.getElementById('loadingText');
+      lt.classList.toggle('show', on);
+      lt.textContent = receiptType === 'physical' ? '正在识别小票，请稍候…' : '正在解析订单截图，请稍候…';
+      const btn = document.getElementById('scanBtn');
+      btn.disabled = on; btn.textContent = on ? '识别中…' : '✨ 开始识别';
+    }
+    function showError(msg) { const b = document.getElementById('errorBox'); b.textContent = msg; b.classList.add('show'); }
+    function hideError() { document.getElementById('errorBox').classList.remove('show'); }
+    function hideResult() { document.getElementById('resultSection').classList.remove('show'); resultData = null; }
+    function toggleJSON() { jsonVisible = !jsonVisible; document.getElementById('jsonBlock').classList.toggle('show', jsonVisible); }
+    function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function syntaxHL(json) {
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        m => { let c = 'json-num'; if (/^"/.test(m)) c = /:$/.test(m) ? 'json-key' : 'json-str'; else if (/true|false/.test(m)) c = 'json-bool'; return `<span class="${c}">${m}</span>`; });
+    }
+  </script>
 </body>
+
 </html>
