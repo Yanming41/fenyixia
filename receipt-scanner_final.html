@@ -1532,8 +1532,8 @@
   "icon": "<最合适的消费类别 emoji>",
   "title": "<商户名+消费类型，如'海底捞外卖'、'Costco采购'，优先用商户名而非泛泛分类>",
   "desc": "<商户名 · 消费描述>",
-  "amount": "¥ {实际TOTAL金额}",
-  "per": "¥ {TOTAL÷${n}的结果}",
+  "amount": "CA$ {实际TOTAL金额}",
+  "per": "CA$ {TOTAL÷${n}的结果}",
   "date": "<消费日期，格式：M月D日>",
   "items": [
     { "name": "<英文全称 (中文翻译)>", "qty": <数量>, "price": <含税单价，折扣为负数> }
@@ -1796,7 +1796,7 @@ ${tpl}
       if (!resultData) return;
       const total = resultData.rawTotal || 0;
       const n = selectedMembers.length || 1;
-      document.getElementById('resPer').textContent = `每人 ¥ ${(total / n).toFixed(2)}`;
+      document.getElementById('resPer').textContent = `每人 CA$ ${(total / n).toFixed(2)}`;
     }
 
     // ════════════════════════════════════════════
@@ -1961,7 +1961,7 @@ ${tpl}
           <span class="item-name">${escHtml(item.name || '')}</span>
           <span class="item-qty">×${item.qty || 1}</span>
           <span class="item-price${disc ? ' discount' : ''}">
-            ${disc ? '-¥' : '¥'}${Math.abs(Number(item.price)).toFixed(2)}
+            ${disc ? '-CA$' : 'CA$'}${Math.abs(Number(item.price)).toFixed(2)}
           </span>
           <span class="item-assigned" data-item-idx="${idx}"></span>
         </div>`;

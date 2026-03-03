@@ -25,7 +25,7 @@ let currentUserId = null;
 /* ══════════════════════════════════════════════════════════════
    格式化工具
 ══════════════════════════════════════════════════════════════ */
-function fmtMoney(n) { return '¥ ' + (Number.isInteger(n) ? n : Number(n).toFixed(2)); }
+function fmtMoney(n) { return 'CA$ ' + (Number.isInteger(n) ? n : Number(n).toFixed(2)); }
 function fmtISODate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -95,11 +95,28 @@ function createCard(b, i) {
 
   // 判断角色：我是垫付人 → 收款；我是分摊人 → 待付款
   const isPayer = currentUserId && b.payer_id === currentUserId;
-  const roleTag = isPayer
-    ? '<div class="card-role-tag collect">收款</div>'
-    : '<div class="card-role-tag pay">待付款</div>';
-  const perLabel = isPayer ? '每人均摊' : '我应付';
-  const perAmount = isPayer ? b.per_amount : (b.my_share || b.per_amount);
+  const otherCount = (b.members || []).filter(m => m.id !== b.payer_id).length;
+  const collectTotal = (b.items || []).reduce((sum, item) => {
+    const n = (item.members || []).length || 1;
+    const otherShare = (item.members || []).filter(m => m.id !== b.payer_id).length;
+    return sum + (item.price * (item.qty || 1) / n) * otherShare;
+  }, 0);
+  const myShare = b.my_share || b.per_amount;
+
+  let roleTagHtml, heroLabel, heroAmount;
+  if (b.settled) {
+    roleTagHtml = '<div class="card-role-tag settled">✓ 已结清</div>';
+    heroLabel = isPayer ? `已收回` : `已支付`;
+    heroAmount = isPayer ? collectTotal : myShare;
+  } else if (isPayer) {
+    roleTagHtml = '<div class="card-role-tag collect">💰 待收款</div>';
+    heroLabel = `向 ${otherCount} 人收`;
+    heroAmount = collectTotal;
+  } else {
+    roleTagHtml = '<div class="card-role-tag pay">📤 待付款</div>';
+    heroLabel = `你要付`;
+    heroAmount = myShare;
+  }
 
   el.innerHTML = `
     <div class="card-bg" style="background:${b.color}"></div>
@@ -110,13 +127,14 @@ function createCard(b, i) {
         <div class="card-icon-box">${b.icon}</div>
         <div class="card-top-right">
           <div class="card-date-label">${fmtISODate(b.date)}</div>
-          ${roleTag}
+          ${roleTagHtml}
         </div>
       </div>
       <div class="card-amount-section">
         <div class="card-label-title">${b.title}</div>
-        <div class="card-amount-num">${fmtMoney(b.total_amount)}</div>
-        <div class="card-per-line">${perLabel} <em>${fmtMoney(perAmount)}</em></div>
+        <div class="card-hero-label">${heroLabel}</div>
+        <div class="card-amount-num">${fmtMoney(heroAmount)}</div>
+        <div class="card-per-line">总计 <em>${fmtMoney(b.total_amount)}</em></div>
       </div>
       <div class="card-bottom-row">
         <div class="card-avs">${(b.members || []).map(m => `<div class="cav">${typeof m === 'string' ? m : m.emoji}</div>`).join('')}</div>
@@ -137,11 +155,38 @@ function createDot() {
 let cardEls = bills.map((b, i) => createCard(b, i));
 let dotEls = bills.map(() => createDot());
 
+function updateSummary(billList) {
+  let total = 0, collect = 0, owe = 0;
+  billList.forEach(b => {
+    total += b.total_amount || 0;
+    const isPayer = currentUserId && b.payer_id === currentUserId;
+    if (isPayer) {
+      // 我垫付的，算应收
+      const others = (b.items || []).reduce((sum, item) => {
+        const n = (item.members || []).length || 1;
+        const otherShare = (item.members || []).filter(m => m.id !== b.payer_id).length;
+        return sum + (item.price * (item.qty || 1) / n) * otherShare;
+      }, 0);
+      if (!b.settled) collect += others;
+    } else {
+      // 我要付的
+      if (!b.settled) owe += (b.my_share || 0);
+    }
+  });
+  const sumTotalEl = document.getElementById('sumTotal');
+  const sumCollectEl = document.getElementById('sumCollect');
+  const sumOweEl = document.getElementById('sumOwe');
+  if (sumTotalEl) sumTotalEl.textContent = fmtMoney(total);
+  if (sumCollectEl) sumCollectEl.textContent = '+' + fmtMoney(collect);
+  if (sumOweEl) sumOweEl.textContent = '-' + fmtMoney(owe);
+}
+
 function rebuildCarousel(billList, animate) {
   stage.innerHTML = '';
   dotsEl.innerHTML = '';
   bills = billList;
   N = bills.length;
+  updateSummary(billList);
   cardEls = bills.map((b, i) => createCard(b, i));
   dotEls = bills.map(() => createDot());
   current = 0;
