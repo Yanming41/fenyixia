@@ -241,6 +241,36 @@
   .error-box { background: rgba(224,107,107,0.08); border: 1px solid rgba(224,107,107,0.3); border-radius: 12px; padding: 14px; font-size: 13px; color: var(--error); margin-top: 14px; display: none; white-space: pre-wrap; line-height: 1.6; }
   .error-box.show { display: block; }
 
+  /* ── Assign Section ── */
+  .assign-section { border-top: 1px solid var(--border); padding: 14px 18px; }
+  .assign-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 10px; }
+
+  .assign-member-list { display: flex; flex-wrap: wrap; gap: 10px; }
+  .assign-member-bubble { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; user-select: none; transition: all 0.2s; opacity: 0.4; }
+  .assign-member-bubble.selected { opacity: 1; }
+  .assign-member-bubble.locked { opacity: 1; }
+  .assign-bubble-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--surface2); border: 2.5px solid transparent; transition: all 0.2s; }
+  .assign-member-bubble.selected .assign-bubble-avatar { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,192,64,0.15); }
+  .assign-member-bubble.locked .assign-bubble-avatar { border-color: var(--success); box-shadow: 0 0 0 3px rgba(109,189,138,0.15); }
+  .assign-bubble-name { font-size: 10px; color: var(--text3); max-width: 50px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .assign-member-bubble.selected .assign-bubble-name { color: var(--text2); }
+
+  .assign-dock { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .assign-dock-avatars { display: flex; gap: 10px; flex-wrap: wrap; }
+  .assign-drag-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: grab; user-select: none; touch-action: none; transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s; }
+
+  .assign-drag-ghost { position: fixed; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 999; pointer-events: none; transform: translate(-50%,-50%) scale(1.2); box-shadow: 0 8px 28px rgba(0,0,0,0.5); opacity: 0.95; }
+
+  .item-row.drop-hover { background: rgba(240,192,64,0.08) !important; box-shadow: inset 0 0 0 1.5px var(--accent); border-radius: 4px; }
+
+  .item-assigned { display: flex; align-items: center; gap: 0; min-width: 20px; }
+  .item-assigned-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-left: -5px; border: 1.5px solid var(--surface); flex-shrink: 0; cursor: pointer; transition: transform 0.15s; }
+  .item-assigned-avatar:first-child { margin-left: 0; }
+  .item-assigned-avatar:active { transform: scale(1.3); }
+
+  .item-row.has-assign { grid-template-columns: 1fr auto auto minmax(40px, auto); }
+  .items-header.has-assign { grid-template-columns: 1fr auto auto minmax(40px, auto); }
+
   ::-webkit-scrollbar{width:4px;height:4px} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
@@ -327,6 +357,17 @@
         <span>🏷️ <span id="resCategory">—</span></span>
       </div>
       <div class="items-list" id="itemsList"></div>
+      <!-- Member Assignment Section -->
+      <div class="assign-section" id="assignSection" style="display:none">
+        <div class="assign-member-picker">
+          <div class="assign-label">选择成员</div>
+          <div class="assign-member-list" id="assignMemberList"></div>
+        </div>
+        <div class="assign-dock">
+          <div class="assign-label">拖动头像到商品行分配</div>
+          <div class="assign-dock-avatars" id="assignDockAvatars"></div>
+        </div>
+      </div>
     </div>
     <div class="result-actions">
       <button class="btn btn-save" id="saveBillBtn" onclick="saveToBill()">保存为账单</button>
@@ -382,6 +423,13 @@ let resultData    = null;
 let jsonVisible   = false;
 let rotationDeg   = 0;      // current rotation in degrees (0, 90, 180, 270)
 let baseBlob      = null;   // pre-rotation image blob (crop result or original file)
+
+// Member assignment state
+let friendsList      = [];    // [{id, name, emoji, color}] from Supabase
+let assignCurrentUser = null; // {id, name, emoji, color}
+let selectedMembers  = [];    // subset of friends + current user
+let itemAssignments  = {};    // { itemIndex: Set<memberId> }
+let dragState        = null;  // { memberId, ghostEl, sourceEl }
 
 // Crop state — corners stored in FULL IMAGE pixel coords
 let corners  = [];
@@ -839,17 +887,17 @@ function buildPrompt(type, members, n) {
   "icon": "<最合适的消费类别 emoji>",
   "title": "<消费场所/类型简短标题>",
   "desc": "<商户名 · 消费描述>",
-  "amount": "<总金额，格式：¥ 268.00>",
-  "per": "<每人均摊，总额÷${n}人，格式：¥ 67.00>",
+  "amount": "¥ {实际TOTAL金额}",
+  "per": "¥ {TOTAL÷${n}的结果}",
   "date": "<消费日期，格式：M月D日>",
   "items": [
-    { "name": "<商品/服务名称>", "qty": <数量>, "price": <单价，折扣为负数> }
+    { "name": "<英文全称 (中文翻译)>", "qty": <数量>, "price": <含税单价，折扣为负数> }
   ],
   "category": "<grocery/dining/transport/entertainment/health/shopping/utilities/other>",
   "merchant": "<商户/平台名称>",
   "settled": false,
   "members": ${JSON.stringify(members)},
-  "rawTotal": <总金额数字>
+  "rawTotal": <TOTAL 数字，必须是含税最终金额>
 }`;
 
   if (type === 'physical') {
@@ -861,12 +909,26 @@ function buildPrompt(type, members, n) {
 
 ${tpl}
 
-识别要点：
-- 商品名通常是大写英文缩写（NN=No Name、PC=President's Choice、CH=Club House）
-- items 中 price 填单价，qty×price=行总价
-- 取含税后最终应付总额
+【最重要】金额规则：
+- amount 和 rawTotal 必须取小票上的 TOTAL（最终应付总额），绝不能用 SUBTOTAL
+- 如果小票有 HST / GST / PST / TAX 行，TOTAL = SUBTOTAL + 所有税
+- 把 HST/税 作为单独一条 item 加入 items 数组，name 写 "HST 13%" 或对应税种
+
+【商品名称规则】：
+- 北美超市小票的商品名通常是大写英文缩写，你必须猜出完整英文名并附上中文翻译
+- name 格式固定为："英文全称 (中文)"
+- 常见缩写示例：
+  NN = No Name, PC = President's Choice, CH = Club House, GV = Great Value
+  KD = Kraft Dinner, BN = Brand Name, SC = Selection, IRR = Irregular
+  HOMO MK = Homo Milk, GRN PEP = Green Pepper, BBy CRT = Baby Carrot
+  ENGL MFFN = English Muffin, STRW BRRY = Strawberry, BL BRRY = Blueberry
+  CHK BRST = Chicken Breast, GRD BEEF = Ground Beef, BK BEANS = Baked Beans
+- 如果缩写无法确认，保留原文并在括号里给出最佳猜测的中文
+
+【其他要点】：
+- items 中 price 填单价（含税价，即分摊了 HST 后的单价），qty×price=行总价
 - 日期统一转为"M月D日"
-- 提取所有商品行，一条不漏
+- 提取所有商品行，一条不漏，包括折扣行（price 为负数）
 - 返回纯 JSON，不要有任何其他文字`;
   } else {
     return `你是专业的 App 订单截图识别助手，处理打车、外卖等数字收据截图。
@@ -875,12 +937,204 @@ ${tpl}
 
 ${tpl}
 
-识别要点：
-- 打车类（Uber/Lyft）：title="打车"，desc="平台·起点→终点"，items分解各费用，折扣负数，category=transport
-- 外卖类（DoorDash/Uber Eats）：merchant=餐厅名，desc="平台·餐厅名"，每道菜+配送费+小费，折扣负数，category=dining
-- 取截图中最终支付总额
+【最重要】金额规则：
+- amount 和 rawTotal 必须取最终支付总额 TOTAL，不能用 SUBTOTAL
+- 如果有 HST / GST / Tax 行，加入 items 数组作为单独条目
+- TOTAL = 所有费用 + 税 + 小费（如有）
+
+【识别要点】：
+- 打车类（Uber/Lyft）：title="打车"，desc="平台·起点→终点"，items 分解各费用（车费、服务费、税、小费），折扣负数，category=transport
+- 外卖类（DoorDash/Uber Eats）：merchant=餐厅名，desc="平台·餐厅名"，每道菜名写"英文全称 (中文翻译)"+配送费+服务费+税+小费，折扣负数，category=dining
+- 所有英文菜名/商品名都附上中文翻译，格式："English Name (中文)"
 - 返回纯 JSON，不要有任何其他文字`;
   }
+}
+
+// ════════════════════════════════════════════
+//  MEMBER ASSIGNMENT
+// ════════════════════════════════════════════
+async function initAssignSection() {
+  try {
+    assignCurrentUser = await DB.getCurrentUser();
+    if (!assignCurrentUser) return;
+
+    const { data: profile } = await DB.sb
+      .from('users')
+      .select('id, name, emoji, color')
+      .eq('id', assignCurrentUser.id)
+      .single();
+    if (profile) assignCurrentUser = { ...assignCurrentUser, ...profile };
+
+    friendsList = await DB.getFriends() || [];
+    selectedMembers = [assignCurrentUser];
+    resetAssignments();
+    renderMemberPicker();
+    renderDock();
+    renderAllItemAssignments();
+    document.getElementById('assignSection').style.display = '';
+  } catch (e) {
+    console.error('initAssignSection error:', e);
+  }
+}
+
+function resetAssignments() {
+  itemAssignments = {};
+  if (!resultData || !resultData.items) return;
+  const ids = selectedMembers.map(m => m.id);
+  resultData.items.forEach((_, idx) => { itemAssignments[idx] = new Set(ids); });
+}
+
+function renderMemberPicker() {
+  const el = document.getElementById('assignMemberList');
+  const all = [assignCurrentUser, ...friendsList];
+  el.innerHTML = all.map(m => {
+    const isSel = selectedMembers.some(s => s.id === m.id);
+    const isMe = m.id === assignCurrentUser.id;
+    const cls = 'assign-member-bubble' + (isSel ? ' selected' : '') + (isMe ? ' locked' : '');
+    return `<div class="${cls}" data-mid="${m.id}" onclick="toggleMemberSel('${m.id}')">
+      <div class="assign-bubble-avatar" style="background:${m.color||'var(--surface2)'}">${m.emoji||'😀'}</div>
+      <div class="assign-bubble-name">${escHtml(m.name||'我')}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMemberSel(mid) {
+  if (assignCurrentUser && mid === assignCurrentUser.id) return;
+  const idx = selectedMembers.findIndex(m => m.id === mid);
+  if (idx >= 0) {
+    selectedMembers.splice(idx, 1);
+    Object.values(itemAssignments).forEach(s => s.delete(mid));
+  } else {
+    const member = friendsList.find(f => f.id === mid);
+    if (member) {
+      selectedMembers.push(member);
+      Object.values(itemAssignments).forEach(s => s.add(mid));
+    }
+  }
+  renderMemberPicker();
+  renderDock();
+  renderAllItemAssignments();
+  updatePerAmount();
+}
+
+function renderDock() {
+  const el = document.getElementById('assignDockAvatars');
+  el.innerHTML = selectedMembers.map(m =>
+    `<div class="assign-drag-avatar" data-mid="${m.id}" style="background:${m.color||'var(--surface2)'}">${m.emoji||'😀'}</div>`
+  ).join('');
+  el.querySelectorAll('.assign-drag-avatar').forEach(av => {
+    av.addEventListener('mousedown', onAssignDragStart);
+    av.addEventListener('touchstart', onAssignDragStart, { passive: false });
+  });
+}
+
+// ── Drag-and-drop ──
+function onAssignDragStart(e) {
+  e.preventDefault();
+  const t = e.touches ? e.touches[0] : e;
+  const src = e.currentTarget;
+  const mid = src.dataset.mid;
+
+  const ghost = document.createElement('div');
+  ghost.className = 'assign-drag-ghost';
+  ghost.style.background = src.style.background;
+  ghost.textContent = src.textContent;
+  ghost.style.left = t.clientX + 'px';
+  ghost.style.top = t.clientY + 'px';
+  document.body.appendChild(ghost);
+
+  src.style.transform = 'scale(0.75)';
+  src.style.opacity = '0.35';
+
+  dragState = { memberId: mid, ghostEl: ghost, sourceEl: src };
+  document.addEventListener('mousemove', onAssignDragMove);
+  document.addEventListener('mouseup', onAssignDragEnd);
+  document.addEventListener('touchmove', onAssignDragMove, { passive: false });
+  document.addEventListener('touchend', onAssignDragEnd);
+}
+
+function onAssignDragMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+  const t = e.touches ? e.touches[0] : e;
+  dragState.ghostEl.style.left = t.clientX + 'px';
+  dragState.ghostEl.style.top = t.clientY + 'px';
+
+  document.querySelectorAll('.item-row').forEach(row => {
+    const r = row.getBoundingClientRect();
+    const over = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+    row.classList.toggle('drop-hover', over);
+  });
+}
+
+function onAssignDragEnd(e) {
+  if (!dragState) return;
+  const t = e.changedTouches ? e.changedTouches[0] : e;
+
+  // Find hovered row
+  let targetIdx = -1;
+  document.querySelectorAll('.item-row').forEach(row => {
+    if (row.classList.contains('drop-hover')) {
+      targetIdx = parseInt(row.dataset.itemIdx);
+      row.classList.remove('drop-hover');
+    }
+  });
+
+  if (targetIdx >= 0) {
+    toggleItemMember(targetIdx, dragState.memberId);
+  }
+
+  // Animate ghost disappearing
+  const ghost = dragState.ghostEl;
+  ghost.style.transition = 'transform 0.2s, opacity 0.2s';
+  ghost.style.transform = 'translate(-50%,-50%) scale(0.3)';
+  ghost.style.opacity = '0';
+  setTimeout(() => ghost.remove(), 200);
+
+  dragState.sourceEl.style.transform = '';
+  dragState.sourceEl.style.opacity = '';
+
+  document.removeEventListener('mousemove', onAssignDragMove);
+  document.removeEventListener('mouseup', onAssignDragEnd);
+  document.removeEventListener('touchmove', onAssignDragMove);
+  document.removeEventListener('touchend', onAssignDragEnd);
+  dragState = null;
+}
+
+function toggleItemMember(idx, mid) {
+  const set = itemAssignments[idx];
+  if (!set) return;
+  if (set.has(mid)) {
+    if (set.size <= 1) return; // can't remove last member
+    set.delete(mid);
+  } else {
+    set.add(mid);
+  }
+  renderItemAssignment(idx);
+  updatePerAmount();
+}
+
+function renderAllItemAssignments() {
+  document.querySelectorAll('.item-assigned').forEach(el => {
+    renderItemAssignment(parseInt(el.dataset.itemIdx));
+  });
+}
+
+function renderItemAssignment(idx) {
+  const el = document.querySelector(`.item-assigned[data-item-idx="${idx}"]`);
+  if (!el) return;
+  const memberIds = itemAssignments[idx] || new Set();
+  el.innerHTML = [...memberIds].map(mid => {
+    const m = selectedMembers.find(s => s.id === mid) || assignCurrentUser || {};
+    return `<div class="item-assigned-avatar" onclick="toggleItemMember(${idx},'${mid}')" style="background:${m.color||'var(--surface2)'}" title="${escHtml(m.name||'')}">${m.emoji||'😀'}</div>`;
+  }).join('');
+}
+
+function updatePerAmount() {
+  if (!resultData) return;
+  const total = resultData.rawTotal || 0;
+  const n = selectedMembers.length || 1;
+  document.getElementById('resPer').textContent = `每人 ¥ ${(total / n).toFixed(2)}`;
 }
 
 // ════════════════════════════════════════════
