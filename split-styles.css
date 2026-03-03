@@ -729,6 +729,253 @@
       padding: 12px 20px !important;
     }
 
+    .detail-btn-edit {
+      background: rgba(0, 122, 255, 0.15);
+      color: #5AC8FA;
+    }
+
+    /* 详情编辑模式 */
+    .de-input {
+      background: var(--bg);
+      border: 1px solid var(--fill);
+      border-radius: 6px;
+      color: var(--label);
+      font-size: 13px;
+      padding: 5px 8px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .de-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(10,132,255,0.2);
+    }
+
+    .de-input.de-qty { width: 48px; text-align: center; }
+    .de-input.de-price { width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    .detail-item-row.de-editing {
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 8px 10px;
+      grid-template-columns: 1fr auto auto auto;
+    }
+
+    .de-item-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .de-item-actions button {
+      font-size: 11px;
+      padding: 3px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .de-btn-ok { background: var(--accent); color: #000; }
+    .de-btn-cancel { background: var(--bg4); color: var(--label2); }
+    .de-btn-rm { background: rgba(255,69,58,0.12); color: #FF6961; margin-right: auto; }
+
+    .de-add-item {
+      padding: 10px;
+      text-align: center;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px dashed var(--fill);
+      border-radius: 8px;
+      margin-top: 6px;
+    }
+
+    .de-member-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 0;
+    }
+
+    .de-member-bubble {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      opacity: 0.35;
+      transition: opacity .2s;
+    }
+
+    .de-member-bubble.selected { opacity: 1; }
+
+    .de-member-bubble .de-m-av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      border: 2px solid transparent;
+    }
+
+    .de-member-bubble.selected .de-m-av {
+      border-color: var(--accent);
+    }
+
+    .de-member-bubble .de-m-name {
+      font-size: 9px;
+      color: var(--label2);
+      max-width: 48px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .de-save-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      padding-bottom: 16px;
+    }
+
+    .de-save-bar button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .de-btn-save { background: var(--accent); color: #000; }
+    .de-btn-back { background: var(--bg3); color: var(--label2); }
+
+    /* 异议按钮 */
+    .detail-btn-protest {
+      background: rgba(255, 149, 0, 0.15);
+      color: var(--orange);
+    }
+
+    .detail-btn-protest:active { transform: scale(0.95); }
+
+    /* 飘浮怒气 emoji */
+    .anger-float {
+      position: fixed;
+      font-size: 36px;
+      pointer-events: none;
+      z-index: 9999;
+      animation: angerRise 1.6s ease-out forwards;
+    }
+
+    @keyframes angerRise {
+      0%   { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+      30%  { opacity: 1; transform: translateY(-60px) scale(1.3) rotate(-15deg); }
+      60%  { opacity: 0.8; transform: translateY(-140px) scale(1.1) rotate(10deg); }
+      100% { opacity: 0; transform: translateY(-240px) scale(0.6) rotate(-20deg); }
+    }
+
+    .anger-msg {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: rgba(0, 0, 0, 0.9);
+      color: #FF9500;
+      padding: 20px 28px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      z-index: 10000;
+      pointer-events: none;
+      animation: angerMsgPop 2.8s ease forwards;
+      line-height: 1.5;
+      max-width: 280px;
+      border: 1px solid rgba(255, 149, 0, 0.3);
+      box-shadow: 0 0 40px rgba(255, 149, 0, 0.2);
+    }
+
+    @keyframes angerMsgPop {
+      0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      12%  { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+      22%  { transform: translate(-50%, -50%) scale(1); }
+      78%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    }
+
+    .anger-storm {
+      position: fixed;
+      font-size: 48px;
+      pointer-events: none;
+      z-index: 9998;
+      animation: angerStorm 2.2s ease-out forwards;
+    }
+
+    @keyframes angerStorm {
+      0%   { opacity: 0; transform: translateY(100vh) scale(0.5) rotate(0deg); }
+      20%  { opacity: 1; transform: translateY(30vh) scale(1.2) rotate(-20deg); }
+      50%  { opacity: 1; transform: translateY(-10vh) scale(1) rotate(15deg); }
+      80%  { opacity: 0.5; transform: translateY(-40vh) scale(0.8) rotate(-10deg); }
+      100% { opacity: 0; transform: translateY(-60vh) scale(0.3) rotate(30deg); }
+    }
+
+    /* 付款凭证 */
+    .detail-btn-pay {
+      background: rgba(48, 209, 88, 0.18);
+      color: #4CD964;
+    }
+
+    .proof-section {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg3);
+      border-radius: 12px;
+    }
+
+    .proof-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--label2);
+      margin-bottom: 8px;
+    }
+
+    .proof-upload-area {
+      padding: 14px;
+      border: 1px dashed var(--fill);
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--label3);
+      font-size: 13px;
+    }
+
+    .proof-upload-area:active { background: var(--bg4); }
+
+    .proof-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 0.5px solid var(--sep);
+      font-size: 12px;
+      color: var(--label2);
+    }
+
+    .proof-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
     /* ══════════════════════════════════════════
    指示点 (iOS 风格)
 ══════════════════════════════════════════ */

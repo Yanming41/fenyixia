@@ -1356,8 +1356,10 @@ tabSettings.addEventListener('click', () => {
    账单详情 Detail Sheet
 ══════════════════════════════════════════════════════════════ */
 const detailOverlay = document.getElementById('detailOverlay');
+let detailBill = null;
 
 function openDetail(bill) {
+  detailBill = bill;
   const el = document.getElementById('detailContent');
   const isPayer = currentUserId && bill.payer_id === currentUserId;
 
@@ -1418,10 +1420,42 @@ function openDetail(bill) {
     </div>`;
   }).join('');
 
-  // 操作按钮
-  const settleBtn = bill.settled
-    ? `<button class="detail-btn-settled" onclick="toggleDetailSettled('${bill.id}', true)">↩ 取消结清</button>`
-    : `<button class="detail-btn-settle" onclick="toggleDetailSettled('${bill.id}', false)">✓ 标记已结清</button>`;
+  // 操作按钮 — 根据角色不同
+  let actionsHtml;
+  if (isPayer) {
+    // 收款人：结清 + 编辑 + 删除 + 查看凭证区域
+    const settleBtn = bill.settled
+      ? `<button class="detail-btn-settled" onclick="toggleDetailSettled('${bill.id}', true)">↩ 取消结清</button>`
+      : `<button class="detail-btn-settle" onclick="toggleDetailSettled('${bill.id}', false)">✓ 标记已结清</button>`;
+    actionsHtml = `
+      <div class="detail-actions">
+        ${settleBtn}
+        <button class="detail-btn-edit" onclick="startEditBill()">✏️ 编辑</button>
+        <button class="detail-btn-delete" onclick="deleteDetailBill('${bill.id}')">🗑</button>
+      </div>
+      <div class="proof-section" id="proofSection">
+        <div class="proof-section-title">💳 付款凭证</div>
+        <div id="proofList">加载中...</div>
+      </div>`;
+  } else {
+    // 付款人：付款(上传凭证) + 异议!
+    const payBtn = bill.settled
+      ? `<button class="detail-btn-settled" disabled>✓ 已结清</button>`
+      : `<button class="detail-btn-pay" onclick="openPayProof('${bill.id}')">💳 付款</button>`;
+    actionsHtml = `
+      <div class="proof-section" id="proofSection">
+        <div class="proof-section-title">💳 我的付款凭证</div>
+        <div id="proofList">加载中...</div>
+        ${bill.settled ? '' : `<div class="proof-upload-area" onclick="document.getElementById('proofFileInput').click()">
+          📷 点击上传 e-Transfer 截图
+        </div>
+        <input type="file" id="proofFileInput" accept="image/*" style="display:none" onchange="uploadProofFile('${bill.id}', this)" />`}
+      </div>
+      <div class="detail-actions">
+        ${payBtn}
+        <button class="detail-btn-protest" onclick="protestBill('${bill.id}')">😡 异议!</button>
+      </div>`;
+  }
 
   el.innerHTML = `
     <div class="detail-header">
@@ -1448,12 +1482,12 @@ function openDetail(bill) {
       <div class="detail-summary-title">每人分摊明细</div>
       ${summaryHtml}
     </div>
-    <div class="detail-actions">
-      ${settleBtn}
-      <button class="detail-btn-delete" onclick="deleteDetailBill('${bill.id}')">🗑</button>
-    </div>`;
+    ${actionsHtml}`;
 
   detailOverlay.classList.add('on');
+
+  // 异步加载付款凭证
+  loadProofList(bill.id);
 }
 
 function closeDetail(e) {
@@ -1491,4 +1525,341 @@ async function deleteDetailBill(billId) {
 function escText(s) {
   if (!s) return '';
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   付款凭证
+══════════════════════════════════════════════════════════════ */
+async function loadProofList(billId) {
+  const el = document.getElementById('proofList');
+  if (!el) return;
+  try {
+    const proofs = await DB.getPaymentProofs(billId);
+    if (proofs.length === 0) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--label3);padding:4px 0">暂无凭证</div>';
+    } else {
+      el.innerHTML = proofs.map(p => `<div class="proof-item">
+        <img class="proof-thumb" src="${p.image_url}" onclick="window.open('${p.image_url}','_blank')" />
+        <div>
+          <div>${p.user?.emoji || '😀'} ${escText(p.user?.name || '?')}</div>
+          <div style="font-size:10px;color:var(--label3)">${new Date(p.created_at).toLocaleString('zh-CN')}</div>
+        </div>
+      </div>`).join('');
+    }
+  } catch (e) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--label3)">加载失败</div>';
+  }
+}
+
+async function uploadProofFile(billId, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    showToast('上传中...');
+    await DB.uploadPaymentProof(billId, file);
+    showToast('✓ 凭证已上传');
+    loadProofList(billId);
+  } catch (e) {
+    showToast('上传失败: ' + e.message);
+    console.error(e);
+  }
+  input.value = '';
+}
+
+function openPayProof(billId) {
+  const input = document.getElementById('proofFileInput');
+  if (input) input.click();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   异议！怒气系统
+══════════════════════════════════════════════════════════════ */
+let protestCount = 0;
+let protestBillId = null;
+
+function protestBill(billId) {
+  if (protestBillId !== billId) { protestCount = 0; protestBillId = billId; }
+  protestCount++;
+
+  // 飘一个😡
+  spawnAngerEmoji();
+
+  // 每次都写入数据库
+  DB.addAnger(billId).catch(e => console.error('addAnger error:', e));
+
+  if (protestCount === 3) {
+    // 第三下：显示怒气传递消息
+    setTimeout(() => {
+      const msg = document.createElement('div');
+      msg.className = 'anger-msg';
+      msg.innerHTML = '😡😡😡<br>您的怒气已经传递给<br>发起此账单的人！';
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 3000);
+    }, 400);
+    protestCount = 0; // 重置，可以继续按
+  }
+}
+
+function spawnAngerEmoji() {
+  const emoji = document.createElement('div');
+  emoji.className = 'anger-float';
+  emoji.textContent = '😡';
+  // 随机位置在按钮附近
+  const btn = document.querySelector('.detail-btn-protest');
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    emoji.style.left = (r.left + Math.random() * r.width) + 'px';
+    emoji.style.top = (r.top - 10) + 'px';
+  } else {
+    emoji.style.left = (window.innerWidth / 2 - 18 + (Math.random() - 0.5) * 60) + 'px';
+    emoji.style.top = (window.innerHeight * 0.6) + 'px';
+  }
+  document.body.appendChild(emoji);
+  setTimeout(() => emoji.remove(), 1700);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   登录时检查未读怒气 → 怒气风暴
+══════════════════════════════════════════════════════════════ */
+async function checkAngerStorm() {
+  try {
+    const reactions = await DB.getUnseenAnger();
+    if (!reactions || reactions.length === 0) return;
+
+    let totalAnger = 0;
+    const names = [];
+    const ids = [];
+    reactions.forEach(r => {
+      totalAnger += r.anger_count;
+      names.push(`${r.user?.emoji || '😡'} ${r.user?.name || '?'} ×${r.anger_count}`);
+      ids.push(r.id);
+    });
+
+    // 飘怒气风暴
+    for (let i = 0; i < Math.min(totalAnger, 20); i++) {
+      setTimeout(() => {
+        const emoji = document.createElement('div');
+        emoji.className = 'anger-storm';
+        emoji.textContent = '😡';
+        emoji.style.left = (Math.random() * window.innerWidth) + 'px';
+        emoji.style.bottom = '0px';
+        document.body.appendChild(emoji);
+        setTimeout(() => emoji.remove(), 2500);
+      }, i * 150);
+    }
+
+    // 显示汇总消息
+    setTimeout(() => {
+      const msg = document.createElement('div');
+      msg.className = 'anger-msg';
+      msg.innerHTML = `😡 收到怒气 ×${totalAnger}<br><br><span style="font-size:13px;font-weight:400;color:var(--label2)">${names.join('<br>')}</span>`;
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 4000);
+    }, Math.min(totalAnger, 20) * 150 + 400);
+
+    // 标记为已读
+    DB.markAngerSeen(ids);
+  } catch (e) {
+    console.error('checkAngerStorm error:', e);
+  }
+}
+
+// 页面加载后延迟检查
+setTimeout(checkAngerStorm, 2000);
+
+/* ══════════════════════════════════════════════════════════════
+   账单编辑模式
+══════════════════════════════════════════════════════════════ */
+let editBill = null;       // 当前编辑的 bill 深拷贝
+let editAllUsers = [];     // 所有可选用户
+let editItemIdx = null;    // 正在编辑的行
+
+function startEditBill() {
+  if (!detailBill) return;
+  // 深拷贝 bill 数据用于编辑
+  editBill = JSON.parse(JSON.stringify(detailBill));
+  editItemIdx = null;
+  loadEditUsers().then(() => renderEditMode());
+}
+
+async function loadEditUsers() {
+  const { data } = await DB.sb
+    .from('users').select('id, name, emoji, color')
+    .order('created_at', { ascending: true });
+  editAllUsers = data || [];
+}
+
+function renderEditMode() {
+  const el = document.getElementById('detailContent');
+
+  // 商品行
+  const itemsHtml = editBill.items.map((item, idx) => renderEditItemRow(item, idx)).join('');
+
+  // 成员选择器（全局选人，然后每个item可独立调）
+  const allMemberIds = new Set();
+  editBill.items.forEach(item => (item.members || []).forEach(m => allMemberIds.add(m.id)));
+
+  const memberPickerHtml = editAllUsers.map(u => {
+    const sel = allMemberIds.has(u.id) ? ' selected' : '';
+    return `<div class="de-member-bubble${sel}" onclick="toggleEditGlobalMember('${u.id}')">
+      <div class="de-m-av" style="background:${u.color || 'var(--bg4)'}">${u.emoji || '😀'}</div>
+      <div class="de-m-name">${escText(u.name || '?')}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-icon">${editBill.icon}</div>
+      <div class="detail-title-col">
+        <input class="de-input" id="de-title" value="${escText(editBill.title)}" placeholder="标题" style="width:100%;font-size:16px;font-weight:700;" />
+      </div>
+    </div>
+    <div class="detail-summary-title" style="margin-top:8px">参与成员（点击增减）</div>
+    <div class="de-member-picker" id="deMemberPicker">${memberPickerHtml}</div>
+    <div class="detail-items-header">
+      <span>商品 / 服务</span><span>数量</span><span>金额</span><span>分摊</span>
+    </div>
+    <div id="deItemsList">${itemsHtml}</div>
+    <div class="de-add-item" onclick="addEditItem()">＋ 添加项目</div>
+    <div class="de-save-bar">
+      <button class="de-btn-back" onclick="cancelEditBill()">取消</button>
+      <button class="de-btn-save" onclick="saveEditBill()">💾 保存</button>
+    </div>`;
+}
+
+function renderEditItemRow(item, idx) {
+  const avatarsHtml = (item.members || []).map(m =>
+    `<div class="cav" style="cursor:pointer" onclick="event.stopPropagation();removeEditItemMember(${idx},'${m.id}')" title="点击移除">${m.emoji || '😀'}</div>`
+  ).join('');
+  const total = item.price * (item.qty || 1);
+  return `<div class="detail-item-row" onclick="startEditItemRow(${idx})">
+    <span class="detail-item-name">${escText(item.name)}</span>
+    <span class="detail-item-qty">×${item.qty || 1}</span>
+    <span class="detail-item-price">${fmtMoney(total)}</span>
+    <div class="detail-item-avatars">${avatarsHtml}</div>
+  </div>`;
+}
+
+function startEditItemRow(idx) {
+  if (editItemIdx === idx) return;
+  editItemIdx = idx;
+  const item = editBill.items[idx];
+  const container = document.getElementById('deItemsList');
+  // 重新渲染所有行，被编辑的行展开为表单
+  container.innerHTML = editBill.items.map((it, i) => {
+    if (i !== idx) return renderEditItemRow(it, i);
+    return `<div class="detail-item-row de-editing">
+      <input class="de-input" id="de-iname-${i}" value="${escText(it.name)}" placeholder="名称" style="width:100%" />
+      <input class="de-input de-qty" id="de-iqty-${i}" type="number" min="1" value="${it.qty || 1}" />
+      <input class="de-input de-price" id="de-iprice-${i}" type="number" step="0.01" value="${Number(it.price).toFixed(2)}" />
+      <div></div>
+      <div class="de-item-actions">
+        <button class="de-btn-rm" onclick="deleteEditItem(${i})">删除</button>
+        <button class="de-btn-cancel" onclick="cancelEditItemRow()">取消</button>
+        <button class="de-btn-ok" onclick="confirmEditItemRow(${i})">确定</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmEditItemRow(idx) {
+  const name = document.getElementById(`de-iname-${idx}`).value.trim();
+  const qty = parseInt(document.getElementById(`de-iqty-${idx}`).value) || 1;
+  const price = parseFloat(document.getElementById(`de-iprice-${idx}`).value) || 0;
+  if (name) {
+    editBill.items[idx].name = name;
+    editBill.items[idx].qty = qty;
+    editBill.items[idx].price = price;
+  }
+  editItemIdx = null;
+  document.getElementById('deItemsList').innerHTML =
+    editBill.items.map((it, i) => renderEditItemRow(it, i)).join('');
+}
+
+function cancelEditItemRow() {
+  editItemIdx = null;
+  document.getElementById('deItemsList').innerHTML =
+    editBill.items.map((it, i) => renderEditItemRow(it, i)).join('');
+}
+
+function deleteEditItem(idx) {
+  editBill.items.splice(idx, 1);
+  editItemIdx = null;
+  document.getElementById('deItemsList').innerHTML =
+    editBill.items.map((it, i) => renderEditItemRow(it, i)).join('');
+}
+
+function addEditItem() {
+  // 新条目默认分配给所有当前已选成员
+  const allMemberIds = new Set();
+  editBill.items.forEach(item => (item.members || []).forEach(m => allMemberIds.add(m.id)));
+  const defaultMembers = editAllUsers.filter(u => allMemberIds.has(u.id));
+  editBill.items.push({ name: '新项目', price: 0, qty: 1, members: defaultMembers });
+  document.getElementById('deItemsList').innerHTML =
+    editBill.items.map((it, i) => renderEditItemRow(it, i)).join('');
+  startEditItemRow(editBill.items.length - 1);
+}
+
+function toggleEditGlobalMember(uid) {
+  const user = editAllUsers.find(u => u.id === uid);
+  if (!user) return;
+  // 检查是否已在任何 item 中
+  const isIn = editBill.items.some(item => (item.members || []).some(m => m.id === uid));
+  editBill.items.forEach(item => {
+    if (!item.members) item.members = [];
+    if (isIn) {
+      // 移除（至少保留1人）
+      if (item.members.length > 1) {
+        item.members = item.members.filter(m => m.id !== uid);
+      }
+    } else {
+      // 添加
+      if (!item.members.some(m => m.id === uid)) {
+        item.members.push({ id: user.id, name: user.name, emoji: user.emoji, color: user.color });
+      }
+    }
+  });
+  renderEditMode();
+}
+
+function removeEditItemMember(idx, uid) {
+  const item = editBill.items[idx];
+  if (!item || !item.members || item.members.length <= 1) return;
+  item.members = item.members.filter(m => m.id !== uid);
+  document.getElementById('deItemsList').innerHTML =
+    editBill.items.map((it, i) => renderEditItemRow(it, i)).join('');
+}
+
+function cancelEditBill() {
+  editBill = null;
+  editItemIdx = null;
+  openDetail(detailBill);
+}
+
+async function saveEditBill() {
+  if (!editBill) return;
+  try {
+    const title = document.getElementById('de-title').value.trim() || editBill.title;
+    const billData = {
+      title,
+      icon: editBill.icon,
+      description: editBill.description || '',
+      items: editBill.items.map(item => ({
+        name: item.name,
+        price: item.price,
+        qty: item.qty || 1,
+        member_ids: (item.members || []).map(m => m.id),
+      })),
+    };
+    await DB.updateBill(editBill.id, billData);
+    editBill = null;
+    editItemIdx = null;
+    detailOverlay.classList.remove('on');
+    const remoteBills = await DB.fetchMyBills();
+    rebuildCarousel(remoteBills);
+    showToast('✓ 已保存');
+  } catch (e) {
+    showToast('保存失败: ' + e.message);
+    console.error(e);
+  }
 }

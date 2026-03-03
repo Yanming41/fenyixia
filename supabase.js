@@ -290,6 +290,66 @@ async function toggleSettled(billId, settled) {
 }
 
 /**
+ * 更新账单（重写条目 + 分摊人）
+ * billData: { title, icon, description, items: [{ name, price, qty, member_ids }] }
+ */
+async function updateBill(billId, billData) {
+  const totalAmount = billData.items.reduce((s, i) => s + i.price * (i.qty || 1), 0);
+
+  // 1. 更新主记录
+  const { error: billErr } = await sb
+    .from('bills')
+    .update({
+      title: billData.title,
+      icon: billData.icon,
+      description: billData.description,
+      total_amount: totalAmount,
+    })
+    .eq('id', billId);
+  if (billErr) throw billErr;
+
+  // 2. 删除旧条目（级联删除 bill_item_members）
+  const { data: oldItems } = await sb
+    .from('bill_items')
+    .select('id')
+    .eq('bill_id', billId);
+  if (oldItems && oldItems.length > 0) {
+    const oldIds = oldItems.map(i => i.id);
+    await sb.from('bill_item_members').delete().in('item_id', oldIds);
+    await sb.from('bill_items').delete().eq('bill_id', billId);
+  }
+
+  // 3. 插入新条目
+  const itemRows = billData.items.map((item, i) => ({
+    bill_id: billId,
+    name: item.name,
+    price: item.price,
+    qty: item.qty || 1,
+    sort_order: i,
+  }));
+  const { data: insertedItems, error: itemsErr } = await sb
+    .from('bill_items')
+    .insert(itemRows)
+    .select();
+  if (itemsErr) throw itemsErr;
+
+  // 4. 插入分摊人
+  const memberRows = [];
+  insertedItems.forEach((dbItem, i) => {
+    const memberIds = billData.items[i].member_ids || [];
+    memberIds.forEach(uid => {
+      memberRows.push({ item_id: dbItem.id, user_id: uid });
+    });
+  });
+  if (memberRows.length > 0) {
+    const { error: memErr } = await sb
+      .from('bill_item_members')
+      .insert(memberRows);
+    if (memErr) throw memErr;
+  }
+}
+
+/**
  * 删除账单（级联删除条目和分摊人）
  */
 async function deleteBill(billId) {
@@ -298,6 +358,113 @@ async function deleteBill(billId) {
     .delete()
     .eq('id', billId);
   if (error) throw error;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   付款凭证
+══════════════════════════════════════════════════════════════ */
+
+async function uploadPaymentProof(billId, file) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('未登录');
+  const ext = file.name?.split('.').pop() || 'jpg';
+  const path = `${billId}/${user.id}_${Date.now()}.${ext}`;
+  const { error: upErr } = await sb.storage
+    .from('payment-proofs')
+    .upload(path, file, { upsert: true });
+  if (upErr) throw upErr;
+  const { data: urlData } = sb.storage.from('payment-proofs').getPublicUrl(path);
+  const imageUrl = urlData.publicUrl;
+  const { error } = await sb.from('payment_proofs').insert({
+    bill_id: billId,
+    user_id: user.id,
+    image_url: imageUrl,
+  });
+  if (error) throw error;
+  return imageUrl;
+}
+
+async function getPaymentProofs(billId) {
+  const { data, error } = await sb
+    .from('payment_proofs')
+    .select('*')
+    .eq('bill_id', billId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  // 补充用户信息
+  const proofs = data || [];
+  const uids = [...new Set(proofs.map(p => p.user_id))];
+  if (uids.length > 0) {
+    const { data: users } = await sb.from('users').select('id,name,emoji').in('id', uids);
+    const umap = {};
+    (users || []).forEach(u => { umap[u.id] = u; });
+    proofs.forEach(p => { p.user = umap[p.user_id] || null; });
+  }
+  return proofs;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   异议 / 怒气
+══════════════════════════════════════════════════════════════ */
+
+async function addAnger(billId) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('未登录');
+  // upsert: 如果已有记录就 +1
+  const { data: existing } = await sb
+    .from('bill_reactions')
+    .select('id, anger_count')
+    .eq('bill_id', billId)
+    .eq('user_id', user.id)
+    .single();
+  if (existing) {
+    const { error } = await sb.from('bill_reactions')
+      .update({ anger_count: existing.anger_count + 1, updated_at: new Date().toISOString(), seen: false })
+      .eq('id', existing.id);
+    if (error) throw error;
+    return existing.anger_count + 1;
+  } else {
+    const { error } = await sb.from('bill_reactions')
+      .insert({ bill_id: billId, user_id: user.id, anger_count: 1 });
+    if (error) throw error;
+    return 1;
+  }
+}
+
+async function getUnseenAnger() {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  // 先拿我垫付的所有账单 id
+  const { data: myBills } = await sb
+    .from('bills').select('id').eq('payer_id', user.id);
+  if (!myBills || myBills.length === 0) return [];
+  const billIds = myBills.map(b => b.id);
+  // 查这些账单的未读怒气
+  const { data, error } = await sb
+    .from('bill_reactions')
+    .select('*')
+    .in('bill_id', billIds)
+    .eq('seen', false)
+    .gt('anger_count', 0);
+  if (error) { console.error('getUnseenAnger error:', error); return []; }
+  // 补充用户信息
+  const reactions = data || [];
+  const uids = [...new Set(reactions.map(r => r.user_id))];
+  if (uids.length > 0) {
+    const { data: users } = await sb.from('users').select('id,name,emoji').in('id', uids);
+    const umap = {};
+    (users || []).forEach(u => { umap[u.id] = u; });
+    reactions.forEach(r => { r.user = umap[r.user_id] || null; });
+  }
+  return reactions;
+}
+
+async function markAngerSeen(reactionIds) {
+  if (!reactionIds.length) return;
+  const { error } = await sb.from('bill_reactions')
+    .update({ seen: true })
+    .in('id', reactionIds);
+  if (error) console.error('markAngerSeen error:', error);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -318,7 +485,15 @@ window.DB = {
   fetchMyBills,
   createBill,
   toggleSettled,
+  updateBill,
   deleteBill,
+  // Payment
+  uploadPaymentProof,
+  getPaymentProofs,
+  // Reactions
+  addAnger,
+  getUnseenAnger,
+  markAngerSeen,
   // Helpers
   normalizeBill,
   ICON_COLORS,
