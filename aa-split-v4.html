@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>分一下 · Split</title>
-    <link rel="stylesheet" href="split-styles.css">
+  <link rel="stylesheet" href="split-styles.css">
 </head>
 
 <body>
@@ -138,6 +138,24 @@
     </div>
   </div>
 
+  <!-- 新建账单选项 Action Sheet -->
+  <div class="overlay" id="add-options-overlay">
+    <div class="sheet" style="padding-bottom: env(safe-area-inset-bottom, 20px);">
+      <div class="sh"></div>
+      <div class="sheet-titlebar" style="margin-bottom: 8px;">
+        <div style="width:40px"></div>
+        <div class="sh-title">选择添加方式</div>
+        <div style="width:40px"></div>
+      </div>
+      <div class="sheet-body" style="gap: 12px; padding-bottom: 24px;">
+        <button class="sb" id="opt-manual" style="background: var(--bg3); color: var(--text1);">✍️ 手动输入</button>
+        <button class="sb" id="opt-ocr" style="background: var(--bg3); color: var(--text1);">📷 拍照/相册上传 (OCR)</button>
+        <button class="sb" id="opt-cancel"
+          style="background: var(--bg4); color: var(--label1); margin-top: 8px;">取消</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 调试控制台 -->
   <div id="debug-panel">
     <div class="dbg-handle"></div>
@@ -194,13 +212,13 @@
     </div>
     <div class="dbg-row">
       <span class="dbg-label">惯性持续时长</span>
-      <input class="dbg-slider" id="sl-inertdur" type="range" min="500" max="5000" value="2000">
-      <span class="dbg-val" id="vl-inertdur">2.0s</span>
+      <input class="dbg-slider" id="sl-inertdur" type="range" min="100" max="5000" value="500">
+      <span class="dbg-val" id="vl-inertdur">0.5s</span>
     </div>
     <div class="dbg-row">
       <span class="dbg-label">惯性速度比例</span>
-      <input class="dbg-slider" id="sl-inertratio" type="range" min="10" max="200" value="60">
-      <span class="dbg-val" id="vl-inertratio">0.60</span>
+      <input class="dbg-slider" id="sl-inertratio" type="range" min="10" max="200" value="35">
+      <span class="dbg-val" id="vl-inertratio">0.35</span>
     </div>
 
     <div class="dbg-section">曲线函数 (指数)</div>
@@ -305,7 +323,7 @@
     <div class="dbg-row"><span class="dbg-label">当前 current</span><span class="dbg-val" id="dbg-cur">0</span></div>
   </div>
 
-    <script src="split-app.js"></script>
+  <script src="split-app.js"></script>
 
 </body>
 
