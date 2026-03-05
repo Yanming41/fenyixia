@@ -35,16 +35,20 @@
     <!-- 汇总卡片 -->
     <div class="summary">
       <div class="sc">
-        <div class="sc-label">本月</div>
-        <div class="sc-val" id="sumTotal">CA$ —</div>
+        <div class="sc-label">已收回</div>
+        <div class="sc-val g" id="sumCollected">+CA$ —</div>
       </div>
       <div class="sc">
-        <div class="sc-label">收回</div>
-        <div class="sc-val g" id="sumCollect">+CA$ —</div>
+        <div class="sc-label">待收回</div>
+        <div class="sc-val g dim" id="sumCollectPending">+CA$ —</div>
       </div>
       <div class="sc">
-        <div class="sc-label">还款</div>
-        <div class="sc-val r" id="sumOwe">-CA$ —</div>
+        <div class="sc-label">已还款</div>
+        <div class="sc-val r" id="sumPaid">-CA$ —</div>
+      </div>
+      <div class="sc">
+        <div class="sc-label">待还款</div>
+        <div class="sc-val r dim" id="sumOwePending">-CA$ —</div>
       </div>
     </div>
 

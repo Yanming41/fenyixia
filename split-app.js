@@ -176,29 +176,28 @@ async function markBillsWithProofs(billList) {
 }
 
 function updateSummary(billList) {
-  let total = 0, collect = 0, owe = 0;
+  let collected = 0, collectPending = 0, paid = 0, owePending = 0;
   billList.forEach(b => {
-    total += b.total_amount || 0;
     const isPayer = currentUserId && b.payer_id === currentUserId;
     if (isPayer) {
-      // 我垫付的，算应收
       const others = (b.items || []).reduce((sum, item) => {
         const n = (item.members || []).length || 1;
         const otherShare = (item.members || []).filter(m => m.id !== b.payer_id).length;
         return sum + (item.price * (item.qty || 1) / n) * otherShare;
       }, 0);
-      if (!b.settled) collect += others;
+      if (b.settled) collected += others;
+      else collectPending += others;
     } else {
-      // 我要付的
-      if (!b.settled) owe += (b.my_share || 0);
+      const share = b.my_share || 0;
+      if (b.settled || b._hasMeProof) paid += share;
+      else owePending += share;
     }
   });
-  const sumTotalEl = document.getElementById('sumTotal');
-  const sumCollectEl = document.getElementById('sumCollect');
-  const sumOweEl = document.getElementById('sumOwe');
-  if (sumTotalEl) sumTotalEl.textContent = fmtMoney(total);
-  if (sumCollectEl) sumCollectEl.textContent = '+' + fmtMoney(collect);
-  if (sumOweEl) sumOweEl.textContent = '-' + fmtMoney(owe);
+  const el = id => document.getElementById(id);
+  if (el('sumCollected')) el('sumCollected').textContent = '+' + fmtMoney(collected);
+  if (el('sumCollectPending')) el('sumCollectPending').textContent = '+' + fmtMoney(collectPending);
+  if (el('sumPaid')) el('sumPaid').textContent = '-' + fmtMoney(paid);
+  if (el('sumOwePending')) el('sumOwePending').textContent = '-' + fmtMoney(owePending);
 }
 
 function rebuildCarousel(billList, animate) {

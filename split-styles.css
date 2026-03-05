@@ -154,15 +154,15 @@
 ══════════════════════════════════════════ */
     .summary {
       padding: 14px 16px 8px;
-      display: flex;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
 
     .sc {
-      flex: 1;
       background: var(--bg2);
       border-radius: 12px;
-      padding: 12px 14px;
+      padding: 10px 14px;
     }
 
     .sc-label {
@@ -173,9 +173,9 @@
     }
 
     .sc-val {
-      font-size: 19px;
+      font-size: 17px;
       font-weight: 600;
-      margin-top: 4px;
+      margin-top: 3px;
       letter-spacing: -0.5px;
       font-variant-numeric: tabular-nums;
     }
@@ -186,6 +186,10 @@
 
     .sc-val.r {
       color: var(--red);
+    }
+
+    .sc-val.dim {
+      opacity: 0.5;
     }
 
     /* ══════════════════════════════════════════
