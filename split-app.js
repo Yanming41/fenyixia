@@ -69,7 +69,8 @@ const CFG = {
   POP_SCALE: 1.08,  // 选中弹跳放大倍数
   POP_DUR: 280,   // 选中弹跳时长 ms
   popMode: 'all', // 'single' = 仅居中卡片放大, 'all' = 整行滑过再回弹
-  INERTIA_DUR: 500,  // 惯性滑行持续时间 ms
+  INERTIA_DUR_MIN: 200,  // 惯性最短时间 ms（轻划）
+  INERTIA_DUR_MAX: 600,  // 惯性最长时间 ms（猛划）
   INERTIA_RATIO: 0.35, // 惯性速度比例（乘以滑动速度）
   showShadow: true,
   showFPS: false,
@@ -539,10 +540,11 @@ function onDragEnd(x) {
   const dxRecent = newest.x - oldest.x;         // px
   const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000); // frac/s
 
-  // 惯性滑行：用 RAF 逐帧减速
+  // 惯性滑行：用 RAF 逐帧减速，时长随速度动态调整
   const inertiaStart = performance.now();
   const startVelocity = velocity * CFG.INERTIA_RATIO;
-  const inertiaDur = CFG.INERTIA_DUR;
+  const absV = Math.abs(startVelocity);
+  const inertiaDur = Math.min(CFG.INERTIA_DUR_MAX, CFG.INERTIA_DUR_MIN + absV * 120);
   const inertiaStartF = fracLive;
 
   function inertiaStep(now) {
@@ -673,8 +675,8 @@ bindSlider('sl-popdur', 'vl-popdur', 'POP_DUR', 'ms');
   const sl = document.getElementById('sl-inertdur');
   const vl = document.getElementById('vl-inertdur');
   sl.addEventListener('input', () => {
-    CFG.INERTIA_DUR = parseFloat(sl.value);
-    vl.textContent = (CFG.INERTIA_DUR / 1000).toFixed(1) + 's';
+    CFG.INERTIA_DUR_MAX = parseFloat(sl.value);
+    vl.textContent = (CFG.INERTIA_DUR_MAX / 1000).toFixed(1) + 's';
     render(fracLive);
   });
 })();
@@ -1112,7 +1114,8 @@ function onMonthDragEnd(x) {
   const velocity = -(dxRecent / CFG.DRAG_PX) / (dt / 1000);
   const inertiaStart = performance.now();
   const startVelocity = velocity * CFG.INERTIA_RATIO;
-  const inertiaDur = CFG.INERTIA_DUR;
+  const absV = Math.abs(startVelocity);
+  const inertiaDur = Math.min(CFG.INERTIA_DUR_MAX, CFG.INERTIA_DUR_MIN + absV * 120);
   const inertiaStartF = mFracLive;
 
   function inertiaStep(now) {
