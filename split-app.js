@@ -507,15 +507,8 @@ function onDragEnd(x) {
 
   // 点击检测
   if (Math.abs(dx) < 8 && duration < 250) {
-    const stageRect = stage.getBoundingClientRect();
-    const clickX = x - stageRect.left - stageRect.width / 2;
-    const clickedCard = Math.round(current + (clickX / CFG.STEP));
-    const target = CFG.cycle
-      ? clickedCard
-      : Math.max(0, Math.min(N - 1, clickedCard));
-
     // 点击当前卡片 → 弹跳动画 → 打开详情
-    if (target === current && cardEls[current]) {
+    if (cardEls[current]) {
       const card = cardEls[current];
       card.style.transition = 'transform .15s cubic-bezier(.34,1.56,.64,1)';
       card.style.transform += ' scale(0.95)';
@@ -524,8 +517,6 @@ function onDragEnd(x) {
         snapTo(current);
         if (bills[current]) openDetail(bills[current]);
       }, 120);
-    } else {
-      snapTo(target);
     }
     return;
   }
@@ -1094,15 +1085,7 @@ function onMonthDragEnd(x) {
   const duration = Date.now() - mTouchStartTime;
 
   if (Math.abs(dx) < 8 && duration < 250) {
-    const rect = monthStage.getBoundingClientRect();
-    const clickX = x - rect.left - rect.width / 2;
-    const clicked = Math.round(mCurrent + (clickX / CFG.STEP));
-    const target = Math.max(0, Math.min(monthN - 1, clicked));
-    if (target === mCurrent) {
-      enterMonthDetail(monthKeys[mCurrent]);
-    } else {
-      snapToMonth(target);
-    }
+    enterMonthDetail(monthKeys[mCurrent]);
     return;
   }
 
