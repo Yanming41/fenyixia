@@ -509,7 +509,7 @@ function onDragEnd(x) {
   if (Math.abs(dx) < 8 && duration < 250) {
     const stageRect = stage.getBoundingClientRect();
     const clickX = x - stageRect.left - stageRect.width / 2;
-    let tapped = Math.round(current + (clickX / CFG.STEP));
+    let tapped = Math.round(fracLive + (clickX / CFG.STEP));
     if (!CFG.cycle) tapped = Math.max(0, Math.min(N - 1, tapped));
     if (cardEls[tapped] && bills[tapped]) {
       const card = cardEls[tapped];
