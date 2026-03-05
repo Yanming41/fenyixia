@@ -505,17 +505,20 @@ function onDragEnd(x) {
   const dx = x - startX;
   const duration = Date.now() - touchStartTime;
 
-  // 点击检测
+  // 点击检测：点哪张卡就打开哪张的详情
   if (Math.abs(dx) < 8 && duration < 250) {
-    // 点击当前卡片 → 弹跳动画 → 打开详情
-    if (cardEls[current]) {
-      const card = cardEls[current];
+    const stageRect = stage.getBoundingClientRect();
+    const clickX = x - stageRect.left - stageRect.width / 2;
+    let tapped = Math.round(current + (clickX / CFG.STEP));
+    if (!CFG.cycle) tapped = Math.max(0, Math.min(N - 1, tapped));
+    if (cardEls[tapped] && bills[tapped]) {
+      const card = cardEls[tapped];
       card.style.transition = 'transform .15s cubic-bezier(.34,1.56,.64,1)';
       card.style.transform += ' scale(0.95)';
       setTimeout(() => {
         card.style.transition = 'transform .35s cubic-bezier(.34,1.56,.64,1)';
-        snapTo(current);
-        if (bills[current]) openDetail(bills[current]);
+        snapTo(tapped);
+        openDetail(bills[tapped]);
       }, 120);
     }
     return;
