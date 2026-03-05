@@ -169,8 +169,15 @@ async function markBillsWithProofs(billList) {
       .select('bill_id, user_id');
     if (!data) return;
     const proofSet = new Set(data.map(p => `${p.bill_id}_${p.user_id}`));
+    // 按 bill_id 分组，记录每张账单有哪些人传了凭证
+    const proofByBill = {};
+    data.forEach(p => {
+      if (!proofByBill[p.bill_id]) proofByBill[p.bill_id] = new Set();
+      proofByBill[p.bill_id].add(p.user_id);
+    });
     billList.forEach(b => {
       b._hasMeProof = proofSet.has(`${b.id}_${currentUserId}`);
+      b._proofUserIds = proofByBill[b.id] || new Set();
     });
   } catch (e) { console.error('markBillsWithProofs:', e); }
 }
@@ -180,13 +187,20 @@ function updateSummary(billList) {
   billList.forEach(b => {
     const isPayer = currentUserId && b.payer_id === currentUserId;
     if (isPayer) {
-      const others = (b.items || []).reduce((sum, item) => {
+      // 按每个分摊人计算，有凭证或已结清算已收回
+      const proofUsers = b._proofUserIds || new Set();
+      const memberShares = {};
+      (b.items || []).forEach(item => {
         const n = (item.members || []).length || 1;
-        const otherShare = (item.members || []).filter(m => m.id !== b.payer_id).length;
-        return sum + (item.price * (item.qty || 1) / n) * otherShare;
-      }, 0);
-      if (b.settled) collected += others;
-      else collectPending += others;
+        const share = (item.price * (item.qty || 1)) / n;
+        (item.members || []).forEach(m => {
+          if (m.id !== b.payer_id) memberShares[m.id] = (memberShares[m.id] || 0) + share;
+        });
+      });
+      Object.entries(memberShares).forEach(([uid, share]) => {
+        if (b.settled || proofUsers.has(uid)) collected += share;
+        else collectPending += share;
+      });
     } else {
       const share = b.my_share || 0;
       if (b.settled || b._hasMeProof) paid += share;
