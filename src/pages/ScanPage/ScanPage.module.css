@@ -1,0 +1,35 @@
+.page {
+    padding: max(var(--space-md), var(--safe-top)) var(--space-md) calc(var(--bottom-nav-height) + var(--safe-bottom) + 16px);
+}
+
+.header {
+    margin-bottom: var(--space-xl);
+}
+
+.title {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-xs);
+}
+
+.desc {
+    font-size: var(--font-sm);
+    color: var(--color-text3);
+}
+
+.placeholder {
+    text-align: center;
+    padding: var(--space-2xl) 0;
+    color: var(--color-text3);
+}
+
+.icon {
+    font-size: 48px;
+    margin-bottom: var(--space-md);
+}
+
+.hint {
+    font-size: var(--font-xs);
+    margin-top: var(--space-sm);
+    opacity: 0.6;
+}

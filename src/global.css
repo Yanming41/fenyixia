@@ -1,0 +1,116 @@
+/* ══════════════════════════════════════════════════════════════
+   Global Styles · 分一下
+   ── Reset · 字体 · 基础样式 · 安全区域 ──
+══════════════════════════════════════════════════════════════ */
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--font-base);
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+/* 滚动条 (Webkit) */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border2);
+    border-radius: var(--radius-full);
+}
+
+/* 链接重置 */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* 按钮重置 */
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+}
+
+/* 输入框重置 */
+input,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+/* 数字输入框去掉 spinner */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type='number'] {
+    -moz-appearance: textfield;
+}
+
+/* 单声道字体 */
+.mono {
+    font-family: 'Space Mono', monospace;
+}
+
+/* 安全区域容器 */
+.safe-area-top {
+    padding-top: var(--safe-top);
+}
+
+.safe-area-bottom {
+    padding-bottom: max(var(--space-md), var(--safe-bottom));
+}
+
+/* 平板居中 */
+@media (min-width: 768px) {
+    #root {
+        display: flex;
+        justify-content: center;
+    }
+
+    #root>* {
+        max-width: var(--max-content-width);
+        width: 100%;
+    }
+}

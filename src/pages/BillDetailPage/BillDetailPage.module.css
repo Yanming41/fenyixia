@@ -1,0 +1,121 @@
+.page {
+    padding: max(var(--space-md), var(--safe-top)) var(--space-md) calc(var(--bottom-nav-height) + var(--safe-bottom) + 16px);
+}
+
+.backBtn {
+    color: var(--color-text2);
+    font-size: var(--font-base);
+    margin-bottom: var(--space-md);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.empty {
+    text-align: center;
+    color: var(--color-text3);
+    margin-top: 60px;
+}
+
+.card {
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.icon {
+    font-size: 40px;
+    margin-bottom: var(--space-sm);
+}
+
+.title {
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: #fff;
+}
+
+.amount {
+    font-family: 'Space Mono', monospace;
+    font-size: var(--font-2xl);
+    font-weight: 700;
+    color: #fff;
+    margin: var(--space-sm) 0;
+}
+
+.meta {
+    font-size: var(--font-sm);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.section {
+    margin-bottom: var(--space-lg);
+}
+
+.sectionTitle {
+    font-size: var(--font-sm);
+    color: var(--color-text3);
+    margin-bottom: var(--space-sm);
+    font-weight: 600;
+}
+
+.itemRow {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--space-md);
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--color-border);
+    font-size: var(--font-base);
+}
+
+.itemQty {
+    color: var(--color-text3);
+}
+
+.itemPrice {
+    font-family: 'Space Mono', monospace;
+    color: var(--color-text2);
+}
+
+.members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.member {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    background: var(--color-surface2);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-sm);
+}
+
+.memberEmoji {
+    font-size: 16px;
+}
+
+.actions {
+    padding-top: var(--space-md);
+}
+
+.actionBtn {
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-md);
+    font-weight: 600;
+}
+
+.settleBtn {
+    background: var(--color-success);
+    color: #fff;
+}
+
+.unsettleBtn {
+    background: var(--color-surface2);
+    color: var(--color-text2);
+    border: 1px solid var(--color-border);
+}

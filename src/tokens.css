@@ -1,0 +1,71 @@
+/* ══════════════════════════════════════════════════════════════
+   Design Tokens · 分一下
+   ── 统一颜色、字号、间距、圆角、阴影、动画 ──
+══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── 颜色 ── */
+  --color-bg:        #0a0a0f;
+  --color-surface:   #13131a;
+  --color-surface2:  #1c1c26;
+  --color-surface3:  #242433;
+  --color-border:    rgba(255, 255, 255, 0.08);
+  --color-border2:   rgba(255, 255, 255, 0.12);
+
+  --color-text:      #f5f5f7;
+  --color-text2:     #a1a1aa;
+  --color-text3:     #6b6b76;
+
+  --color-accent:    #c8f135;
+  --color-accent-dim: rgba(200, 241, 53, 0.12);
+  --color-error:     #ff453a;
+  --color-success:   #30d158;
+  --color-warning:   #ff9f0a;
+  --color-info:      #5ac8fa;
+
+  /* ── 字号（clamp 响应式）── */
+  --font-xs:    clamp(10px, 2.8vw, 11px);
+  --font-sm:    clamp(11px, 3vw, 12px);
+  --font-base:  clamp(13px, 3.5vw, 14px);
+  --font-md:    clamp(14px, 3.8vw, 15px);
+  --font-lg:    clamp(16px, 4.2vw, 18px);
+  --font-xl:    clamp(20px, 5vw, 24px);
+  --font-2xl:   clamp(28px, 7vw, 36px);
+  --font-3xl:   clamp(36px, 9vw, 48px);
+
+  /* ── 间距 ── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   32px;
+  --space-2xl:  48px;
+
+  /* ── 圆角 ── */
+  --radius-sm:   8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --radius-full: 9999px;
+
+  /* ── 阴影 ── */
+  --shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md:  0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  /* ── 动画时长 ── */
+  --duration-fast:   150ms;
+  --duration-normal: 300ms;
+  --duration-slow:   500ms;
+
+  /* ── 安全区域 ── */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+
+  /* ── 布局 ── */
+  --max-content-width: 480px;
+  --bottom-nav-height: 56px;
+}
