@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Agent & OpenSpec
+.agent/
+openspec/
+
 # Build output
 dist/
 
