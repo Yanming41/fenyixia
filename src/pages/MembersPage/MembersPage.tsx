@@ -1,75 +1,64 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import * as friendsService from '../../services/friends';
-import type { UserRef } from '../../types/user';
+import { supabase } from '../../services/supabase';
 import styles from './MembersPage.module.css';
+
+interface Member {
+    id: string;
+    name: string;
+    email: string | null;
+    emoji: string | null;
+    color: string | null;
+}
 
 export function MembersPage() {
     const { user } = useAuth();
-    const [friends, setFriends] = useState<UserRef[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
-    const [email, setEmail] = useState('');
-    const [adding, setAdding] = useState(false);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         if (!user) return;
-        friendsService.getFriends(user.id)
-            .then(setFriends)
-            .catch(console.error)
+        setLoading(true);
+        supabase
+            .from('users')
+            .select('id, name, email, emoji, color')
+            .order('created_at', { ascending: true })
+            .then(({ data, error }) => {
+                if (error) {
+                    console.error('[Members] 加载失败:', error);
+                    setMembers([]);
+                } else {
+                    setMembers(data || []);
+                }
+            })
             .finally(() => setLoading(false));
     }, [user]);
-
-    const handleAdd = async () => {
-        if (!user || !email.trim()) return;
-        setAdding(true);
-        setError('');
-        try {
-            const friend = await friendsService.addFriend(user.id, email.trim());
-            setFriends((prev) => [...prev, friend]);
-            setEmail('');
-        } catch (e) {
-            setError(e instanceof Error ? e.message : '添加失败');
-        } finally {
-            setAdding(false);
-        }
-    };
 
     return (
         <div className={styles.page}>
             <h1 className={styles.title}>👥 群组成员</h1>
 
-            <div className={styles.addSection}>
-                <input
-                    className={styles.input}
-                    type="email"
-                    placeholder="输入好友邮箱"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-                <button className={styles.addBtn} onClick={handleAdd} disabled={adding}>
-                    {adding ? '...' : '添加'}
-                </button>
-            </div>
-            {error && <div className={styles.error}>{error}</div>}
-
             {loading ? (
                 <div className={styles.empty}>加载中...</div>
-            ) : friends.length === 0 ? (
-                <div className={styles.empty}>还没有好友，通过邮箱添加</div>
+            ) : members.length === 0 ? (
+                <div className={styles.empty}>暂无成员</div>
             ) : (
                 <div className={styles.list}>
-                    {user && (
-                        <div className={styles.member}>
-                            <span className={styles.emoji}>{user.emoji}</span>
-                            <span>{user.name}</span>
-                            <span className={styles.you}>我</span>
-                        </div>
-                    )}
-                    {friends.map((f) => (
-                        <div key={f.id} className={styles.member}>
-                            <span className={styles.emoji}>{f.emoji}</span>
-                            <span>{f.name}</span>
+                    {members.map((m) => (
+                        <div key={m.id} className={styles.member}>
+                            <div
+                                className={styles.avatar}
+                                style={{ background: m.color || 'var(--color-surface2)' }}
+                            >
+                                {m.emoji || '😀'}
+                            </div>
+                            <div className={styles.info}>
+                                <div className={styles.name}>{m.name || '未命名'}</div>
+                                {m.email && <div className={styles.email}>{m.email}</div>}
+                            </div>
+                            {m.id === user?.id && (
+                                <span className={styles.you}>我</span>
+                            )}
                         </div>
                     ))}
                 </div>
