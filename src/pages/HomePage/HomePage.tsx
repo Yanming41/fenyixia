@@ -241,8 +241,8 @@ function MonthPileCarousel({
 
     useEffect(() => {
         carousel.onRender(updatePiles);
-        updatePiles(0);
-    }, [carousel, updatePiles]);
+        updatePiles(carousel.frac.current);
+    }, [carousel.onRender, carousel.frac, updatePiles]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
         carousel.onDragStart(e.clientX);

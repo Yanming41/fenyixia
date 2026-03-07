@@ -28,9 +28,9 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
 
     useEffect(() => {
         carousel.onRender(updateCards);
-        // 初始渲染
-        updateCards(0);
-    }, [carousel, updateCards]);
+        // Restore initial or current fraction instead of forcing 0
+        updateCards(carousel.frac.current);
+    }, [carousel.onRender, carousel.frac, updateCards]);
 
     // 触摸/鼠标事件
     const handlePointerDown = useCallback((e: React.PointerEvent) => {
