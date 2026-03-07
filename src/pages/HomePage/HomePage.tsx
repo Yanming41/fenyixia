@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { useCarousel } from '../../hooks/useCarousel';
 import { getUnseenAnger, markAngerSeen } from '../../services/reactions';
+import { supabase } from '../../services/supabase';
 import { isoToMonthKey } from '../../utils/format';
 import type { Bill } from '../../types/bill';
 import styles from './HomePage.module.css';
@@ -24,6 +25,28 @@ export function HomePage() {
 
     const [viewMode, setViewMode] = useState<ViewMode>('all');
     const [currentMonthKey, setCurrentMonthKey] = useState<string | null>(null);
+
+    // Payment proof data for accurate summary
+    const [proofSet, setProofSet] = useState<Set<string>>(new Set());
+    const [proofByBill, setProofByBill] = useState<Record<string, Set<string>>>({});
+
+    useEffect(() => {
+        if (!user) return;
+        supabase
+            .from('payment_proofs')
+            .select('bill_id, user_id')
+            .then(({ data }) => {
+                if (!data) return;
+                const pSet = new Set(data.map(p => `${p.bill_id}_${p.user_id}`));
+                const pByBill: Record<string, Set<string>> = {};
+                data.forEach(p => {
+                    if (!pByBill[p.bill_id]) pByBill[p.bill_id] = new Set();
+                    pByBill[p.bill_id].add(p.user_id);
+                });
+                setProofSet(pSet);
+                setProofByBill(pByBill);
+            });
+    }, [user, bills]);
 
     // Check for unseen anger on mount
     useEffect(() => {
@@ -74,17 +97,33 @@ export function HomePage() {
         if (!user) return { collected, collectPending, paid, owePending };
 
         bills.forEach((b: Bill) => {
-            if (b.payer_id === user.id) {
-                const othersShare = b.total_amount - b.my_share;
-                if (b.settled) collected += othersShare;
-                else collectPending += othersShare;
+            const isPayer = b.payer_id === user.id;
+            if (isPayer) {
+                // Per-member calculation: check who has proof
+                const billProofUsers = proofByBill[b.id] || new Set<string>();
+                const memberShares: Record<string, number> = {};
+                (b.items || []).forEach(item => {
+                    const n = (item.members || []).length || 1;
+                    const share = (item.price * (item.qty || 1)) / n;
+                    (item.members || []).forEach(m => {
+                        if (m.id !== b.payer_id) {
+                            memberShares[m.id] = (memberShares[m.id] || 0) + share;
+                        }
+                    });
+                });
+                Object.entries(memberShares).forEach(([uid, share]) => {
+                    if (b.settled || billProofUsers.has(uid)) collected += share;
+                    else collectPending += share;
+                });
             } else {
-                if (b.settled) paid += b.my_share;
-                else owePending += b.my_share;
+                const share = b.my_share || 0;
+                const hasMeProof = proofSet.has(`${b.id}_${user.id}`);
+                if (b.settled || hasMeProof) paid += share;
+                else owePending += share;
             }
         });
         return { collected, collectPending, paid, owePending };
-    }, [bills, user]);
+    }, [bills, user, proofSet, proofByBill]);
 
     // Month grouping
     const monthGroups = useMemo(() => {
