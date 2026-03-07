@@ -30,3 +30,8 @@ npm-debug.log*
 
 # Vite
 vite.config.ts.timestamp-*
+
+# Claude Token Monitor data
+.claude-monitor/
+.claude/settings.local.json
+.gitignore

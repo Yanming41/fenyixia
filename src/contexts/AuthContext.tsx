@@ -29,13 +29,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 初始化：获取当前用户
     useEffect(() => {
+        console.log('[Auth] 开始初始化...');
         authService.getCurrentUser()
-            .then(setUser)
-            .catch(() => setUser(null))
-            .finally(() => setLoading(false));
+            .then((u) => {
+                console.log('[Auth] getCurrentUser 完成:', u ? u.name : 'null');
+                setUser(u);
+            })
+            .catch((e) => {
+                console.error('[Auth] getCurrentUser 失败:', e);
+                setUser(null);
+            })
+            .finally(() => {
+                console.log('[Auth] loading → false');
+                setLoading(false);
+            });
 
         // 监听 auth 状态变化
         const { data: { subscription } } = authService.onAuthChange((u) => {
+            console.log('[Auth] onAuthChange:', u ? u.name : 'null');
             setUser(u);
             setLoading(false);
         });
