@@ -31,29 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let ignore = false;
 
-        console.log('[Auth] 开始初始化（本地 session）...');
-
-        authService.getSessionUser()
-            .then((u) => {
-                if (!ignore) {
-                    console.log('[Auth] getSessionUser 完成:', u ? u.name : 'null');
-                    setUser(u);
-                }
-            })
-            .catch((e) => {
-                if (!ignore) {
-                    console.error('[Auth] getSessionUser 失败:', e);
-                    setUser(null);
-                }
-            })
-            .finally(() => {
-                if (!ignore) {
-                    console.log('[Auth] loading → false');
-                    setLoading(false);
-                }
-            });
-
-        // 监听 auth 状态变化
+        // onAuthStateChange fires immediately with INITIAL_SESSION event
+        // No need to call getSessionUser() separately — that causes lock contention in Strict Mode
         const { data: { subscription } } = authService.onAuthChange((u) => {
             if (!ignore) {
                 console.log('[Auth] onAuthChange:', u ? u.name : 'null');
