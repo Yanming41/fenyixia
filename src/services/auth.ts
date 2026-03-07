@@ -72,25 +72,12 @@ export async function signOut() {
     await supabase.auth.signOut();
 }
 
-/** 监听登录状态变化 */
+/** 监听登录状态变化（只传 event，不查 DB） */
 export function onAuthChange(
-    callback: (user: User | null, event: AuthChangeEvent) => void
+    callback: (event: AuthChangeEvent, hasSession: boolean) => void
 ) {
-    return supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-        try {
-            if (session?.user) {
-                const { data } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
-                callback(data as User | null, event);
-            } else {
-                callback(null, event);
-            }
-        } catch (e) {
-            console.error('[Auth] onAuthStateChange callback error:', e);
-            callback(null, event);
-        }
+    return supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+        console.log('[auth.ts] onAuthStateChange event=', event, 'has session=', !!session);
+        callback(event, !!session);
     });
 }

@@ -23,18 +23,18 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    // Start with loading=false, user=null — no auto-login on startup
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Only listen for auth changes triggered by explicit signIn/signOut actions
+    // Listen for SIGNED_OUT to clear user; ignore everything else
     useEffect(() => {
-        const { data: { subscription } } = authService.onAuthChange((u, event) => {
-            // Ignore INITIAL_SESSION — we don't auto-login on startup
-            if (event === 'INITIAL_SESSION') return;
-            setUser(u);
-            setLoading(false);
+        const { data: { subscription } } = authService.onAuthChange((event) => {
+            console.log('[Auth] event=', event);
+            if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setLoading(false);
+            }
         });
         return () => subscription.unsubscribe();
     }, []);
@@ -42,14 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signIn = useCallback(async (email: string, password: string) => {
         setError(null);
         setLoading(true);
+        console.log('[signIn] start');
         try {
             await authService.signIn(email, password);
-            // onAuthChange SIGNED_IN event will call setUser + setLoading(false)
+            console.log('[signIn] auth ok, fetching user from DB...');
+            const u = await authService.getCurrentUser();
+            console.log('[signIn] user=', u ? u.name : 'null');
+            setUser(u);
         } catch (e) {
-            setLoading(false);
+            console.error('[signIn] error:', e);
             const appErr = toAppError(e);
             setError(appErr.message);
-            throw e;
+        } finally {
+            setLoading(false);
         }
     }, []);
 
@@ -64,11 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         try {
             await authService.signUp(email, password, name, emoji, color);
+            const u = await authService.getCurrentUser();
+            setUser(u);
         } catch (e) {
-            setLoading(false);
             const appErr = toAppError(e);
             setError(appErr.message);
-            throw e;
+        } finally {
+            setLoading(false);
         }
     }, []);
 
