@@ -1,0 +1,70 @@
+.pile {
+    position: absolute;
+    width: 240px;
+    left: 50%;
+    top: 50%;
+    margin-left: -120px;
+    margin-top: -100px;
+    cursor: pointer;
+    will-change: transform, opacity;
+    transform-origin: center center;
+}
+
+.pin {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: -8px;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.card {
+    background: var(--color-surface2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    text-align: center;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+}
+
+.monthLabel {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+.year {
+    font-size: var(--font-xs);
+    color: var(--color-text3);
+}
+
+.divider {
+    width: 40px;
+    height: 2px;
+    background: var(--color-border2);
+    border-radius: 1px;
+    margin: 10px auto;
+}
+
+.count {
+    font-size: var(--font-sm);
+    color: var(--color-text2);
+    margin-bottom: 4px;
+}
+
+.total {
+    font-family: 'Space Mono', monospace;
+    font-size: var(--font-xl);
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.icons {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    font-size: 18px;
+}

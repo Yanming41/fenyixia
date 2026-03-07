@@ -1,0 +1,73 @@
+/* Section label row */
+.sectionLabelRow {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--space-md);
+    margin-bottom: var(--space-sm);
+    min-height: 36px;
+}
+
+.backBtn {
+    font-size: var(--font-sm);
+    color: var(--color-text2);
+    margin-right: var(--space-sm);
+    white-space: nowrap;
+}
+
+.sectionLabel {
+    flex: 1;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    color: var(--color-text3);
+}
+
+.navRight {
+    flex-shrink: 0;
+}
+
+.clipBtn {
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: background var(--duration-fast);
+}
+
+.clipActive {
+    background: var(--color-surface2);
+}
+
+/* Month pile carousel */
+.monthStage {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.monthCardArea {
+    position: relative;
+    width: 100%;
+    height: 230px;
+    overflow: visible;
+}
+
+.dots {
+    display: flex;
+    gap: 6px;
+    margin-top: var(--space-md);
+    justify-content: center;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-border2);
+    transition: background var(--duration-fast), transform var(--duration-fast);
+}
+
+.dotOn {
+    background: var(--color-text);
+    transform: scale(1.3);
+}
