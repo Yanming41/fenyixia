@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import './global.css';
-import './utils/fpsMonitor'; // exposes showFPS() / hideFPS() in browser console
+import './utils/fpsMonitor';    // showFPS() / hideFPS()
+import './utils/debugPanel';    // openDebugPanel() / closeDebugPanel(), triple-click on [data-debug-trigger]
 import App from './App';
 
 // StrictMode removed: incompatible with Supabase navigator.locks (causes 5s lock timeout)

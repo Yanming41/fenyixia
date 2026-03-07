@@ -12,7 +12,7 @@ export function Header({ title = '分一下', subtitle }: HeaderProps) {
     return (
         <header className={styles.header}>
             <div className={styles.navRow}>
-                <div className={styles.logo}>{title}</div>
+                <div className={styles.logo} data-debug-trigger>{title}</div>
                 {user && (
                     <div className={styles.avatarWrap}>
                         <div className={styles.avatar}>{user.emoji || '🙂'}</div>

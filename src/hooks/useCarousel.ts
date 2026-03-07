@@ -28,7 +28,8 @@ export interface CarouselConfig {
     count: number;
 }
 
-const DEFAULTS = {
+// Exported so debug panel can mutate at runtime
+export const CAROUSEL_DEFAULTS = {
     step: 148,
     dragPx: 72,
     scaleStep: 0.13,
@@ -55,7 +56,7 @@ export interface CardTransform {
 }
 
 export function useCarousel(config: CarouselConfig) {
-    const cfg = { ...DEFAULTS, ...config };
+    const cfg = { ...CAROUSEL_DEFAULTS, ...config };
     const N = cfg.count;
 
     const [current, setCurrent] = useState(0);
