@@ -45,6 +45,11 @@ export const CAROUSEL_DEFAULTS = {
     curveScale: 2.4,
     curveY: 1.7,
     curveOpacity: 1.7,
+    // Master Scalars
+    masterScale: 1.0,
+    fontScale: 1.0,
+    topOffset: 30,
+    baseOpacity: 1.0,
 };
 
 const VELOCITY_WINDOW = 80;
@@ -66,14 +71,32 @@ export function useCarousel(config: CarouselConfig) {
     );
 
     useEffect(() => {
-        const handleResize = () => {
+        const syncScalars = () => {
             const ratio = Math.max(1, Math.min(window.innerWidth, 480) / 390);
             setScaleRatio(ratio);
-            document.documentElement.style.setProperty('--sr', String(ratio));
+
+            // Sync all CSS global variables based on master controls
+            const root = document.documentElement.style;
+            root.setProperty('--sr', String(ratio * CAROUSEL_DEFAULTS.masterScale));
+            root.setProperty('--font-sr', String(ratio * CAROUSEL_DEFAULTS.fontScale));
+            root.setProperty('--top-offset', String(CAROUSEL_DEFAULTS.topOffset));
         };
+
+        const handleResize = () => syncScalars();
+
+        const handleDebugUpdate = () => {
+            syncScalars();
+            // Force an instant re-render of the current fraction via the ref to evade TS hoist errors
+            renderCallbackRef.current?.(fracRef.current);
+        };
+
         handleResize();
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('debug-update', handleDebugUpdate);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('debug-update', handleDebugUpdate);
+        };
     }, []);
 
     // Load initial from sessionStorage if id is provided
@@ -108,7 +131,7 @@ export function useCarousel(config: CarouselConfig) {
             x: sign * cX * cfg.step * scaleRatio,
             y: cY * cfg.yStep * scaleRatio,
             scale: baseScale, // Removed scaleRatio multiplication to prevent blur
-            opacity: Math.max(0.28, 1 - cO * cfg.opacityStep),
+            opacity: Math.max(0.28, 1 - cO * cfg.opacityStep) * cfg.baseOpacity,
             zIndex: Math.round(50 - absO * 10),
         };
     }, [cfg, scaleRatio]);

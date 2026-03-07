@@ -24,6 +24,10 @@ const PARAMS: Param[] = [
     { key: 'curveX', label: '曲线X curveX', min: 0.1, max: 3, step: 0.05 },
     { key: 'curveScale', label: '曲线Scale curveScale', min: 0.1, max: 5, step: 0.05 },
     { key: 'curveY', label: '曲线Y curveY', min: 0.1, max: 3, step: 0.05 },
+    { key: 'masterScale', label: '基础缩放 masterScale', min: 0.5, max: 2.0, step: 0.05 },
+    { key: 'fontScale', label: '字体缩放 fontScale', min: 0.5, max: 2.0, step: 0.05 },
+    { key: 'topOffset', label: '下沉高度 topOffset (px)', min: -50, max: 200, step: 2 },
+    { key: 'baseOpacity', label: '全局透明 baseOpacity', min: 0.1, max: 1.0, step: 0.05 },
 ];
 
 const ORIGINAL_DEFAULTS = { ...CAROUSEL_DEFAULTS };
@@ -41,11 +45,13 @@ export function DebugPanel({ open, onClose }: DebugPanelProps) {
         const num = parseFloat(val);
         (CAROUSEL_DEFAULTS as Record<string, number>)[key] = num;
         setRenderTrigger(v => v + 1);
+        window.dispatchEvent(new Event('debug-update'));
     };
 
     const handleReset = () => {
         Object.assign(CAROUSEL_DEFAULTS, ORIGINAL_DEFAULTS);
         setRenderTrigger(v => v + 1);
+        window.dispatchEvent(new Event('debug-update'));
     };
 
     return (

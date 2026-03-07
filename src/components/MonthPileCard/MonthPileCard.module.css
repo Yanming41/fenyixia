@@ -7,12 +7,12 @@
     left: 50%;
     margin-left: calc(-120px * var(--sr, 1));
     /* Shift cards significantly downward off the top boundary */
-    top: calc(30px * var(--sr, 1));
+    top: calc(var(--top-offset, 30) * 1px * var(--sr, 1));
     margin-top: 0;
 }
 
 .pin {
-    font-size: calc(28px * var(--sr, 1));
+    font-size: calc(28px * var(--font-sr, var(--sr, 1)));
     text-align: center;
     margin-bottom: calc(-8px * var(--sr, 1));
     position: relative;
@@ -31,14 +31,14 @@
 }
 
 .monthLabel {
-    font-size: calc(28px * var(--sr, 1));
+    font-size: calc(28px * var(--font-sr, var(--sr, 1)));
     font-weight: 900;
     color: var(--color-text);
     margin-bottom: calc(2px * var(--sr, 1));
 }
 
 .year {
-    font-size: calc(12px * var(--sr, 1));
+    font-size: calc(12px * var(--font-sr, var(--sr, 1)));
     color: var(--color-text3);
 }
 
@@ -51,14 +51,14 @@
 }
 
 .count {
-    font-size: calc(13px * var(--sr, 1));
+    font-size: calc(13px * var(--font-sr, var(--sr, 1)));
     color: var(--color-text2);
     margin-bottom: calc(4px * var(--sr, 1));
 }
 
 .total {
     font-family: 'Space Mono', monospace;
-    font-size: calc(24px * var(--sr, 1));
+    font-size: calc(24px * var(--font-sr, var(--sr, 1)));
     font-weight: 700;
     color: var(--color-text);
     margin-bottom: calc(8px * var(--sr, 1));
@@ -68,5 +68,5 @@
     display: flex;
     justify-content: center;
     gap: calc(4px * var(--sr, 1));
-    font-size: calc(18px * var(--sr, 1));
+    font-size: calc(18px * var(--font-sr, var(--sr, 1)));
 }
