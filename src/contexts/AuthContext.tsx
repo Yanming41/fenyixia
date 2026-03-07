@@ -27,31 +27,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // 初始化：获取当前用户
+    // 初始化：从本地 session 恢复用户（不发网络请求，不会卡住）
     useEffect(() => {
-        console.log('[Auth] 开始初始化...');
-        authService.getCurrentUser()
+        let ignore = false;
+
+        console.log('[Auth] 开始初始化（本地 session）...');
+
+        authService.getSessionUser()
             .then((u) => {
-                console.log('[Auth] getCurrentUser 完成:', u ? u.name : 'null');
-                setUser(u);
+                if (!ignore) {
+                    console.log('[Auth] getSessionUser 完成:', u ? u.name : 'null');
+                    setUser(u);
+                }
             })
             .catch((e) => {
-                console.error('[Auth] getCurrentUser 失败:', e);
-                setUser(null);
+                if (!ignore) {
+                    console.error('[Auth] getSessionUser 失败:', e);
+                    setUser(null);
+                }
             })
             .finally(() => {
-                console.log('[Auth] loading → false');
-                setLoading(false);
+                if (!ignore) {
+                    console.log('[Auth] loading → false');
+                    setLoading(false);
+                }
             });
 
         // 监听 auth 状态变化
         const { data: { subscription } } = authService.onAuthChange((u) => {
-            console.log('[Auth] onAuthChange:', u ? u.name : 'null');
-            setUser(u);
-            setLoading(false);
+            if (!ignore) {
+                console.log('[Auth] onAuthChange:', u ? u.name : 'null');
+                setUser(u);
+                setLoading(false);
+            }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            ignore = true;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const signIn = useCallback(async (email: string, password: string) => {
@@ -59,14 +73,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         try {
             await authService.signIn(email, password);
-            const u = await authService.getCurrentUser();
-            setUser(u);
+            // onAuthChange 会自动更新 user，不需要再调 getCurrentUser
         } catch (e) {
+            setLoading(false);
             const appErr = toAppError(e);
             setError(appErr.message);
             throw e;
-        } finally {
-            setLoading(false);
         }
     }, []);
 
@@ -81,14 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(true);
         try {
             await authService.signUp(email, password, name, emoji, color);
-            const u = await authService.getCurrentUser();
-            setUser(u);
+            // onAuthChange 会自动更新 user
         } catch (e) {
+            setLoading(false);
             const appErr = toAppError(e);
             setError(appErr.message);
             throw e;
-        } finally {
-            setLoading(false);
         }
     }, []);
 

@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import type { User } from '../types/user';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-/** 获取当前登录用户（null = 未登录） */
+/** 获取当前登录用户（null = 未登录） — 会发网络请求验证 token */
 export async function getCurrentUser(): Promise<User | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
@@ -12,6 +12,20 @@ export async function getCurrentUser(): Promise<User | null> {
         .from('users')
         .select('*')
         .eq('id', user.id)
+        .single();
+
+    return data as User | null;
+}
+
+/** 从本地 session 获取用户（不发网络请求，用于初始化） */
+export async function getSessionUser(): Promise<User | null> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+
+    const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
         .single();
 
     return data as User | null;
@@ -63,14 +77,19 @@ export function onAuthChange(
     callback: (user: User | null, event: AuthChangeEvent) => void
 ) {
     return supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-        if (session?.user) {
-            const { data } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-            callback(data as User | null, event);
-        } else {
+        try {
+            if (session?.user) {
+                const { data } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                callback(data as User | null, event);
+            } else {
+                callback(null, event);
+            }
+        } catch (e) {
+            console.error('[Auth] onAuthStateChange callback error:', e);
             callback(null, event);
         }
     });
