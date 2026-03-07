@@ -264,7 +264,7 @@ function MonthPileCarousel({
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                style={{ height: Math.max(230, 230 * carousel.scaleRatio), touchAction: 'none' }}
+                style={{ touchAction: 'none' }}
             >
                 {monthKeys.map((key, i) => (
                     <div key={key} ref={el => { pileRefs.current[i] = el; }}>

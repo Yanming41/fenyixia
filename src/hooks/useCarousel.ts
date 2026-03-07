@@ -67,8 +67,11 @@ export function useCarousel(config: CarouselConfig) {
 
     useEffect(() => {
         const handleResize = () => {
-            setScaleRatio(Math.max(0.7, Math.min(window.innerWidth, 480) / 390));
+            const ratio = Math.max(1, Math.min(window.innerWidth, 480) / 390);
+            setScaleRatio(ratio);
+            document.documentElement.style.setProperty('--sr', String(ratio));
         };
+        handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -99,12 +102,12 @@ export function useCarousel(config: CarouselConfig) {
         const cY = Math.pow(absO, cfg.curveY);
         const cO = Math.pow(absO, cfg.curveOpacity);
 
-        // Apply global UI layout scaling
+        // Apply dynamic spacing scaling, BUT keep physical visual scale untampered for crisp CSS vector rendering
         const baseScale = Math.max(cfg.minScale, 1 - cS * cfg.scaleStep);
         return {
             x: sign * cX * cfg.step * scaleRatio,
             y: cY * cfg.yStep * scaleRatio,
-            scale: baseScale * scaleRatio,
+            scale: baseScale, // Removed scaleRatio multiplication to prevent blur
             opacity: Math.max(0.28, 1 - cO * cfg.opacityStep),
             zIndex: Math.round(50 - absO * 10),
         };
