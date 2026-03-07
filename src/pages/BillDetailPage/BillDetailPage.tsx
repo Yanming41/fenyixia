@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useBills } from '../../contexts/BillsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { fmtMoney, fmtISODate } from '../../utils/format';
-import type { Bill, BillItem } from '../../types/bill';
+import { uploadPaymentProof, getPaymentProofs } from '../../services/reactions';
+import type { Bill, BillItem, PaymentProof } from '../../types/bill';
 import styles from './BillDetailPage.module.css';
 
 function escText(s: string | undefined) {
@@ -23,6 +24,9 @@ export function BillDetailPage() {
     const [editMode, setEditMode] = useState(false);
     const [editBill, setEditBill] = useState<Bill | null>(null);
     const [editingItemIdx, setEditingItemIdx] = useState<number | null>(null);
+    const [proofs, setProofs] = useState<PaymentProof[]>([]);
+    const [proofsLoading, setProofsLoading] = useState(true);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!bill) {
         return (
@@ -68,6 +72,40 @@ export function BillDetailPage() {
             navigate('/');
         } catch {
             showToast('删除失败', 'error');
+        }
+    };
+
+    // Payment proofs
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        if (!bill) return;
+        setProofsLoading(true);
+        getPaymentProofs(bill.id)
+            .then(setProofs)
+            .catch(() => setProofs([]))
+            .finally(() => setProofsLoading(false));
+    }, [bill?.id]);
+
+    const handleUploadProof = async (file: File) => {
+        if (!user || !bill) return;
+        try {
+            showToast('上传中...', 'info');
+            await uploadPaymentProof(user.id, bill.id, file);
+            showToast('✓ 凭证已上传', 'success');
+            const updated = await getPaymentProofs(bill.id);
+            setProofs(updated);
+        } catch {
+            showToast('上传失败', 'error');
+        }
+    };
+
+    const handlePayBtn = async () => {
+        const amountStr = myShare.toFixed(2);
+        try {
+            await navigator.clipboard.writeText(amountStr);
+            showToast(`📋 已复制 $${amountStr} 到剪贴板`, 'success');
+        } catch {
+            showToast(`付款金额: $${amountStr}`, 'info');
         }
     };
 
@@ -206,6 +244,56 @@ export function BillDetailPage() {
                 })}
             </div>
 
+            {/* Payment proofs */}
+            <div className={styles.proofSection}>
+                <div className={styles.proofTitle}>💳 {isPayer ? '付款凭证' : '我的付款凭证'}</div>
+                {proofsLoading ? (
+                    <div className={styles.proofEmpty}>加载中...</div>
+                ) : proofs.length === 0 ? (
+                    <div className={styles.proofEmpty}>暂无凭证</div>
+                ) : (
+                    <div className={styles.proofList}>
+                        {proofs.map(p => (
+                            <div key={p.id} className={styles.proofItem}>
+                                <img
+                                    className={styles.proofThumb}
+                                    src={p.image_url}
+                                    onClick={() => window.open(p.image_url, '_blank')}
+                                    alt="凭证"
+                                />
+                                <div>
+                                    <div>{p.user?.emoji || '😀'} {p.user?.name || '?'}</div>
+                                    <div className={styles.proofDate}>
+                                        {new Date(p.created_at).toLocaleString('zh-CN')}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {!isPayer && !bill.settled && (
+                    <>
+                        <div
+                            className={styles.proofUpload}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            📷 点击上传 e-Transfer 截图
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) handleUploadProof(file);
+                                e.target.value = '';
+                            }}
+                        />
+                    </>
+                )}
+            </div>
+
             {/* Actions */}
             <div className={styles.actions}>
                 {isPayer ? (
@@ -217,9 +305,14 @@ export function BillDetailPage() {
                         <button className={styles.deleteBtn} onClick={handleDelete}>🗑</button>
                     </>
                 ) : (
-                    <button className={bill.settled ? styles.unsettleBtn : styles.settleBtn} onClick={handleToggleSettled} disabled={bill.settled}>
-                        {bill.settled ? '✓ 已结清' : '✓ 标记已结清'}
-                    </button>
+                    <>
+                        {!bill.settled && (
+                            <button className={styles.payBtn} onClick={handlePayBtn}>💳 付款</button>
+                        )}
+                        <button className={bill.settled ? styles.unsettleBtn : styles.settleBtn} onClick={handleToggleSettled} disabled={bill.settled}>
+                            {bill.settled ? '✓ 已结清' : '✓ 标记已结清'}
+                        </button>
+                    </>
                 )}
             </div>
         </div>
