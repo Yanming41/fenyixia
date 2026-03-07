@@ -62,15 +62,12 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
                 style={{ touchAction: 'none' }}
             >
                 {bills.map((bill, i) => (
-                    <div
+                    <BillCard
                         key={bill.id}
                         ref={(el) => { cardRefs.current[i] = el; }}
-                    >
-                        <BillCard
-                            bill={bill}
-                            onClick={() => handleCardClick(bill, i)}
-                        />
-                    </div>
+                        bill={bill}
+                        onClick={() => handleCardClick(bill, i)}
+                    />
                 ))}
             </div>
             <div className={styles.dots}>

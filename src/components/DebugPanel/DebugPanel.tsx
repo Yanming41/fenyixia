@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BottomSheet } from '../BottomSheet';
 import { CAROUSEL_DEFAULTS } from '../../hooks/useCarousel';
+import { sfx } from '../../utils/sfx';
 import styles from './DebugPanel.module.css';
 
 type Param = {
@@ -26,6 +27,7 @@ const PARAMS: Param[] = [
     { key: 'curveY', label: '曲线Y curveY', min: 0.1, max: 3, step: 0.05 },
     { key: 'masterScale', label: '基础缩放 masterScale', min: 0.5, max: 2.0, step: 0.05 },
     { key: 'fontScale', label: '字体缩放 fontScale', min: 0.5, max: 2.0, step: 0.05 },
+    { key: 'summaryScale', label: '记录缩放 summaryScale', min: 0.5, max: 2.0, step: 0.05 },
     { key: 'topOffset', label: '下沉高度 topOffset (px)', min: -50, max: 200, step: 2 },
     { key: 'baseOpacity', label: '全局透明 baseOpacity', min: 0.1, max: 1.0, step: 0.05 },
 ];
@@ -62,6 +64,102 @@ export function DebugPanel({ open, onClose }: DebugPanelProps) {
                 ↺ Reset defaults
             </button>
 
+            {/* Visual Toggles */}
+            <div className={styles.sectionHeader}>视觉开关</div>
+            <div className={styles.row}>
+                <div className={styles.topRow}>
+                    <span>显示阴影</span>
+                    <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        onChange={(e) => document.body.classList.toggle('disable-shadows', !e.target.checked)}
+                    />
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div className={styles.topRow}>
+                    <span>显示纸张纹理</span>
+                    <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        onChange={(e) => document.body.classList.toggle('disable-textures', !e.target.checked)}
+                    />
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div className={styles.topRow}>
+                    <span>显示顶部光晕</span>
+                    <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        onChange={(e) => document.body.classList.toggle('disable-sheen', !e.target.checked)}
+                    />
+                </div>
+            </div>
+
+            {/* Audio Settings */}
+            <div className={styles.sectionHeader}>滑动音效</div>
+            <div className={styles.row}>
+                <div className={styles.topRow}>
+                    <span>启用音效</span>
+                    <input
+                        type="checkbox"
+                        checked={sfx.enabled}
+                        onChange={(e) => {
+                            sfx.enabled = e.target.checked;
+                            setRenderTrigger(v => v + 1);
+                        }}
+                    />
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div className={styles.topRow}>
+                    <span>音量</span>
+                    <span className={styles.val}>{Math.round(sfx.volume * 100)}%</span>
+                </div>
+                <input
+                    type="range"
+                    className={styles.slider}
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={sfx.volume * 100}
+                    onChange={(e) => {
+                        sfx.volume = parseFloat(e.target.value) / 100;
+                        setRenderTrigger(v => v + 1);
+                    }}
+                />
+            </div>
+            <div className={styles.row} style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                <span className={styles.label}>拖入音频文件或点击添加</span>
+                <input
+                    type="file"
+                    id="sound-input"
+                    accept="audio/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const files = e.target.files;
+                        if (!files) return;
+                        Array.from(files).forEach(f => sfx.loadSoundFromFile(f).then(() => setRenderTrigger(v => v + 1)));
+                    }}
+                />
+                <div
+                    className={styles.dropZone}
+                    onClick={() => document.getElementById('sound-input')?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const files = e.dataTransfer.files;
+                        if (!files) return;
+                        Array.from(files).forEach(f => sfx.loadSoundFromFile(f).then(() => setRenderTrigger(v => v + 1)));
+                    }}
+                >
+                    拖放 .mp3 / .wav 到这里，或点击选择
+                </div>
+            </div>
+
+            <div className={styles.sectionHeader}>动画参数</div>
             {PARAMS.map(({ key, label, min, max, step }) => (
                 <div key={key} className={styles.row}>
                     <div className={styles.topRow}>

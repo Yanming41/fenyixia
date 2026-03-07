@@ -267,13 +267,13 @@ function MonthPileCarousel({
                 style={{ touchAction: 'none' }}
             >
                 {monthKeys.map((key, i) => (
-                    <div key={key} ref={el => { pileRefs.current[i] = el; }}>
-                        <MonthPileCard
-                            monthKey={key}
-                            bills={monthGroups[key]}
-                            onClick={() => onMonthClick(key)}
-                        />
-                    </div>
+                    <MonthPileCard
+                        key={key}
+                        ref={el => { pileRefs.current[i] = el; }}
+                        monthKey={key}
+                        bills={monthGroups[key]}
+                        onClick={() => onMonthClick(key)}
+                    />
                 ))}
             </div>
             <div className={styles.dots}>
@@ -284,6 +284,6 @@ function MonthPileCarousel({
                     />
                 ))}
             </div>
-        </div>
+        </div >
     );
 }

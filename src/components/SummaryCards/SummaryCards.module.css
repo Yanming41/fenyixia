@@ -21,7 +21,7 @@
 
 .value {
     font-family: 'Space Mono', monospace;
-    font-size: var(--font-md);
+    font-size: calc(var(--font-md) * var(--summary-scale, 1));
     font-weight: 700;
 }
 

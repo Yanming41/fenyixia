@@ -1,6 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-
-export interface CarouselConfig {
+import { sfx } from '../utils/sfx'; export interface CarouselConfig {
     /** 标识符（用于状态持久化） */
     id?: string;
     /** 卡片间距 (px) */
@@ -46,10 +45,11 @@ export const CAROUSEL_DEFAULTS = {
     curveY: 1.7,
     curveOpacity: 1.7,
     // Master Scalars
-    masterScale: 1.0,
+    masterScale: 0.75,
     fontScale: 1.0,
     topOffset: 30,
     baseOpacity: 1.0,
+    summaryScale: 1.0,
 };
 
 const VELOCITY_WINDOW = 80;
@@ -80,6 +80,7 @@ export function useCarousel(config: CarouselConfig) {
             root.setProperty('--sr', String(ratio * CAROUSEL_DEFAULTS.masterScale));
             root.setProperty('--font-sr', String(ratio * CAROUSEL_DEFAULTS.fontScale));
             root.setProperty('--top-offset', String(CAROUSEL_DEFAULTS.topOffset));
+            root.setProperty('--summary-scale', String(ratio * CAROUSEL_DEFAULTS.summaryScale));
         };
 
         const handleResize = () => syncScalars();
@@ -142,6 +143,7 @@ export function useCarousel(config: CarouselConfig) {
         if (cfg.id) {
             sessionStorage.setItem(`carousel_${cfg.id}`, String(frac));
         }
+        sfx.checkSfxTrigger(frac);
         renderCallbackRef.current?.(frac);
     }, [cfg.id]);
 
@@ -155,6 +157,7 @@ export function useCarousel(config: CarouselConfig) {
 
     /** Snap 到指定卡片（带弹跳动画） */
     const snapTo = useCallback((idx: number) => {
+        sfx.init();
         const target = Math.max(0, Math.min(N - 1, idx));
         currentRef.current = target;
         setCurrent(target);
@@ -187,6 +190,7 @@ export function useCarousel(config: CarouselConfig) {
 
     /** 拖动开始 */
     const onDragStart = useCallback((x: number) => {
+        sfx.init();
         if (inertiaRafRef.current) {
             cancelAnimationFrame(inertiaRafRef.current);
             inertiaRafRef.current = null;

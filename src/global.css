@@ -140,3 +140,16 @@ input[type='number'] {
         width: 100%;
     }
 }
+
+/* Debug Console Toggles */
+body.disable-shadows * {
+    box-shadow: none !important;
+}
+
+body.disable-textures div[class*="noise"] {
+    display: none !important;
+}
+
+body.disable-sheen div[class*="highlight"] {
+    display: none !important;
+}
