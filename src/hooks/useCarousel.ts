@@ -95,19 +95,55 @@ export function useCarousel(config: CarouselConfig) {
         renderCallbackRef.current?.(frac);
     }, []);
 
-    /** Snap 到指定卡片 */
+    /** ease-out-back: slight overshoot then settle */
+    const easeOutBack = (t: number, overshoot = 1.4) => {
+        const s = overshoot;
+        return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
+    };
+
+    const snapRafRef = useRef<number | null>(null);
+
+    /** Snap 到指定卡片（带弹跳动画） */
     const snapTo = useCallback((idx: number) => {
         const target = Math.max(0, Math.min(N - 1, idx));
         currentRef.current = target;
         setCurrent(target);
-        render(target);
-    }, [N, render]);
+
+        // cancel any running snap / inertia
+        if (snapRafRef.current) cancelAnimationFrame(snapRafRef.current);
+        if (inertiaRafRef.current) {
+            cancelAnimationFrame(inertiaRafRef.current);
+            inertiaRafRef.current = null;
+        }
+
+        const startF = fracRef.current;
+        const startTime = performance.now();
+        const dur = cfg.snapDur;
+
+        const step = (now: number) => {
+            const t = Math.min(1, (now - startTime) / dur);
+            const eased = easeOutBack(t);
+            const frac = startF + (target - startF) * eased;
+            render(frac);
+            if (t < 1) {
+                snapRafRef.current = requestAnimationFrame(step);
+            } else {
+                snapRafRef.current = null;
+                render(target); // ensure exact landing
+            }
+        };
+        snapRafRef.current = requestAnimationFrame(step);
+    }, [N, cfg.snapDur, render]);
 
     /** 拖动开始 */
     const onDragStart = useCallback((x: number) => {
         if (inertiaRafRef.current) {
             cancelAnimationFrame(inertiaRafRef.current);
             inertiaRafRef.current = null;
+        }
+        if (snapRafRef.current) {
+            cancelAnimationFrame(snapRafRef.current);
+            snapRafRef.current = null;
         }
         draggingRef.current = true;
         draggedRef.current = false;
@@ -190,9 +226,8 @@ export function useCarousel(config: CarouselConfig) {
     // 清理
     useEffect(() => {
         return () => {
-            if (inertiaRafRef.current) {
-                cancelAnimationFrame(inertiaRafRef.current);
-            }
+            if (inertiaRafRef.current) cancelAnimationFrame(inertiaRafRef.current);
+            if (snapRafRef.current) cancelAnimationFrame(snapRafRef.current);
         };
     }, []);
 
