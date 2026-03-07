@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { User } from '../types/user';
 import * as authService from '../services/auth';
+import { supabase } from '../services/supabase';
 import { toAppError, isAuthExpired } from '../services/errors';
 
 interface AuthContextValue {
@@ -29,21 +30,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 初始化：从本地 session 恢复用户（不发网络请求，不会卡住）
     useEffect(() => {
-        let ignore = false;
+        let settled = false;
 
-        // onAuthStateChange fires immediately with INITIAL_SESSION event
-        // No need to call getSessionUser() separately — that causes lock contention in Strict Mode
-        const { data: { subscription } } = authService.onAuthChange((u) => {
-            if (!ignore) {
-                console.log('[Auth] onAuthChange:', u ? u.name : 'null');
-                setUser(u);
-                setLoading(false);
+        const settle = (u: User | null) => {
+            if (settled) return;
+            settled = true;
+            console.log('[Auth] settle called, user=', u ? u.name : 'null');
+            setUser(u);
+            setLoading(false);
+        };
+
+        // Fast path: read session directly (no lock, no network)
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log('[Auth] getSession result, session=', session ? 'exists' : 'null');
+            if (!session) {
+                settle(null); // not logged in, stop loading immediately
             }
+            // if session exists, wait for onAuthStateChange to fetch full user from users table
         });
 
+        // onAuthStateChange handles both initial session (with user data) and future changes
+        const { data: { subscription } } = authService.onAuthChange((u, event) => {
+            console.log('[Auth] onAuthChange fired, event=', event, 'user=', u ? u.name : 'null');
+            settle(u);
+            // After initial settle, allow future changes
+            settled = false;
+        });
+
+        // Safety net: if nothing resolved in 3s, stop loading anyway
+        const timeout = setTimeout(() => {
+            console.warn('[Auth] timeout! forcing loading=false');
+            settle(null);
+        }, 3000);
+
         return () => {
-            ignore = true;
+            settled = true; // prevent any callbacks after unmount
             subscription.unsubscribe();
+            clearTimeout(timeout);
         };
     }, []);
 
