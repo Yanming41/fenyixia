@@ -1,0 +1,54 @@
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.sectionLabel {
+    font-size: var(--font-sm);
+    color: var(--color-text2);
+    font-weight: 500;
+}
+
+.formGroup {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.submitBtn {
+    width: 100%;
+    padding: 16px;
+    font-size: var(--font-md);
+    font-weight: 700;
+    color: #fff;
+    background: var(--color-accent);
+    border-radius: var(--radius-md);
+    transition: opacity var(--duration-fast);
+    min-height: 52px;
+}
+
+.submitBtn:disabled {
+    opacity: 0.5;
+}
+
+.optionBtn {
+    width: 100%;
+    padding: 16px;
+    font-size: var(--font-md);
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-surface3);
+    border-radius: var(--radius-md);
+    text-align: center;
+    transition: opacity var(--duration-fast);
+}
+
+.optionBtn:active {
+    opacity: 0.7;
+}
+
+.cancelBtn {
+    background: var(--color-surface2);
+    color: var(--color-text2);
+    margin-top: var(--space-xs);
+}
