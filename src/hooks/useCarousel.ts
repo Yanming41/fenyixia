@@ -32,11 +32,11 @@ export interface CarouselConfig {
 
 // Exported so debug panel can mutate at runtime
 export const CAROUSEL_DEFAULTS = {
-    step: 148,
-    dragPx: 72,
+    step: 130,
+    dragPx: 64,
     scaleStep: 0.13,
     minScale: 0.60,
-    yStep: 14,
+    yStep: 16,
     opacityStep: 0.26,
     snapDur: 420,
     inertiaDur: 300,

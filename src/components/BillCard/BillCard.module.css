@@ -1,7 +1,7 @@
 .card {
     position: absolute;
-    width: 280px;
-    height: 180px;
+    width: 236px;
+    height: 340px;
     border-radius: var(--radius-xl);
     overflow: hidden;
     cursor: pointer;
@@ -9,8 +9,8 @@
     transform-origin: center center;
     left: 50%;
     top: 50%;
-    margin-left: -140px;
-    margin-top: -90px;
+    margin-left: -118px;
+    margin-top: -170px;
 }
 
 .bg {
@@ -41,7 +41,7 @@
     position: relative;
     z-index: 1;
     height: 100%;
-    padding: 14px 16px 12px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
 }
@@ -133,11 +133,13 @@
 
 .amountNum {
     font-family: 'Space Mono', monospace;
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
     font-weight: 700;
     color: #fff;
     letter-spacing: -0.02em;
     line-height: 1.1;
+    margin-top: 4px;
+    margin-bottom: 2px;
 }
 
 .perLine {
@@ -157,7 +159,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 6px;
+    margin-top: 12px;
 }
 
 .avatars {

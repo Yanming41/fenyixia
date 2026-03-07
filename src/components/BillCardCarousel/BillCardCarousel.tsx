@@ -59,7 +59,7 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                style={{ height: Math.max(210, 210 * carousel.scaleRatio), touchAction: 'none' }}
+                style={{ height: Math.max(390, 390 * carousel.scaleRatio), touchAction: 'none' }}
             >
                 {bills.map((bill, i) => (
                     <div
