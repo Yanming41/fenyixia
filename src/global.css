@@ -102,6 +102,32 @@ input[type='number'] {
     padding-bottom: max(var(--space-md), var(--safe-bottom));
 }
 
+/* 怒气飘浮动画 */
+@keyframes angerFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-120px) scale(1.6);
+    }
+}
+
+/* 怒气风暴飘浮 */
+@keyframes angerStorm {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-100vh) scale(1.5) rotate(30deg);
+    }
+}
+
 /* 平板居中 */
 @media (min-width: 768px) {
     #root {

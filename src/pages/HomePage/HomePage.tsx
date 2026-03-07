@@ -1,16 +1,68 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { SummaryCards } from '../../components/SummaryCards';
 import { BillCardCarousel } from '../../components/BillCardCarousel';
 import { useBills } from '../../contexts/BillsContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../components/Toast';
+import { getUnseenAnger, markAngerSeen } from '../../services/reactions';
 import type { Bill } from '../../types/bill';
 
 export function HomePage() {
     const { bills, loading } = useBills();
     const { user } = useAuth();
+    const { show: showToast } = useToast();
     const navigate = useNavigate();
+    const angerChecked = useRef(false);
+
+    // Check for unseen anger on mount
+    useEffect(() => {
+        if (!user || angerChecked.current) return;
+        angerChecked.current = true;
+
+        const timer = setTimeout(async () => {
+            try {
+                const reactions = await getUnseenAnger(user.id);
+                if (!reactions || reactions.length === 0) return;
+
+                let totalAnger = 0;
+                const names: string[] = [];
+                const ids: string[] = [];
+                reactions.forEach(r => {
+                    totalAnger += r.anger_count;
+                    names.push(`${r.user?.emoji || '😡'} ${r.user?.name || '?'} ×${r.anger_count}`);
+                    ids.push(r.id);
+                });
+
+                // Spawn floating anger emojis
+                for (let i = 0; i < Math.min(totalAnger, 20); i++) {
+                    setTimeout(() => {
+                        const emoji = document.createElement('div');
+                        emoji.textContent = '😡';
+                        emoji.style.cssText = `
+                            position:fixed;font-size:28px;pointer-events:none;z-index:9999;
+                            left:${Math.random() * 100}%;bottom:0;
+                            animation:angerStorm 2.2s ease-out forwards;
+                        `;
+                        document.body.appendChild(emoji);
+                        setTimeout(() => emoji.remove(), 2500);
+                    }, i * 150);
+                }
+
+                // Show summary toast
+                setTimeout(() => {
+                    showToast(`😡 收到怒气 ×${totalAnger}`, 'error');
+                }, Math.min(totalAnger, 20) * 150 + 400);
+
+                markAngerSeen(ids);
+            } catch {
+                // ignore
+            }
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [user, showToast]);
 
     const summary = useMemo(() => {
         let collected = 0, collectPending = 0, paid = 0, owePending = 0;

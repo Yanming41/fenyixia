@@ -4,7 +4,7 @@ import { useBills } from '../../contexts/BillsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
 import { fmtMoney, fmtISODate } from '../../utils/format';
-import { uploadPaymentProof, getPaymentProofs } from '../../services/reactions';
+import { uploadPaymentProof, getPaymentProofs, addAnger } from '../../services/reactions';
 import type { Bill, BillItem, PaymentProof } from '../../types/bill';
 import styles from './BillDetailPage.module.css';
 
@@ -106,6 +106,34 @@ export function BillDetailPage() {
             showToast(`📋 已复制 $${amountStr} 到剪贴板`, 'success');
         } catch {
             showToast(`付款金额: $${amountStr}`, 'info');
+        }
+    };
+
+    // Protest / anger
+    const [protestCount, setProtestCount] = useState(0);
+    const handleProtest = async () => {
+        if (!user || !bill) return;
+        const count = protestCount + 1;
+        setProtestCount(count);
+
+        // Spawn floating emoji
+        const emoji = document.createElement('div');
+        emoji.textContent = '😡';
+        emoji.style.cssText = `
+            position:fixed;font-size:32px;pointer-events:none;z-index:9999;
+            left:${50 + (Math.random() - 0.5) * 30}%;
+            bottom:120px;
+            animation:angerFloat 1.5s ease-out forwards;
+        `;
+        document.body.appendChild(emoji);
+        setTimeout(() => emoji.remove(), 1600);
+
+        addAnger(user.id, bill.id).catch(() => {});
+
+        if (count % 3 === 0) {
+            setTimeout(() => {
+                showToast('😡😡😡 您的怒气已传递给发起人！', 'info');
+            }, 400);
         }
     };
 
@@ -312,6 +340,9 @@ export function BillDetailPage() {
                         <button className={bill.settled ? styles.unsettleBtn : styles.settleBtn} onClick={handleToggleSettled} disabled={bill.settled}>
                             {bill.settled ? '✓ 已结清' : '✓ 标记已结清'}
                         </button>
+                        {!bill.settled && (
+                            <button className={styles.protestBtn} onClick={handleProtest}>😡 异议!</button>
+                        )}
                     </>
                 )}
             </div>
