@@ -62,6 +62,7 @@ export function useCarousel(config: CarouselConfig) {
     const fracRef = useRef(0);
     const currentRef = useRef(0);
     const draggingRef = useRef(false);
+    const draggedRef = useRef(false); // true when drag > threshold
     const startXRef = useRef(0);
     const startFracRef = useRef(0);
     const moveHistoryRef = useRef<{ x: number; t: number }[]>([]);
@@ -109,6 +110,7 @@ export function useCarousel(config: CarouselConfig) {
             inertiaRafRef.current = null;
         }
         draggingRef.current = true;
+        draggedRef.current = false;
         startXRef.current = x;
         startFracRef.current = fracRef.current;
         moveHistoryRef.current = [{ x, t: Date.now() }];
@@ -126,6 +128,7 @@ export function useCarousel(config: CarouselConfig) {
             moveHistoryRef.current.shift();
         }
         const dx = x - startXRef.current;
+        if (Math.abs(dx) > 6) draggedRef.current = true;
         const raw = startFracRef.current - dx / cfg.dragPx;
         const frac = Math.max(0, Math.min(N - 1, raw));
         render(frac);
@@ -196,6 +199,7 @@ export function useCarousel(config: CarouselConfig) {
     return {
         current,
         frac: fracRef,
+        wasDragged: draggedRef,
         snapTo,
         onDragStart,
         onDragMove,

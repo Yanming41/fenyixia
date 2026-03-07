@@ -46,6 +46,11 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
         carousel.onDragEnd(e.clientX);
     }, [carousel]);
 
+    const handleCardClick = useCallback((bill: Bill, i: number) => {
+        if (carousel.wasDragged.current) return; // swipe, not tap
+        onCardClick?.(bill, i);
+    }, [carousel, onCardClick]);
+
     return (
         <div className={styles.stage}>
             <div
@@ -63,7 +68,7 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
                     >
                         <BillCard
                             bill={bill}
-                            onClick={() => onCardClick?.(bill, i)}
+                            onClick={() => handleCardClick(bill, i)}
                         />
                     </div>
                 ))}
