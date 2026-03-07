@@ -39,33 +39,39 @@ function buildPanel(): HTMLElement {
         right: '0',
         margin: '0 auto',
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: 'var(--max-content-width, 600px)',
         maxHeight: '85vh',
         overflowY: 'auto',
-        background: 'rgba(30, 30, 36, 0.95)',
-        backdropFilter: 'blur(16px)',
-        zIndex: '99998',
-        padding: '16px',
-        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+        background: 'var(--color-surface, #1e1e24)',
+        zIndex: '9999',
+        padding: '0',
         fontFamily: 'monospace',
         fontSize: '11px',
         color: '#ccc',
-        borderTopLeftRadius: '24px',
-        borderTopRightRadius: '24px',
+        borderTopLeftRadius: 'var(--radius-lg, 24px)',
+        borderTopRightRadius: 'var(--radius-lg, 24px)',
         boxSizing: 'border-box',
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
         transform: 'translateY(100%)',
         transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
     });
 
+    const innerBody = document.createElement('div');
+    Object.assign(innerBody.style, {
+        padding: '0 16px',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+    });
+
     const handleWrap = document.createElement('div');
     Object.assign(handleWrap.style, {
-        width: '100%', padding: '0 0 16px', display: 'flex', justifyContent: 'center', cursor: 'grab', touchAction: 'pan-y'
+        width: '100%', padding: '12px 0 8px', display: 'flex', justifyContent: 'center', cursor: 'grab', touchAction: 'pan-y'
     });
     const handle = document.createElement('div');
-    Object.assign(handle.style, { width: '40px', height: '5px', background: '#555', borderRadius: '4px' });
+    Object.assign(handle.style, { width: '40px', height: '5px', background: 'var(--color-border2, #444)', borderRadius: '9999px' });
     handleWrap.appendChild(handle);
     panel.appendChild(handleWrap);
+
+    // append to innerBody instead of panel directly from now on
+    panel.appendChild(innerBody);
 
     let startY = 0;
     let currentY = 0;
@@ -102,7 +108,7 @@ function buildPanel(): HTMLElement {
     const title = document.createElement('div');
     title.textContent = '🛠 Carousel Debug';
     Object.assign(title.style, { color: '#fff', fontWeight: 'bold', fontSize: '13px', marginBottom: '12px' });
-    panel.appendChild(title);
+    innerBody.appendChild(title);
 
     const resetBtn = document.createElement('button');
     resetBtn.textContent = '↺ Reset defaults';
@@ -111,7 +117,7 @@ function buildPanel(): HTMLElement {
         padding: '6px 10px', borderRadius: '6px', cursor: 'pointer',
         marginBottom: '14px', fontSize: '11px', width: '100%',
     });
-    panel.appendChild(resetBtn);
+    innerBody.appendChild(resetBtn);
 
     PARAMS.forEach(({ key, label, min, max, step }) => {
         const row = document.createElement('div');
@@ -146,7 +152,7 @@ function buildPanel(): HTMLElement {
 
         row.appendChild(topRow);
         row.appendChild(slider);
-        panel.appendChild(row);
+        innerBody.appendChild(row);
 
         resetBtn.addEventListener('click', () => {
             const fresh = ORIGINAL_DEFAULTS[key];
