@@ -13,7 +13,7 @@ export function BillCardCarousel({ bills, onCardClick }: BillCardCarouselProps) 
     const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
     const stageRef = useRef<HTMLDivElement>(null);
 
-    const carousel = useCarousel({ count: bills.length });
+    const carousel = useCarousel({ count: bills.length, id: 'main-bills' });
 
     // 更新 DOM (绕过 React re-render 保证 60fps)
     const updateCards = useCallback((frac: number) => {

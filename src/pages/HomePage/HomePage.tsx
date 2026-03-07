@@ -227,7 +227,7 @@ function MonthPileCarousel({
     onMonthClick: (key: string) => void;
 }) {
     const pileRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const carousel = useCarousel({ count: monthKeys.length });
+    const carousel = useCarousel({ count: monthKeys.length, id: 'main-months' });
 
     const updatePiles = useCallback((frac: number) => {
         pileRefs.current.forEach((el, i) => {

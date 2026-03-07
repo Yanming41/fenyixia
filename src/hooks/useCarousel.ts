@@ -1,6 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 
 export interface CarouselConfig {
+    /** 标识符（用于状态持久化） */
+    id?: string;
     /** 卡片间距 (px) */
     step?: number;
     /** 拖动灵敏度 (px) */
@@ -59,9 +61,13 @@ export function useCarousel(config: CarouselConfig) {
     const cfg = { ...CAROUSEL_DEFAULTS, ...config };
     const N = cfg.count;
 
-    const [current, setCurrent] = useState(0);
-    const fracRef = useRef(0);
-    const currentRef = useRef(0);
+    // Load initial from sessionStorage if id is provided
+    const initialFrac = cfg.id ? Number(sessionStorage.getItem(`carousel_${cfg.id}`)) || 0 : 0;
+    const initialCurrent = Math.max(0, Math.min(N - 1, Math.round(initialFrac)));
+
+    const [current, setCurrent] = useState(initialCurrent);
+    const fracRef = useRef(initialFrac);
+    const currentRef = useRef(initialCurrent);
     const draggingRef = useRef(false);
     const draggedRef = useRef(false); // true when drag > threshold
     const startXRef = useRef(0);
@@ -93,8 +99,11 @@ export function useCarousel(config: CarouselConfig) {
     /** 触发渲染回调 */
     const render = useCallback((frac: number) => {
         fracRef.current = frac;
+        if (cfg.id) {
+            sessionStorage.setItem(`carousel_${cfg.id}`, String(frac));
+        }
         renderCallbackRef.current?.(frac);
-    }, []);
+    }, [cfg.id]);
 
     /** ease-out-back: slight overshoot then settle */
     const easeOutBack = (t: number, overshoot = 1.4) => {
