@@ -34,21 +34,69 @@ function buildPanel(): HTMLElement {
     panel.id = 'debug-panel';
     Object.assign(panel.style, {
         position: 'fixed',
-        top: '0',
-        right: '0',
-        width: '280px',
-        height: '100dvh',
+        bottom: '0',
+        width: '100%',
+        maxWidth: '600px',
+        maxHeight: '85vh',
         overflowY: 'auto',
-        background: 'rgba(10,10,18,0.92)',
+        background: 'rgba(30, 30, 36, 0.95)',
         backdropFilter: 'blur(16px)',
         zIndex: '99998',
         padding: '16px',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
         fontFamily: 'monospace',
         fontSize: '11px',
         color: '#ccc',
-        borderLeft: '1px solid rgba(255,255,255,0.1)',
+        borderTopLeftRadius: '24px',
+        borderTopRightRadius: '24px',
         boxSizing: 'border-box',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
+        transform: 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        left: '50%',
+        marginLeft: '-min(50vw, 300px)', // Center logic assumes max 600px
     });
+
+    const handleWrap = document.createElement('div');
+    Object.assign(handleWrap.style, {
+        width: '100%', padding: '0 0 16px', display: 'flex', justifyContent: 'center', cursor: 'grab', touchAction: 'pan-y'
+    });
+    const handle = document.createElement('div');
+    Object.assign(handle.style, { width: '40px', height: '5px', background: '#555', borderRadius: '4px' });
+    handleWrap.appendChild(handle);
+    panel.appendChild(handleWrap);
+
+    let startY = 0;
+    let currentY = 0;
+
+    const onStart = (e: TouchEvent | MouseEvent) => {
+        startY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        panel.style.transition = 'none';
+    };
+    const onMove = (e: TouchEvent | MouseEvent) => {
+        if (!startY) return;
+        const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        currentY = Math.max(0, y - startY);
+        panel.style.transform = `translateY(${currentY}px)`;
+    };
+    const onEnd = () => {
+        if (!startY) return;
+        panel.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        if (currentY > 100) {
+            closeDebugPanel();
+        } else {
+            panel.style.transform = 'translateY(0)';
+        }
+        startY = 0;
+        currentY = 0;
+    };
+
+    handleWrap.addEventListener('touchstart', onStart, { passive: true });
+    handleWrap.addEventListener('touchmove', onMove, { passive: true });
+    handleWrap.addEventListener('touchend', onEnd);
+    handleWrap.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
 
     const title = document.createElement('div');
     title.textContent = '🛠 Carousel Debug';
@@ -59,17 +107,17 @@ function buildPanel(): HTMLElement {
     resetBtn.textContent = '↺ Reset defaults';
     Object.assign(resetBtn.style, {
         background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff',
-        padding: '4px 10px', borderRadius: '6px', cursor: 'pointer',
+        padding: '6px 10px', borderRadius: '6px', cursor: 'pointer',
         marginBottom: '14px', fontSize: '11px', width: '100%',
     });
     panel.appendChild(resetBtn);
 
     PARAMS.forEach(({ key, label, min, max, step }) => {
         const row = document.createElement('div');
-        row.style.marginBottom = '10px';
+        row.style.marginBottom = '12px';
 
         const topRow = document.createElement('div');
-        Object.assign(topRow.style, { display: 'flex', justifyContent: 'space-between', marginBottom: '3px' });
+        Object.assign(topRow.style, { display: 'flex', justifyContent: 'space-between', marginBottom: '4px' });
 
         const lbl = document.createElement('span');
         lbl.textContent = label;
@@ -100,7 +148,6 @@ function buildPanel(): HTMLElement {
         panel.appendChild(row);
 
         resetBtn.addEventListener('click', () => {
-            // re-read value from a fresh copy of originalDefaults
             const fresh = ORIGINAL_DEFAULTS[key];
             (CAROUSEL_DEFAULTS as Record<string, number>)[key] = fresh;
             slider.value = String(fresh);
@@ -119,14 +166,20 @@ function openDebugPanel() {
     if (!panel) {
         panel = buildPanel();
         document.body.appendChild(panel);
+        // Force reflow for transition
+        panel.getBoundingClientRect();
     }
     panel.style.display = 'block';
+    setTimeout(() => { panel!.style.transform = 'translateY(0)'; }, 10);
     console.log('[Debug] panel open');
 }
 
 function closeDebugPanel() {
     const panel = document.getElementById('debug-panel');
-    if (panel) panel.style.display = 'none';
+    if (panel) {
+        panel.style.transform = 'translateY(100%)';
+        setTimeout(() => { panel.style.display = 'none'; }, 300);
+    }
     console.log('[Debug] panel closed');
 }
 

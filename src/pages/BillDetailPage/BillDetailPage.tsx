@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useBills } from '../../contexts/BillsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/Toast';
+import { BottomSheet } from '../../components/BottomSheet';
 import { fmtMoney, fmtISODate } from '../../utils/format';
 import { uploadPaymentProof, getPaymentProofs, addAnger } from '../../services/reactions';
 import type { Bill, BillItem, PaymentProof } from '../../types/bill';
@@ -17,7 +18,7 @@ export function BillDetailPage() {
     const { id } = useParams<{ id: string }>();
     const { bills, toggleSettled, deleteBill, updateBill } = useBills();
     const { user } = useAuth();
-    const { show: showToast } = useToast();
+    const { toast: showToast } = useToast();
     const navigate = useNavigate();
 
     const bill = bills.find((b) => b.id === id);
@@ -28,12 +29,21 @@ export function BillDetailPage() {
     const [proofsLoading, setProofsLoading] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // We keep the sheet "open" locally so it can animate out before we actually route away.
+    const [open, setOpen] = useState(true);
+
+    const handleClose = () => {
+        setOpen(false);
+        // Wait for sheet exit animation (0.2s) before actually changing route
+        setTimeout(() => navigate('/'), 250);
+    };
+
     if (!bill) {
         return (
-            <div className={styles.page}>
+            <BottomSheet open={open} onClose={handleClose} title="提示">
                 <div className={styles.empty}>账单不存在</div>
-                <button className={styles.backBtn} onClick={() => navigate('/')}>← 返回</button>
-            </div>
+                <button className={styles.backBtn} onClick={handleClose}>← 返回</button>
+            </BottomSheet>
         );
     }
 
@@ -128,7 +138,7 @@ export function BillDetailPage() {
         document.body.appendChild(emoji);
         setTimeout(() => emoji.remove(), 1600);
 
-        addAnger(user.id, bill.id).catch(() => {});
+        addAnger(user.id, bill.id).catch(() => { });
 
         if (count % 3 === 0) {
             setTimeout(() => {
@@ -204,9 +214,7 @@ export function BillDetailPage() {
     }
 
     return (
-        <div className={styles.page}>
-            <button className={styles.backBtn} onClick={() => navigate('/')}>← 返回</button>
-
+        <BottomSheet open={open} onClose={handleClose} fullHeight>
             {/* Header */}
             <div className={styles.detailHeader}>
                 <div className={styles.detailIcon}>{bill.icon}</div>
@@ -346,7 +354,7 @@ export function BillDetailPage() {
                     </>
                 )}
             </div>
-        </div>
+        </BottomSheet>
     );
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, ActionSheet } from '../Modal';
+import { BottomSheet } from '../BottomSheet';
 import { IconPicker, TextInput, NumberInput, SegmentedControl } from '../FormGroup';
 import { useBills } from '../../contexts/BillsContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,7 +23,7 @@ const PEOPLE_OPTIONS = [
 export function CreateBillModal({ open, onClose }: CreateBillModalProps) {
     const { createBill, bills } = useBills();
     const { user } = useAuth();
-    const { show: showToast } = useToast();
+    const { toast: showToast } = useToast();
 
     const [icon, setIcon] = useState('🧾');
     const [title, setTitle] = useState('');
@@ -96,7 +96,7 @@ export function CreateBillModal({ open, onClose }: CreateBillModalProps) {
     };
 
     return (
-        <Modal open={open} onClose={handleClose} title="\u65b0\u5efa\u8d26\u5355">
+        <BottomSheet open={open} onClose={handleClose} title="\u65b0\u5efa\u8d26\u5355" fullHeight={false}>
             <div className={styles.section}>
                 <div className={styles.sectionLabel}>\u7c7b\u578b</div>
                 <IconPicker icons={BILL_ICONS} selected={icon} onChange={setIcon} />
@@ -116,7 +116,7 @@ export function CreateBillModal({ open, onClose }: CreateBillModalProps) {
             <button className={styles.submitBtn} onClick={handleCreate} disabled={saving}>
                 {saving ? '\u4fdd\u5b58\u4e2d\u2026' : '\u521b\u5efa\u8d26\u5355'}
             </button>
-        </Modal>
+        </BottomSheet>
     );
 }
 
@@ -130,7 +130,7 @@ interface AddOptionsSheetProps {
 
 export function AddOptionsSheet({ open, onClose, onManual, onOCR }: AddOptionsSheetProps) {
     return (
-        <ActionSheet open={open} onClose={onClose} title="\u9009\u62e9\u6dfb\u52a0\u65b9\u5f0f">
+        <BottomSheet open={open} onClose={onClose} title="\u9009\u62e9\u6dfb\u52a0\u65b9\u5f0f" fullHeight={false}>
             <button className={styles.optionBtn} onClick={onManual}>
                 \u270d\ufe0f \u624b\u52a8\u8f93\u5165
             </button>
@@ -140,6 +140,6 @@ export function AddOptionsSheet({ open, onClose, onManual, onOCR }: AddOptionsSh
             <button className={`${styles.optionBtn} ${styles.cancelBtn}`} onClick={onClose}>
                 \u53d6\u6d88
             </button>
-        </ActionSheet>
+        </BottomSheet>
     );
 }

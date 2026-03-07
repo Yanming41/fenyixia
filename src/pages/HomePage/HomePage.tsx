@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Outlet } from 'react-router-dom';
 import { Header } from '../../components/Header';
 import { SummaryCards } from '../../components/SummaryCards';
 import { BillCardCarousel } from '../../components/BillCardCarousel';
@@ -19,7 +19,7 @@ type ViewMode = 'all' | 'months' | 'month-detail';
 export function HomePage() {
     const { bills, loading } = useBills();
     const { user } = useAuth();
-    const { show: showToast } = useToast();
+    const { toast: showToast } = useToast();
     const navigate = useNavigate();
     const angerChecked = useRef(false);
 
@@ -210,6 +210,9 @@ export function HomePage() {
             ) : (
                 <BillCardCarousel bills={monthDetailBills} onCardClick={handleCardClick} />
             )}
+
+            {/* Nested routes (like BillDetailPage) will render here as an overlay */}
+            <Outlet />
         </div>
     );
 }

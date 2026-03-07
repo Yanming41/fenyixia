@@ -19,19 +19,24 @@ export function MembersPage() {
     useEffect(() => {
         if (!user) return;
         setLoading(true);
-        supabase
-            .from('users')
-            .select('id, name, email, emoji, color')
-            .order('created_at', { ascending: true })
-            .then(({ data, error }) => {
+        const fetchMembers = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, name, email, emoji, color')
+                    .order('created_at', { ascending: true });
+
                 if (error) {
                     console.error('[Members] 加载失败:', error);
                     setMembers([]);
                 } else {
                     setMembers(data || []);
                 }
-            })
-            .finally(() => setLoading(false));
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMembers();
     }, [user]);
 
     return (

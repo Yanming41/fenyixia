@@ -1,0 +1,99 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* allow pointer events to pass through wrapper to child overlay */
+    pointer-events: none;
+}
+
+.backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: auto;
+}
+
+.sheet {
+    position: relative;
+    width: 100%;
+    max-width: var(--max-content-width, 600px);
+    margin: 0 auto;
+    background: var(--color-surface, #1e1e24);
+    border-radius: var(--radius-lg, 24px) var(--radius-lg, 24px) 0 0;
+    padding-bottom: max(var(--space-lg, 24px), var(--safe-bottom, env(safe-area-inset-bottom)));
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    /* ensure content doesn't overflow the rounded corners */
+    overflow: hidden;
+    /* default shadow */
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    will-change: transform;
+}
+
+/* Modifier for views like BillDetail that need full screen estate */
+.fullHeight {
+    height: 92vh;
+}
+
+/* Default height for smaller sheets */
+.sheet:not(.fullHeight) {
+    max-height: 90vh;
+}
+
+.handleBar {
+    width: 100%;
+    padding: 12px 0 8px;
+    display: flex;
+    justify-content: center;
+    background: transparent;
+    cursor: grab;
+    /* prevent text selection on drag */
+    user-select: none;
+    touch-action: pan-y;
+}
+
+.handleBar:active {
+    cursor: grabbing;
+}
+
+.handle {
+    width: 40px;
+    height: 5px;
+    background: var(--color-border2, #444);
+    border-radius: var(--radius-full, 9999px);
+}
+
+.titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-md, 16px) var(--space-md, 16px);
+}
+
+.cancelBtn {
+    background: none;
+    border: none;
+    color: var(--color-text2, #a0a0a0);
+    font-size: var(--font-base, 16px);
+    padding: 8px 0;
+    cursor: pointer;
+}
+
+.title {
+    font-size: var(--font-md, 18px);
+    font-weight: 600;
+    color: var(--color-text, #fff);
+}
+
+.body {
+    padding: 0 var(--space-md, 16px);
+    flex: 1;
+    overflow-y: auto;
+    /* momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+}

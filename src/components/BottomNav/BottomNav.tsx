@@ -20,7 +20,7 @@ export function BottomNav({ onAdd }: BottomNavProps) {
     return (
         <nav className={styles.nav}>
             {TABS.map((tab) => {
-                if (tab.isAdd) {
+                if ('isAdd' in tab && tab.isAdd) {
                     return (
                         <button key="add" className={styles.addBtn} onClick={onAdd}>
                             {tab.icon}

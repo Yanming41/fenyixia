@@ -63,15 +63,9 @@ export default function App() {
                                         <AppLayout><HomePage /></AppLayout>
                                     </AuthGuard>
                                 }
-                            />
-                            <Route
-                                path="/bills/:id"
-                                element={
-                                    <AuthGuard>
-                                        <AppLayout><BillDetailPage /></AppLayout>
-                                    </AuthGuard>
-                                }
-                            />
+                            >
+                                <Route path="bills/:id" element={<BillDetailPage />} />
+                            </Route>
                             <Route
                                 path="/scan"
                                 element={
