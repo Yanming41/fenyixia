@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { BillsProvider } from './contexts/BillsContext';
@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast';
 import { AuthGuard } from './components/AuthGuard';
 import { BottomNav } from './components/BottomNav';
 import { CreateBillModal, AddOptionsSheet } from './components/CreateBillModal';
+import { DebugPanel } from './components/DebugPanel';
 
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
@@ -19,6 +20,28 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate();
     const [showAddOptions, setShowAddOptions] = useState(false);
     const [showCreateBill, setShowCreateBill] = useState(false);
+    const [showDebugPanel, setShowDebugPanel] = useState(false);
+
+    // Global triple-click to toggle debug panel
+    useEffect(() => {
+        let clickCount = 0;
+        let clickTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (!target.closest('[data-debug-trigger]')) return;
+            clickCount++;
+            if (clickTimer) clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+            if (clickCount >= 3) {
+                clickCount = 0;
+                setShowDebugPanel(true);
+            }
+        };
+
+        document.addEventListener('click', handleClick);
+        return () => document.removeEventListener('click', handleClick);
+    }, []);
 
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -43,6 +66,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <CreateBillModal
                 open={showCreateBill}
                 onClose={() => setShowCreateBill(false)}
+            />
+
+            <DebugPanel
+                open={showDebugPanel}
+                onClose={() => setShowDebugPanel(false)}
             />
         </div>
     );

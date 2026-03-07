@@ -1,0 +1,40 @@
+.title {
+    color: var(--color-text, #fff);
+    font-weight: 600;
+    font-size: var(--font-sm, 13px);
+    margin-bottom: var(--space-sm, 12px);
+}
+
+.resetBtn {
+    background: var(--color-surface2, rgba(255, 255, 255, 0.1));
+    border: none;
+    color: var(--color-text, #fff);
+    padding: 6px 10px;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    margin-bottom: var(--space-sm, 14px);
+    font-size: var(--font-xs, 11px);
+    width: 100%;
+}
+
+.row {
+    margin-bottom: var(--space-sm, 12px);
+    font-family: monospace;
+    font-size: var(--font-xs, 11px);
+    color: var(--color-text2, #ccc);
+}
+
+.topRow {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs, 4px);
+}
+
+.val {
+    color: var(--color-success, #0f0);
+}
+
+.slider {
+    width: 100%;
+    accent-color: var(--color-success, #0f0);
+}
