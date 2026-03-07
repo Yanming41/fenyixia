@@ -35,6 +35,9 @@ function buildPanel(): HTMLElement {
     Object.assign(panel.style, {
         position: 'fixed',
         bottom: '0',
+        left: '0',
+        right: '0',
+        margin: '0 auto',
         width: '100%',
         maxWidth: '600px',
         maxHeight: '85vh',
@@ -53,8 +56,6 @@ function buildPanel(): HTMLElement {
         boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
         transform: 'translateY(100%)',
         transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
-        left: '50%',
-        marginLeft: '-min(50vw, 300px)', // Center logic assumes max 600px
     });
 
     const handleWrap = document.createElement('div');
