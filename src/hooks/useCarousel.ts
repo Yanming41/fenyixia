@@ -61,6 +61,18 @@ export function useCarousel(config: CarouselConfig) {
     const cfg = { ...CAROUSEL_DEFAULTS, ...config };
     const N = cfg.count;
 
+    const [scaleRatio, setScaleRatio] = useState(() =>
+        typeof window !== 'undefined' ? Math.max(0.7, Math.min(window.innerWidth, 480) / 390) : 1
+    );
+
+    useEffect(() => {
+        const handleResize = () => {
+            setScaleRatio(Math.max(0.7, Math.min(window.innerWidth, 480) / 390));
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Load initial from sessionStorage if id is provided
     const initialFrac = cfg.id ? Number(sessionStorage.getItem(`carousel_${cfg.id}`)) || 0 : 0;
     const initialCurrent = Math.max(0, Math.min(N - 1, Math.round(initialFrac)));
@@ -87,14 +99,16 @@ export function useCarousel(config: CarouselConfig) {
         const cY = Math.pow(absO, cfg.curveY);
         const cO = Math.pow(absO, cfg.curveOpacity);
 
+        // Apply global UI layout scaling
+        const baseScale = Math.max(cfg.minScale, 1 - cS * cfg.scaleStep);
         return {
-            x: sign * cX * cfg.step,
-            y: cY * cfg.yStep,
-            scale: Math.max(cfg.minScale, 1 - cS * cfg.scaleStep),
+            x: sign * cX * cfg.step * scaleRatio,
+            y: cY * cfg.yStep * scaleRatio,
+            scale: baseScale * scaleRatio,
             opacity: Math.max(0.28, 1 - cO * cfg.opacityStep),
             zIndex: Math.round(50 - absO * 10),
         };
-    }, [cfg]);
+    }, [cfg, scaleRatio]);
 
     /** 触发渲染回调 */
     const render = useCallback((frac: number) => {
@@ -175,10 +189,10 @@ export function useCarousel(config: CarouselConfig) {
         }
         const dx = x - startXRef.current;
         if (Math.abs(dx) > 6) draggedRef.current = true;
-        const raw = startFracRef.current - dx / cfg.dragPx;
+        const raw = startFracRef.current - dx / (cfg.dragPx * scaleRatio);
         const frac = Math.max(0, Math.min(N - 1, raw));
         render(frac);
-    }, [cfg.dragPx, N, render]);
+    }, [cfg.dragPx, N, render, scaleRatio]);
 
     /** 拖动结束 */
     const onDragEnd = useCallback((x: number) => {
@@ -190,7 +204,7 @@ export function useCarousel(config: CarouselConfig) {
         const newest = moveHistoryRef.current[moveHistoryRef.current.length - 1];
         const dt = Math.max(1, newest.t - oldest.t);
         const dxRecent = newest.x - oldest.x;
-        const velocity = -(dxRecent / cfg.dragPx) / (dt / 1000);
+        const velocity = -(dxRecent / (cfg.dragPx * scaleRatio)) / (dt / 1000);
 
         const startVelocity = velocity * cfg.inertiaRatio;
 
@@ -245,6 +259,7 @@ export function useCarousel(config: CarouselConfig) {
         current,
         frac: fracRef,
         wasDragged: draggedRef,
+        scaleRatio,
         snapTo,
         onDragStart,
         onDragMove,
