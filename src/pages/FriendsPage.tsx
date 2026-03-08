@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
 import { addFriend } from '../lib/api/friends'
 import BottomNav from '../components/Layout/BottomNav'
@@ -14,17 +15,12 @@ interface UserProfile {
 
 export default function FriendsPage({ onAddClick }: { onAddClick?: () => void }) {
     const { user } = useAuth()
+    const { showToast } = useToast()
     const [members, setMembers] = useState<UserProfile[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [email, setEmail] = useState('')
     const [adding, setAdding] = useState(false)
-    const [toast, setToast] = useState('')
-
-    const showToast = (msg: string) => {
-        setToast(msg)
-        setTimeout(() => setToast(''), 2500)
-    }
 
     const loadMembers = async () => {
         setLoading(true)
@@ -176,24 +172,7 @@ export default function FriendsPage({ onAddClick }: { onAddClick?: () => void })
                 )}
             </div>
 
-            {/* Toast */}
-            {toast && (
-                <div style={{
-                    position: 'fixed',
-                    bottom: 100,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.8)',
-                    color: '#fff',
-                    padding: '10px 20px',
-                    borderRadius: 20,
-                    fontSize: 14,
-                    zIndex: 9999,
-                    pointerEvents: 'none',
-                }}>
-                    {toast}
-                </div>
-            )}
+
 
             <BottomNav onAddClick={onAddClick} />
         </div>

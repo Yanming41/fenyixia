@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useBills } from './hooks/useBills'
+import { ToastProvider } from './contexts/ToastContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import FriendsPage from './pages/FriendsPage'
@@ -22,7 +23,7 @@ export default function App() {
   const handleAddClick = () => setShowAddOptions(true)
 
   return (
-    <>
+    <ToastProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
@@ -56,6 +57,6 @@ export default function App() {
         onCreated={() => { setShowAddOptions(false); reload() }}
       />
       <DebugConsole />
-    </>
+    </ToastProvider>
   )
 }
