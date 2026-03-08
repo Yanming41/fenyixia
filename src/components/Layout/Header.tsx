@@ -10,7 +10,7 @@ interface Profile {
 }
 
 interface HeaderProps {
-  viewMode?: 'carousel' | 'months'
+  viewMode?: 'carousel' | 'mine'
   onToggleView?: () => void
 }
 
@@ -59,7 +59,7 @@ export default function Header({ viewMode, onToggleView }: HeaderProps) {
       </div>
       <div className="large-title-row">
         <div className="h-large">
-          {viewMode === 'months' ? '月份账单' : '账单记录'}
+          {viewMode === 'mine' ? '我的待付' : '账单记录'}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="h-sub">Split Bills</div>
@@ -67,14 +67,15 @@ export default function Header({ viewMode, onToggleView }: HeaderProps) {
             <button
               onClick={onToggleView}
               style={{
-                background: viewMode === 'months' ? 'var(--blue)' : 'var(--bg3)',
-                color: viewMode === 'months' ? '#fff' : 'var(--label2)',
+                background: viewMode === 'mine' ? 'var(--orange)' : 'var(--bg3)',
+                color: viewMode === 'mine' ? '#fff' : 'var(--label2)',
                 border: 'none', borderRadius: 8,
-                padding: '4px 10px', fontSize: 16,
+                padding: '4px 10px', fontSize: 14, fontWeight: 600,
                 cursor: 'pointer', transition: 'all 0.2s',
+                fontFamily: 'inherit',
               }}
             >
-              📌
+              {viewMode === 'mine' ? '全部' : '💰 我的'}
             </button>
           )}
         </div>

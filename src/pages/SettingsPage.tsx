@@ -11,7 +11,7 @@ interface Profile {
     email: string
 }
 
-export default function SettingsPage() {
+export default function SettingsPage({ onAddClick }: { onAddClick?: () => void }) {
     const { user, signOut } = useAuth()
     const navigate = useNavigate()
     const [profile, setProfile] = useState<Profile | null>(null)
@@ -100,7 +100,7 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <BottomNav />
+            <BottomNav onAddClick={onAddClick} />
         </div>
     )
 }

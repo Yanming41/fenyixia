@@ -12,7 +12,7 @@ interface UserProfile {
     color: string
 }
 
-export default function FriendsPage() {
+export default function FriendsPage({ onAddClick }: { onAddClick?: () => void }) {
     const { user } = useAuth()
     const [members, setMembers] = useState<UserProfile[]>([])
     const [loading, setLoading] = useState(true)
@@ -195,7 +195,7 @@ export default function FriendsPage() {
                 </div>
             )}
 
-            <BottomNav />
+            <BottomNav onAddClick={onAddClick} />
         </div>
     )
 }
