@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useBills } from '../hooks/useBills'
 import Header from '../components/Layout/Header'
 import SummaryCards from '../components/BillCardCarousel/SummaryCards'
 import BillCardCarousel from '../components/BillCardCarousel/BillCardCarousel'
 import SplitDetail from '../components/SplitDetail/SplitDetail'
-import MyBillsView from '../components/MyBillsView/MyBillsView'
+import BillListView from '../components/BillListView/BillListView'
 import BottomNav from '../components/Layout/BottomNav'
 import { useDebugConfig } from '../contexts/DebugContext'
 import type { Bill } from '../lib/types'
@@ -19,9 +19,21 @@ export default function HomePage({ onAddClick }: HomePageProps) {
   const { bills, loading, reload } = useBills()
   const { config } = useDebugConfig()
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
-  const [viewMode, setViewMode] = useState<'carousel' | 'mine'>('carousel')
+  const [dataFilter, setDataFilter] = useState<'all' | 'mine'>('all')
+  const [displayMode, setDisplayMode] = useState<'carousel' | 'list'>('carousel')
+
+  const myBills = useMemo(() => {
+    if (!user) return []
+    return bills.filter(b =>
+      !b.settled &&
+      b.payer_id !== user.id &&
+      b.items.some(item => item.members.some(m => m.id === user.id))
+    )
+  }, [bills, user])
 
   if (!user) return null
+
+  const displayBills = dataFilter === 'mine' ? myBills : bills
 
   const appClasses = [
     'app',
@@ -30,25 +42,46 @@ export default function HomePage({ onAddClick }: HomePageProps) {
     !config.showSheen && 'no-sheen'
   ].filter(Boolean).join(' ')
 
-  return (
-    <div className={appClasses} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 70px)' }}>
-      <Header viewMode={viewMode} onToggleView={() => setViewMode(v => v === 'carousel' ? 'mine' : 'carousel')} />
-
-      <SummaryCards bills={bills} currentUserId={user.id} />
-
-      {loading ? (
+  const renderContent = () => {
+    if (loading) {
+      return (
         <div className="carousel-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ color: 'var(--label3)', fontSize: 15 }}>加载中...</div>
         </div>
-      ) : viewMode === 'mine' ? (
-        <MyBillsView bills={bills} currentUserId={user.id} onSelectBill={setSelectedBill} />
-      ) : (
-        <BillCardCarousel
-          bills={bills}
-          currentUserId={user.id}
+      )
+    }
+
+    if (displayMode === 'list') {
+      return (
+        <BillListView
+          bills={displayBills}
+          showMyShare={dataFilter === 'mine'}
           onSelectBill={setSelectedBill}
         />
-      )}
+      )
+    }
+
+    return (
+      <BillCardCarousel
+        bills={displayBills}
+        currentUserId={user.id}
+        onSelectBill={setSelectedBill}
+      />
+    )
+  }
+
+  return (
+    <div className={appClasses} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 70px)' }}>
+      <Header
+        dataFilter={dataFilter}
+        displayMode={displayMode}
+        onToggleFilter={() => setDataFilter(f => f === 'all' ? 'mine' : 'all')}
+        onToggleDisplay={() => setDisplayMode(d => d === 'carousel' ? 'list' : 'carousel')}
+      />
+
+      <SummaryCards bills={bills} currentUserId={user.id} />
+
+      {renderContent()}
 
       {selectedBill && (
         <SplitDetail

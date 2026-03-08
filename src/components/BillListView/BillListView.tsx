@@ -1,37 +1,24 @@
-import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Bill } from '../../lib/types'
 
-interface MyBillsViewProps {
+interface BillListViewProps {
     bills: Bill[]
-    currentUserId: string
+    showMyShare?: boolean
     onSelectBill?: (bill: Bill) => void
 }
 
-export default function MyBillsView({ bills, currentUserId, onSelectBill }: MyBillsViewProps) {
-    const myBills = useMemo(() =>
-        bills.filter(b => {
-            if (b.settled) return false
-            if (b.payer_id === currentUserId) return false // I'm the payer, I collect
-            // Check if I'm in any item's members
-            return b.items.some(item =>
-                item.members.some(m => m.id === currentUserId)
-            )
-        }),
-        [bills, currentUserId]
-    )
-
-    if (myBills.length === 0) {
+export default function BillListView({ bills, showMyShare, onSelectBill }: BillListViewProps) {
+    if (bills.length === 0) {
         return (
             <div style={{ color: 'var(--label3)', textAlign: 'center', padding: 60, fontSize: 14 }}>
-                🎉 没有待付账单
+                {showMyShare ? '🎉 没有待付账单' : '暂无账单'}
             </div>
         )
     }
 
     return (
-        <div style={{ padding: '0 16px' }}>
-            {myBills.map((bill, i) => (
+        <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+            {bills.map((bill, i) => (
                 <motion.div
                     key={bill.id}
                     initial={{ opacity: 0, y: 16 }}
@@ -60,16 +47,27 @@ export default function MyBillsView({ bills, currentUserId, onSelectBill }: MyBi
                             {bill.title}
                         </div>
                         <div style={{ fontSize: 12, color: 'var(--label3)', marginTop: 3 }}>
-                            付给 {bill.payer_emoji} {bill.payer_name} · {new Date(bill.date).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}日
+                            {showMyShare
+                                ? `付给 ${bill.payer_emoji} ${bill.payer_name} · ${new Date(bill.date).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}日`
+                                : `${new Date(bill.date).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}日${bill.settled ? ' · ✅ 已结清' : ''}`
+                            }
                         </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--orange)' }}>
-                            CA$ {bill.my_share?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--label3)', marginTop: 2 }}>
-                            我的份额
-                        </div>
+                        {showMyShare ? (
+                            <>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--orange)' }}>
+                                    CA$ {bill.my_share?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}
+                                </div>
+                                <div style={{ fontSize: 11, color: 'var(--label3)', marginTop: 2 }}>
+                                    我的份额
+                                </div>
+                            </>
+                        ) : (
+                            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--label1)' }}>
+                                CA$ {bill.total_amount?.toLocaleString('en-CA', { minimumFractionDigits: 0 })}
+                            </div>
+                        )}
                     </div>
                 </motion.div>
             ))}

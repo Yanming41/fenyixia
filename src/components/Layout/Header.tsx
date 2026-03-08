@@ -10,11 +10,13 @@ interface Profile {
 }
 
 interface HeaderProps {
-  viewMode?: 'carousel' | 'mine'
-  onToggleView?: () => void
+  dataFilter?: 'all' | 'mine'
+  displayMode?: 'carousel' | 'list'
+  onToggleFilter?: () => void
+  onToggleDisplay?: () => void
 }
 
-export default function Header({ viewMode, onToggleView }: HeaderProps) {
+export default function Header({ dataFilter, displayMode, onToggleFilter, onToggleDisplay }: HeaderProps) {
   const { user } = useAuth()
   const { setIsDebugOpen } = useDebugConfig()
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -59,23 +61,36 @@ export default function Header({ viewMode, onToggleView }: HeaderProps) {
       </div>
       <div className="large-title-row">
         <div className="h-large">
-          {viewMode === 'mine' ? '我的待付' : '账单记录'}
+          {dataFilter === 'mine' ? '我的待付' : '账单记录'}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div className="h-sub">Split Bills</div>
-          {onToggleView && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {onToggleFilter && (
             <button
-              onClick={onToggleView}
+              onClick={onToggleFilter}
               style={{
-                background: viewMode === 'mine' ? 'var(--orange)' : 'var(--bg3)',
-                color: viewMode === 'mine' ? '#fff' : 'var(--label2)',
+                background: dataFilter === 'mine' ? 'var(--orange)' : 'var(--bg3)',
+                color: dataFilter === 'mine' ? '#fff' : 'var(--label2)',
                 border: 'none', borderRadius: 8,
-                padding: '4px 10px', fontSize: 14, fontWeight: 600,
+                padding: '5px 10px', fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', transition: 'all 0.2s',
                 fontFamily: 'inherit',
               }}
             >
-              {viewMode === 'mine' ? '全部' : '💰 我的'}
+              {dataFilter === 'mine' ? '📋 全部' : '💰 我的'}
+            </button>
+          )}
+          {onToggleDisplay && (
+            <button
+              onClick={onToggleDisplay}
+              style={{
+                background: 'var(--bg3)',
+                color: 'var(--label2)',
+                border: 'none', borderRadius: 8,
+                padding: '5px 10px', fontSize: 13,
+                cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              {displayMode === 'list' ? '🃏' : '📋'}
             </button>
           )}
         </div>
