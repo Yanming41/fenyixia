@@ -9,7 +9,12 @@ interface Profile {
   color: string
 }
 
-export default function Header() {
+interface HeaderProps {
+  viewMode?: 'carousel' | 'months'
+  onToggleView?: () => void
+}
+
+export default function Header({ viewMode, onToggleView }: HeaderProps) {
   const { user } = useAuth()
   const { setIsDebugOpen } = useDebugConfig()
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -38,14 +43,11 @@ export default function Header() {
       })
   }, [user])
 
-
   return (
     <div className="header">
       <div className="nav-row">
         <div className="h-title" id="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>分一下</div>
         <div className="av-wrap">
-          {/* The snippet shows the old avatar div, not the new Avatar component.
-              I will keep the old div as per the snippet's explicit content. */}
           <div
             className="av"
             style={profile?.color ? { background: profile.color } : undefined}
@@ -56,8 +58,26 @@ export default function Header() {
         </div>
       </div>
       <div className="large-title-row">
-        <div className="h-large">账单记录</div>
-        <div className="h-sub">Split Bills</div>
+        <div className="h-large">
+          {viewMode === 'months' ? '月份账单' : '账单记录'}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="h-sub">Split Bills</div>
+          {onToggleView && (
+            <button
+              onClick={onToggleView}
+              style={{
+                background: viewMode === 'months' ? 'var(--blue)' : 'var(--bg3)',
+                color: viewMode === 'months' ? '#fff' : 'var(--label2)',
+                border: 'none', borderRadius: 8,
+                padding: '4px 10px', fontSize: 16,
+                cursor: 'pointer', transition: 'all 0.2s',
+              }}
+            >
+              📌
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

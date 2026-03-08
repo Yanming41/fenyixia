@@ -1,22 +1,46 @@
-export default function BottomNav() {
+import { useLocation, useNavigate } from 'react-router-dom'
+
+interface BottomNavProps {
+    onAddClick?: () => void
+}
+
+export default function BottomNav({ onAddClick }: BottomNavProps) {
+    const location = useLocation()
+    const navigate = useNavigate()
+    const path = location.pathname
+
     return (
         <div className="bottom-nav">
-            <button className="nb on">
+            <button
+                className={`nb${path === '/' ? ' on' : ''}`}
+                onClick={() => navigate('/')}
+            >
                 <div className="nb-icon">📄</div>
                 <div>我的账单</div>
             </button>
             <button
+                className={`nb${path === '/friends' ? ' on' : ''}`}
+                onClick={() => navigate('/friends')}
+            >
+                <div className="nb-icon">👥</div>
+                <div>好友</div>
+            </button>
+            <button
                 className="add-btn"
-                onClick={() => {
-                    // TODO: Open "Add Bill" flow
-                    alert('Add Bill clicked! Form coming soon.')
-                }}
+                onClick={() => onAddClick?.()}
             >
                 +
             </button>
-            <button className="nb">
+            <button className="nb" disabled>
                 <div className="nb-icon">📊</div>
-                <div>统计数据</div>
+                <div>统计</div>
+            </button>
+            <button
+                className={`nb${path === '/settings' ? ' on' : ''}`}
+                onClick={() => navigate('/settings')}
+            >
+                <div className="nb-icon">⚙️</div>
+                <div>设置</div>
             </button>
         </div>
     )

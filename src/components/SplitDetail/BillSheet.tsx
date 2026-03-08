@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { Bill, BillItem, Member, UpdateBillData } from '../../lib/types'
-import { updateBill } from '../../lib/api/bills'
+import type { Bill, BillItem, Member, UpdateBillData, CreateBillData } from '../../lib/types'
+import { updateBill, createBill } from '../../lib/api/bills'
 
 const ICON_LIST = ['🍔', '🍕', '🍣', '🍜', '🧋', '☕', '🍰', '🎮', '🎬', '🛒',
     '✈️', '🏨', '⛽', '💊', '🎁', '🎪', '🎵', '🏋️', '🛁', '💡', '🧴', '🛵', '🚌', '🍻']
 
 interface BillSheetProps {
-    bill: Bill
+    bill?: Bill | null
     friends: Member[]
     onClose: () => void
     onSaved: () => void
@@ -34,10 +34,11 @@ function newItem(): EditItem {
 }
 
 export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheetProps) {
-    const [icon, setIcon] = useState(bill.icon)
-    const [title, setTitle] = useState(bill.title)
-    const [description, setDescription] = useState(bill.description || '')
-    const [items, setItems] = useState<EditItem[]>(bill.items.map(itemToEdit))
+    const isCreate = !bill
+    const [icon, setIcon] = useState(bill?.icon || '🧾')
+    const [title, setTitle] = useState(bill?.title || '')
+    const [description, setDescription] = useState(bill?.description || '')
+    const [items, setItems] = useState<EditItem[]>(bill ? bill.items.map(itemToEdit) : [newItem()])
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
 
@@ -70,26 +71,37 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
             if (it.memberIds.length === 0) { setError('每个商品至少分给一人'); return }
         }
 
-        const payload: UpdateBillData = {
-            icon,
-            title: title.trim(),
-            description: description.trim() || undefined,
-            items: items.map(it => ({
-                name: it.name.trim(),
-                price: parseFloat(it.price),
-                qty: parseInt(it.qty) || 1,
-                member_ids: it.memberIds,
-            })),
-        }
+        const itemsPayload = items.map(it => ({
+            name: it.name.trim(),
+            price: parseFloat(it.price),
+            qty: parseInt(it.qty) || 1,
+            member_ids: it.memberIds,
+        }))
 
         setSaving(true)
         setError('')
         try {
-            await updateBill(bill.id, payload)
+            if (isCreate) {
+                const payload: CreateBillData = {
+                    icon,
+                    title: title.trim(),
+                    description: description.trim() || undefined,
+                    items: itemsPayload,
+                }
+                await createBill(payload)
+            } else {
+                const payload: UpdateBillData = {
+                    icon,
+                    title: title.trim(),
+                    description: description.trim() || undefined,
+                    items: itemsPayload,
+                }
+                await updateBill(bill.id, payload)
+            }
             onSaved()
             onClose()
         } catch (e) {
-            setError(e instanceof Error ? e.message : '保存失败')
+            setError(e instanceof Error ? e.message : (isCreate ? '创建失败' : '保存失败'))
         } finally {
             setSaving(false)
         }
@@ -118,7 +130,7 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
                     {/* Title bar */}
                     <div className="sheet-titlebar">
                         <button className="sheet-cancel" onClick={onClose}>取消</button>
-                        <div className="sh-title">编辑账单</div>
+                        <div className="sh-title">{isCreate ? '新建账单' : '编辑账单'}</div>
                         <button className="sheet-cancel" style={{ fontWeight: 700 }} onClick={handleSave} disabled={saving}>
                             {saving ? '保存...' : '保存'}
                         </button>
@@ -240,7 +252,7 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
                         )}
 
                         <button className="sb" onClick={handleSave} disabled={saving}>
-                            {saving ? '保存中...' : '✓ 保存更改'}
+                            {saving ? (isCreate ? '创建中...' : '保存中...') : (isCreate ? '✓ 创建账单' : '✓ 保存更改')}
                         </button>
                     </div>
                 </motion.div>
