@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback, useRef } from 'react'
+import { createContext, useState, useCallback, useRef, useContext } from 'react'
 
 interface ToastContextValue {
     showToast: (msg: string, duration?: number) => void
@@ -7,6 +7,10 @@ interface ToastContextValue {
 export const ToastContext = createContext<ToastContextValue>({
     showToast: () => { },
 })
+
+export function useToast() {
+    return useContext(ToastContext)
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [message, setMessage] = useState('')

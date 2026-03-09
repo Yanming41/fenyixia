@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useBills } from './hooks/useBills'
+import { useAngerStorm } from './hooks/useAngerStorm'
 import { ToastProvider } from './contexts/ToastContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
@@ -14,6 +15,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/login" replace />
+
+  const { checkAngerStorm } = useAngerStorm()
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  import('react').then(({ useEffect }) => {
+    useEffect(() => {
+      checkAngerStorm()
+    }, [checkAngerStorm])
+  })
+
   return <>{children}</>
 }
 

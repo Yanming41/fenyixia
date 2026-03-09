@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, useDragControls } from 'framer-motion';
 import { useDebugConfig, DebugConfig } from '../../contexts/DebugContext';
+import { useFps } from '../../hooks/useFps';
 
 // Basic helper for slider rows
 function SliderRow({
@@ -65,6 +66,7 @@ function ToggleRow({
 export default function DebugConsole() {
     const { config, updateConfig, isDebugOpen, setIsDebugOpen } = useDebugConfig();
     const controls = useDragControls();
+    const { fps, color } = useFps(config.showFps);
 
     // If not open, render nothing (or a minimized button, but we'll use a globally accessible way to open it later)
     if (!isDebugOpen) return null;
@@ -120,6 +122,15 @@ export default function DebugConsole() {
                 <ToggleRow label="显示纸张纹理" checked={config.showTexture} onChange={(v) => updateConfig({ showTexture: v })} />
                 <ToggleRow label="显示顶部光晕" checked={config.showSheen} onChange={(v) => updateConfig({ showSheen: v })} />
 
+                <div className="dbg-section">实时数据</div>
+                {config.showFps && (
+                    <div className="dbg-row">
+                        <span className="dbg-label">当前帧率</span>
+                        <span className="dbg-val" style={{ color, fontWeight: 'bold' }}>
+                            {fps > 0 ? fps : '--'}
+                        </span>
+                    </div>
+                )}
             </div>
         </motion.div>
     );

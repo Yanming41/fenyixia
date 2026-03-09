@@ -4,8 +4,9 @@ import type { Bill, PaymentProof, Member } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
 import { getPaymentProofs, uploadPaymentProof } from '../../lib/api/payments'
-import { addAnger } from '../../lib/api/reactions'
+import { useAngerStorm } from '../../hooks/useAngerStorm'
 import { getFriends } from '../../lib/api/friends'
+import { useToast } from '../../contexts/ToastContext'
 import BillSheet from './BillSheet'
 
 interface SplitDetailProps {
@@ -22,6 +23,8 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [friends, setFriends] = useState<Member[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isPayer = bill.payer_id === currentUserId
+  const { protestBill } = useAngerStorm()
+  const { showToast } = useToast()
 
   useEffect(() => {
     getPaymentProofs(bill.id).then(setProofs).catch(console.error)
@@ -57,19 +60,16 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     }
   }
 
-  const handleAnger = async () => {
+  const handleAnger = () => {
+    protestBill(bill.id)
+  }
+
+  const handleCopyPayment = async (amount: number) => {
     try {
-      await addAnger(bill.id)
-      // Floating emoji animation
-      const el = document.createElement('div')
-      el.className = 'anger-float'
-      el.textContent = '😤'
-      el.style.left = `${Math.random() * 60 + 20}%`
-      el.style.bottom = '200px'
-      document.body.appendChild(el)
-      setTimeout(() => el.remove(), 1600)
+      await navigator.clipboard.writeText(amount.toString())
+      showToast(`已复制金额：${amount}`)
     } catch (err) {
-      console.error('Anger failed:', err)
+      showToast('复制金额失败')
     }
   }
 
@@ -144,7 +144,11 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
               </div>
 
               {/* Role banner */}
-              <div className={`detail-role-banner ${bannerClass}`}>
+              <div
+                className={`detail-role-banner ${bannerClass}`}
+                onClick={bannerClass === 'pay' ? () => handleCopyPayment(bannerAmount) : undefined}
+                style={{ cursor: bannerClass === 'pay' ? 'pointer' : 'default' }}
+              >
                 <span>{bannerText}</span>
                 <span className="role-amount">{fmtMoney(bannerAmount)}</span>
               </div>
@@ -275,7 +279,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                 )}
                 {!isPayer && !bill.settled && !bill._hasMeProof && (
                   <button className="detail-btn-protest" onClick={handleAnger}>
-                    😤 催一下
+                    😡 异议!
                   </button>
                 )}
               </div>
