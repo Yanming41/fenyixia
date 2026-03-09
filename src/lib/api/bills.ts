@@ -89,7 +89,7 @@ export async function fetchMyBills(): Promise<Bill[]> {
         )
       )
     `)
-    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (error) throw error
 
