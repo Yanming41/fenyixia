@@ -47,10 +47,16 @@ export default function FriendsPage({ onAddClick }: { onAddClick?: () => void })
         if (!email.trim()) return
         setAdding(true)
         try {
-            await addFriend(email.trim())
-            showToast('✓ 好友添加成功')
+            const result = await addFriend(email.trim())
+            if (result.type === 'added') {
+                showToast('好友添加成功')
+                loadMembers()
+            } else if (result.type === 'invited') {
+                showToast(`已发送邀请邮件到 ${result.email}`)
+            } else if (result.type === 'already_invited') {
+                showToast('已邀请过该用户，等待对方注册')
+            }
             setEmail('')
-            loadMembers()
         } catch (e) {
             showToast(e instanceof Error ? e.message : '添加失败')
         } finally {

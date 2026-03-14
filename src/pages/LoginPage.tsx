@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { resendVerification } from '../lib/api/auth'
 
 const EMOJI_LIST = [
   '🐱','🐻','🦊','🐰','🐼','🐨','🦁','🐯','🐸','🐵',
@@ -13,11 +14,12 @@ const COLOR_LIST = [
   '#3a1a00','#4a1942','#0c2340','#2c1810','#1a1a2e',
 ]
 
-type Step = 'welcome' | 'login-email' | 'login-pin' | 'signup-name' | 'signup-email' | 'signup-emoji' | 'signup-pin'
+type Step = 'welcome' | 'login-email' | 'login-pin' | 'signup-name' | 'signup-email' | 'signup-emoji' | 'signup-pin' | 'verify-email'
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [step, setStep] = useState<Step>('welcome')
   const [email, setEmail] = useState('')
@@ -27,6 +29,16 @@ export default function LoginPage() {
   const [color, setColor] = useState('#1c1c26')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inviteToken] = useState(() => searchParams.get('invite') || '')
+
+  // 如果是邀请链接，自动填充邮箱并跳到注册流程
+  useEffect(() => {
+    const inviteEmail = searchParams.get('email')
+    if (inviteEmail) {
+      setEmail(inviteEmail)
+      setStep('signup-name')
+    }
+  }, [searchParams])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -46,9 +58,30 @@ export default function LoginPage() {
     setError('')
     try {
       await signUp(email, pin, name, emoji, color)
-      navigate('/', { replace: true })
+      // 如果是邀请注册，更新邀请状态
+      if (inviteToken) {
+        const { supabase } = await import('../lib/supabase')
+        await supabase
+          .from('invitations')
+          .update({ status: 'accepted' })
+          .eq('token', inviteToken)
+      }
+      setStep('verify-email')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '注册失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      await resendVerification(email)
+      setError('验证邮件已重新发送')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '发送失败')
     } finally {
       setLoading(false)
     }
@@ -247,6 +280,28 @@ export default function LoginPage() {
                 {loading ? '注册中...' : '完成注册'}
               </button>
               <button className="ghost-btn" onClick={() => setStep('signup-emoji')}>返回</button>
+            </div>
+          </div>
+        )}
+        {step === 'verify-email' && (
+          <div className="login-step">
+            <div className="step-eyebrow">VERIFY</div>
+            <div className="step-title">验证邮件已发送</div>
+            <div className="step-subtitle">
+              请查收 {email} 的收件箱，点击验证链接完成注册
+            </div>
+            {error && <div className="input-error">{error}</div>}
+            <div className="step-bottom">
+              <button
+                className="primary-btn"
+                disabled={loading}
+                onClick={handleResendVerification}
+              >
+                {loading ? '发送中...' : '重新发送验证邮件'}
+              </button>
+              <button className="ghost-btn" onClick={() => setStep('welcome')}>
+                返回登录
+              </button>
             </div>
           </div>
         )}

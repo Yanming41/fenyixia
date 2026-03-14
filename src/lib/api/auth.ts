@@ -13,7 +13,13 @@ export async function signUp(
   emoji?: string,
   color?: string,
 ) {
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/login`,
+    },
+  })
   if (error) throw error
 
   if (data.user) {
@@ -26,6 +32,17 @@ export async function signUp(
     })
   }
   return data
+}
+
+export async function resendVerification(email: string) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/login`,
+    },
+  })
+  if (error) throw error
 }
 
 export async function signIn(email: string, password: string) {

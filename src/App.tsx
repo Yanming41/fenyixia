@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import EmailVerificationBanner from './components/EmailVerificationBanner'
 import { useBills } from './hooks/useBills'
 import { useAngerStorm } from './hooks/useAngerStorm'
 import { ToastProvider } from './contexts/ToastContext'
@@ -25,7 +26,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }, [checkAngerStorm])
   })
 
-  return <>{children}</>
+  const emailVerified = user.email_confirmed_at != null
+
+  return (
+    <>
+      {!emailVerified && <EmailVerificationBanner email={user.email || ''} />}
+      {children}
+    </>
+  )
 }
 
 export default function App() {
