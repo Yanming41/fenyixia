@@ -1,5 +1,5 @@
 import { supabase } from '../supabase'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import type { User as SupabaseUser, UserIdentity } from '@supabase/supabase-js'
 
 export async function getCurrentUser(): Promise<SupabaseUser | null> {
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,4 +59,33 @@ export function onAuthChange(callback: (user: SupabaseUser | null) => void) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null)
   })
+}
+
+// ── Google OAuth ──────────────────────────────────────
+
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/` },
+  })
+  if (error) throw error
+}
+
+export async function getGoogleIdentity(): Promise<UserIdentity | null> {
+  const { data, error } = await supabase.auth.getUserIdentities()
+  if (error) throw error
+  return data.identities.find(i => i.provider === 'google') ?? null
+}
+
+export async function linkGoogle() {
+  const { error } = await supabase.auth.linkIdentity({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/settings` },
+  })
+  if (error) throw error
+}
+
+export async function unlinkGoogle(identity: UserIdentity) {
+  const { error } = await supabase.auth.unlinkIdentity(identity)
+  if (error) throw error
 }

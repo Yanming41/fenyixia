@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useGoogleIdentity } from '../hooks/useGoogleIdentity'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import BottomNav from '../components/Layout/BottomNav'
@@ -15,6 +16,7 @@ export default function SettingsPage({ onAddClick }: { onAddClick?: () => void }
     const { user, signOut } = useAuth()
     const navigate = useNavigate()
     const [profile, setProfile] = useState<Profile | null>(null)
+    const { googleIdentity, loading: googleLoading, error: googleError, link, unlink } = useGoogleIdentity()
 
     useEffect(() => {
         if (!user) return
@@ -68,6 +70,71 @@ export default function SettingsPage({ onAddClick }: { onAddClick?: () => void }
                             {profile?.email || ''}
                         </div>
                     </div>
+                </div>
+
+                {/* Account linking */}
+                <div style={{
+                    background: 'var(--bg2)',
+                    borderRadius: 12,
+                    padding: '14px 16px',
+                    marginBottom: 20,
+                }}>
+                    <div style={{ fontSize: 13, color: 'var(--label2)', fontWeight: 500, marginBottom: 10 }}>
+                        账号绑定
+                    </div>
+                    {googleLoading ? (
+                        <div style={{ fontSize: 13, color: 'var(--label3)' }}>加载中...</div>
+                    ) : googleIdentity ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--label)' }}>
+                                    Google
+                                </div>
+                                <div style={{ fontSize: 12, color: 'var(--label3)', marginTop: 2 }}>
+                                    {googleIdentity.identity_data?.email || '已绑定'}
+                                </div>
+                            </div>
+                            <button
+                                onClick={unlink}
+                                style={{
+                                    padding: '6px 14px',
+                                    borderRadius: 8,
+                                    border: 'none',
+                                    background: 'rgba(255,59,48,0.12)',
+                                    color: 'var(--red)',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                }}
+                            >
+                                解绑
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={link}
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: 'rgba(10,132,255,0.12)',
+                                color: 'var(--blue)',
+                                fontSize: 14,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                            }}
+                        >
+                            绑定 Google 账号
+                        </button>
+                    )}
+                    {googleError && (
+                        <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 8 }}>
+                            {googleError}
+                        </div>
+                    )}
                 </div>
 
                 {/* Sign out button */}

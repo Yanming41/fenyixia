@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { resendVerification } from '../lib/api/auth'
+import { resendVerification, signInWithGoogle } from '../lib/api/auth'
 
 const EMOJI_LIST = [
   '🐱','🐻','🦊','🐰','🐼','🐨','🦁','🐯','🐸','🐵',
@@ -106,6 +106,30 @@ export default function LoginPage() {
               <button className="ghost-btn" onClick={() => setStep('signup-name')}>
                 注册新账号
               </button>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                margin: '8px 0 0',
+              }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
+                <span style={{ fontSize: 12, color: 'var(--text3)' }}>或</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
+              </div>
+              <button
+                className="ghost-btn"
+                style={{ marginTop: 0 }}
+                onClick={async () => {
+                  try {
+                    await signInWithGoogle()
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Google 登录失败')
+                  }
+                }}
+              >
+                通过 Google 登录
+              </button>
+              {error && <div className="input-error">{error}</div>}
             </div>
           </div>
         )}
