@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useToast } from '../../contexts/ToastContext'
 
 interface BottomNavProps {
     onAddClick?: () => void
@@ -9,7 +8,6 @@ export default function BottomNav({ onAddClick }: BottomNavProps) {
     const location = useLocation()
     const navigate = useNavigate()
     const path = location.pathname
-    const { showToast } = useToast()
 
     return (
         <div className="bottom-nav">
@@ -34,8 +32,8 @@ export default function BottomNav({ onAddClick }: BottomNavProps) {
                 +
             </button>
             <button
-                className="nb"
-                onClick={() => showToast('📊 统计功能暂未实现')}
+                className={`nb${path === '/stats' ? ' on' : ''}`}
+                onClick={() => navigate('/stats')}
             >
                 <div className="nb-icon">📊</div>
                 <div>统计</div>

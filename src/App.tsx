@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import FriendsPage from './pages/FriendsPage'
 import SettingsPage from './pages/SettingsPage'
+import StatsPage from './pages/StatsPage'
 import AddBillOverlay from './components/AddBillOverlay/AddBillOverlay'
 import DebugConsole from './components/Debug/DebugConsole'
 
@@ -58,6 +59,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <FriendsPage onAddClick={handleAddClick} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stats"
+          element={
+            <ProtectedRoute>
+              <StatsPage onAddClick={handleAddClick} />
             </ProtectedRoute>
           }
         />
