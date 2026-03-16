@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>分一下</title>
+    <!-- GitHub Pages SPA route restore -->
+    <script>
+      (function(){
+        var q = window.location.search;
+        if (q.indexOf('?p=') > -1) {
+          var decoded = q.slice(3).split('&q=');
+          var path = decoded[0].replace(/~and~/g, '&');
+          var search = decoded[1] ? ('?' + decoded[1].replace(/~and~/g, '&')) : '';
+          window.history.replaceState(null, '',
+            window.location.pathname + path + search + window.location.hash
+          );
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

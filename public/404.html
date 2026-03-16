@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>fenyixia</title>
+  <script>
+    // GitHub Pages SPA redirect hack
+    // Converts /fenyixia/stats to /fenyixia/?p=/stats so index.html can restore the route
+    var seg = 1; // number of path segments to keep (repo name = 1)
+    var loc = window.location;
+    loc.replace(
+      loc.protocol + '//' + loc.hostname + (loc.port ? ':' + loc.port : '') +
+      loc.pathname.split('/').slice(0, 1 + seg).join('/') + '/?p=' +
+      loc.pathname.slice(1).split('/').slice(seg).join('/').replace(/&/g, '~and~') +
+      (loc.search ? '&q=' + loc.search.slice(1).replace(/&/g, '~and~') : '') +
+      loc.hash
+    );
+  </script>
+</head>
+<body></body>
+</html>

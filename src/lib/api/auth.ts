@@ -17,7 +17,7 @@ export async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/login`,
+      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}login`,
     },
   })
   if (error) throw error
@@ -39,7 +39,7 @@ export async function resendVerification(email: string) {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/login`,
+      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}login`,
     },
   })
   if (error) throw error
@@ -66,7 +66,7 @@ export function onAuthChange(callback: (user: SupabaseUser | null) => void) {
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/` },
+    options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
   })
   if (error) throw error
 }
@@ -80,7 +80,7 @@ export async function getGoogleIdentity(): Promise<UserIdentity | null> {
 export async function linkGoogle() {
   const { error } = await supabase.auth.linkIdentity({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/settings` },
+    options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}settings` },
   })
   if (error) throw error
 }
