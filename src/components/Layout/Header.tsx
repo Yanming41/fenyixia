@@ -39,7 +39,7 @@ export default function Header({ dataFilter, displayMode, onToggleFilter, onTogg
       .from('users')
       .select('name, emoji, color')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (data) setProfile(data as Profile)
       })
