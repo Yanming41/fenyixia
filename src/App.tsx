@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
-import EmailVerificationBanner from './components/EmailVerificationBanner'
 import { useBills } from './hooks/useBills'
-import { useAngerStorm } from './hooks/useAngerStorm'
 import { ToastProvider } from './contexts/ToastContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
@@ -14,27 +12,15 @@ import AddBillOverlay from './components/AddBillOverlay/AddBillOverlay'
 import DebugConsole from './components/Debug/DebugConsole'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, profileCompleted } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/login" replace />
+  // 未完善资料 → 重定向到 login 页的 setup 流程
+  if (profileCompleted === false) return <Navigate to="/login" replace />
+  // 还在检查 profileCompleted 状态
+  if (profileCompleted === null) return null
 
-  const { checkAngerStorm } = useAngerStorm()
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  import('react').then(({ useEffect }) => {
-    useEffect(() => {
-      checkAngerStorm()
-    }, [checkAngerStorm])
-  })
-
-  const emailVerified = user.email_confirmed_at != null
-
-  return (
-    <>
-      {!emailVerified && <EmailVerificationBanner email={user.email || ''} />}
-      {children}
-    </>
-  )
+  return <>{children}</>
 }
 
 export default function App() {

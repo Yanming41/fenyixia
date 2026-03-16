@@ -14,10 +14,13 @@ const COLOR_LIST = [
   '#3a1a00','#4a1942','#0c2340','#2c1810','#1a1a2e',
 ]
 
-type Step = 'welcome' | 'login-email' | 'login-pin' | 'signup-name' | 'signup-email' | 'signup-emoji' | 'signup-pin' | 'verify-email'
+type Step =
+  | 'welcome' | 'login-email' | 'login-pin'
+  | 'signup-email' | 'signup-pin' | 'verify-email'
+  | 'setup-welcome' | 'setup-name' | 'setup-emoji'
 
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth()
+  const { user, profileCompleted, signIn, signUp, updateProfile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -31,12 +34,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [inviteToken] = useState(() => searchParams.get('invite') || '')
 
-  // 如果是邀请链接，自动填充邮箱并跳到注册流程
+  // 已登录用户：检查 profile 完善状态
+  useEffect(() => {
+    if (!user) return
+    if (profileCompleted === true) {
+      navigate('/', { replace: true })
+    } else if (profileCompleted === false) {
+      // 已验证但未完善资料 → 进入 setup 流程
+      setStep('setup-welcome')
+    }
+    // profileCompleted === null → still loading, wait
+  }, [user, profileCompleted, navigate])
+
+  // 邀请链接自动填充邮箱
   useEffect(() => {
     const inviteEmail = searchParams.get('email')
     if (inviteEmail) {
       setEmail(inviteEmail)
-      setStep('signup-name')
+      setStep('signup-email')
     }
   }, [searchParams])
 
@@ -45,7 +60,7 @@ export default function LoginPage() {
     setError('')
     try {
       await signIn(email, pin)
-      navigate('/', { replace: true })
+      // navigate handled by useEffect above
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '登录失败')
     } finally {
@@ -57,8 +72,7 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      await signUp(email, pin, name, emoji, color)
-      // 如果是邀请注册，更新邀请状态
+      await signUp(email, pin)
       if (inviteToken) {
         const { supabase } = await import('../lib/supabase')
         await supabase
@@ -87,6 +101,19 @@ export default function LoginPage() {
     }
   }
 
+  const handleCompleteProfile = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      await updateProfile(name, emoji, color)
+      navigate('/', { replace: true })
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="login-bg">
@@ -95,6 +122,7 @@ export default function LoginPage() {
       </div>
 
       <div className="login-container">
+        {/* ── Welcome ── */}
         {step === 'welcome' && (
           <div className="login-step">
             <div className="welcome-logo">分一下</div>
@@ -103,14 +131,11 @@ export default function LoginPage() {
               <button className="primary-btn" onClick={() => setStep('login-email')}>
                 登录
               </button>
-              <button className="ghost-btn" onClick={() => setStep('signup-name')}>
+              <button className="ghost-btn" onClick={() => setStep('signup-email')}>
                 注册新账号
               </button>
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                margin: '8px 0 0',
+                display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0 0',
               }}>
                 <div style={{ flex: 1, height: 1, background: 'var(--border2)' }} />
                 <span style={{ fontSize: 12, color: 'var(--text3)' }}>或</span>
@@ -120,11 +145,8 @@ export default function LoginPage() {
                 className="ghost-btn"
                 style={{ marginTop: 0 }}
                 onClick={async () => {
-                  try {
-                    await signInWithGoogle()
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : 'Google 登录失败')
-                  }
+                  try { await signInWithGoogle() }
+                  catch (e) { setError(e instanceof Error ? e.message : 'Google 登录失败') }
                 }}
               >
                 通过 Google 登录
@@ -134,6 +156,7 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* ── Login: Email ── */}
         {step === 'login-email' && (
           <div className="login-step">
             <div className="step-eyebrow">LOGIN</div>
@@ -161,6 +184,7 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* ── Login: PIN ── */}
         {step === 'login-pin' && (
           <div className="login-step">
             <div className="step-eyebrow">LOGIN</div>
@@ -190,9 +214,108 @@ export default function LoginPage() {
           </div>
         )}
 
-        {step === 'signup-name' && (
+        {/* ── Signup: Email ── */}
+        {step === 'signup-email' && (
           <div className="login-step">
             <div className="step-eyebrow">SIGN UP</div>
+            <div className="step-title">你的邮箱</div>
+            <div className="step-subtitle">用于登录和验证身份</div>
+            <input
+              className="big-input"
+              type="email"
+              placeholder="email@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              autoFocus
+            />
+            {error && <div className="input-error">{error}</div>}
+            <div className="step-bottom">
+              <button
+                className="primary-btn"
+                disabled={!email}
+                onClick={() => { setError(''); setStep('signup-pin') }}
+              >
+                下一步
+              </button>
+              <button className="ghost-btn" onClick={() => setStep('welcome')}>返回</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Signup: PIN ── */}
+        {step === 'signup-pin' && (
+          <div className="login-step">
+            <div className="step-eyebrow">SIGN UP</div>
+            <div className="step-title">设置 PIN</div>
+            <div className="step-subtitle">6 位数字密码，用于登录</div>
+            <input
+              className="big-input"
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="••••••"
+              value={pin}
+              onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              autoFocus
+            />
+            {error && <div className="input-error">{error}</div>}
+            <div className="step-bottom">
+              <button
+                className="primary-btn"
+                disabled={pin.length < 6 || loading}
+                onClick={handleSignup}
+              >
+                {loading ? '注册中...' : '注册'}
+              </button>
+              <button className="ghost-btn" onClick={() => setStep('signup-email')}>返回</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Verify Email ── */}
+        {step === 'verify-email' && (
+          <div className="login-step">
+            <div className="step-eyebrow">VERIFY</div>
+            <div className="step-title">验证邮件已发送</div>
+            <div className="step-subtitle">
+              请查收 {email} 的收件箱，点击验证链接完成注册
+            </div>
+            {error && <div className="input-error">{error}</div>}
+            <div className="step-bottom">
+              <button
+                className="primary-btn"
+                disabled={loading}
+                onClick={handleResendVerification}
+              >
+                {loading ? '发送中...' : '重新发送验证邮件'}
+              </button>
+              <button className="ghost-btn" onClick={() => setStep('welcome')}>
+                返回登录
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Setup: Welcome Back ── */}
+        {step === 'setup-welcome' && (
+          <div className="login-step">
+            <div className="step-eyebrow">WELCOME</div>
+            <div className="step-title">欢迎回来！</div>
+            <div className="step-subtitle">
+              邮箱验证已完成，接下来完善一下你的资料吧
+            </div>
+            <div className="step-bottom">
+              <button className="primary-btn" onClick={() => setStep('setup-name')}>
+                开始设置
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Setup: Name ── */}
+        {step === 'setup-name' && (
+          <div className="login-step">
+            <div className="step-eyebrow">PROFILE</div>
             <div className="step-title">你叫什么名字？</div>
             <div className="step-subtitle">室友们会看到这个名字</div>
             <input
@@ -207,44 +330,19 @@ export default function LoginPage() {
               <button
                 className="primary-btn"
                 disabled={!name.trim()}
-                onClick={() => setStep('signup-email')}
+                onClick={() => setStep('setup-emoji')}
               >
                 下一步
               </button>
-              <button className="ghost-btn" onClick={() => setStep('welcome')}>返回</button>
+              <button className="ghost-btn" onClick={() => setStep('setup-welcome')}>返回</button>
             </div>
           </div>
         )}
 
-        {step === 'signup-email' && (
+        {/* ── Setup: Emoji + Color ── */}
+        {step === 'setup-emoji' && (
           <div className="login-step">
-            <div className="step-eyebrow">SIGN UP</div>
-            <div className="step-title">你的邮箱</div>
-            <div className="step-subtitle">用于登录，不会公开</div>
-            <input
-              className="big-input"
-              type="email"
-              placeholder="email@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              autoFocus
-            />
-            <div className="step-bottom">
-              <button
-                className="primary-btn"
-                disabled={!email}
-                onClick={() => setStep('signup-emoji')}
-              >
-                下一步
-              </button>
-              <button className="ghost-btn" onClick={() => setStep('signup-name')}>返回</button>
-            </div>
-          </div>
-        )}
-
-        {step === 'signup-emoji' && (
-          <div className="login-step">
-            <div className="step-eyebrow">SIGN UP</div>
+            <div className="step-eyebrow">PROFILE</div>
             <div className="step-title">选个头像</div>
             <div className="avatar-preview" style={{ background: color }}>
               {emoji}
@@ -270,62 +368,16 @@ export default function LoginPage() {
                 />
               ))}
             </div>
-            <div className="step-bottom">
-              <button className="primary-btn" onClick={() => setStep('signup-pin')}>
-                下一步
-              </button>
-              <button className="ghost-btn" onClick={() => setStep('signup-email')}>返回</button>
-            </div>
-          </div>
-        )}
-
-        {step === 'signup-pin' && (
-          <div className="login-step">
-            <div className="step-eyebrow">SIGN UP</div>
-            <div className="step-title">设置 PIN</div>
-            <div className="step-subtitle">6 位数字密码，用于登录</div>
-            <input
-              className="big-input"
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••••"
-              value={pin}
-              onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              autoFocus
-            />
-            {error && <div className="input-error">{error}</div>}
-            <div className="step-bottom">
-              <button
-                className="primary-btn"
-                disabled={pin.length < 6 || loading}
-                onClick={handleSignup}
-              >
-                {loading ? '注册中...' : '完成注册'}
-              </button>
-              <button className="ghost-btn" onClick={() => setStep('signup-emoji')}>返回</button>
-            </div>
-          </div>
-        )}
-        {step === 'verify-email' && (
-          <div className="login-step">
-            <div className="step-eyebrow">VERIFY</div>
-            <div className="step-title">验证邮件已发送</div>
-            <div className="step-subtitle">
-              请查收 {email} 的收件箱，点击验证链接完成注册
-            </div>
             {error && <div className="input-error">{error}</div>}
             <div className="step-bottom">
               <button
                 className="primary-btn"
                 disabled={loading}
-                onClick={handleResendVerification}
+                onClick={handleCompleteProfile}
               >
-                {loading ? '发送中...' : '重新发送验证邮件'}
+                {loading ? '保存中...' : '完成设置'}
               </button>
-              <button className="ghost-btn" onClick={() => setStep('welcome')}>
-                返回登录
-              </button>
+              <button className="ghost-btn" onClick={() => setStep('setup-name')}>返回</button>
             </div>
           </div>
         )}

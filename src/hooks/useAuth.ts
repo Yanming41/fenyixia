@@ -1,14 +1,20 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { createElement } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { getCurrentUser, onAuthChange, signIn as apiSignIn, signUp as apiSignUp, signOut as apiSignOut } from '../lib/api/auth'
+import {
+  getCurrentUser, onAuthChange,
+  signIn as apiSignIn, signUp as apiSignUp, signOut as apiSignOut,
+  checkProfileCompleted, updateProfile as apiUpdateProfile,
+} from '../lib/api/auth'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
+  profileCompleted: boolean | null // null = still checking
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, name: string, emoji?: string, color?: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  updateProfile: (name: string, emoji: string, color: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -16,16 +22,23 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null)
 
   useEffect(() => {
     getCurrentUser().then(u => {
       setUser(u)
       setLoading(false)
+      if (u) checkProfileCompleted(u.id).then(setProfileCompleted)
     }).catch(() => setLoading(false))
 
     const { data: { subscription } } = onAuthChange(u => {
       setUser(u)
       setLoading(false)
+      if (u) {
+        checkProfileCompleted(u.id).then(setProfileCompleted)
+      } else {
+        setProfileCompleted(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -35,17 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await apiSignIn(email, password)
   }
 
-  const signUp = async (email: string, password: string, name: string, emoji?: string, color?: string) => {
-    await apiSignUp(email, password, name, emoji, color)
+  const signUp = async (email: string, password: string) => {
+    await apiSignUp(email, password)
   }
 
   const signOut = async () => {
     await apiSignOut()
+    setProfileCompleted(null)
+  }
+
+  const updateProfile = async (name: string, emoji: string, color: string) => {
+    await apiUpdateProfile(name, emoji, color)
+    setProfileCompleted(true)
   }
 
   return createElement(
     AuthContext.Provider,
-    { value: { user, loading, signIn, signUp, signOut } },
+    { value: { user, loading, profileCompleted, signIn, signUp, signOut, updateProfile } },
     children,
   )
 }

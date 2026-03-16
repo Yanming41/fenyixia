@@ -6,13 +6,7 @@ export async function getCurrentUser(): Promise<SupabaseUser | null> {
   return user
 }
 
-export async function signUp(
-  email: string,
-  password: string,
-  name: string,
-  emoji?: string,
-  color?: string,
-) {
+export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -21,16 +15,6 @@ export async function signUp(
     },
   })
   if (error) throw error
-
-  if (data.user) {
-    await supabase.from('users').upsert({
-      id: data.user.id,
-      email,
-      name,
-      emoji: emoji || '😀',
-      color: color || '#1c1c26',
-    })
-  }
   return data
 }
 
@@ -59,6 +43,31 @@ export function onAuthChange(callback: (user: SupabaseUser | null) => void) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user || null)
   })
+}
+
+// ── Profile ──────────────────────────────────────────
+
+export async function checkProfileCompleted(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('users')
+    .select('profile_completed')
+    .eq('id', userId)
+    .maybeSingle()
+  return data?.profile_completed === true
+}
+
+export async function updateProfile(name: string, emoji: string, color: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('未登录')
+  const { error } = await supabase.from('users').upsert({
+    id: user.id,
+    email: user.email,
+    name,
+    emoji,
+    color,
+    profile_completed: true,
+  })
+  if (error) throw error
 }
 
 // ── Google OAuth ──────────────────────────────────────
