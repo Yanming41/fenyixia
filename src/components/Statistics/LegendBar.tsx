@@ -1,11 +1,11 @@
 import { fmtMoney } from '../../lib/utils'
 
-interface LegendItem {
+export interface LegendItem {
   label: string
   icon?: string
   amount: number
   percentage: number
-  color: string
+  color?: string
 }
 
 interface LegendBarProps {

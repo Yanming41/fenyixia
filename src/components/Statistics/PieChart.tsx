@@ -1,7 +1,9 @@
-interface PieSlice {
+import React from 'react'
+
+export interface PieSlice {
   label: string
   value: number
-  color: string
+  color?: string
 }
 
 interface PieChartProps {
@@ -38,7 +40,7 @@ export default function PieChart({ data, size = 180 }: PieChartProps) {
   const r = size / 2 - 2
 
   let cumAngle = -90 // Start from top
-  const paths: JSX.Element[] = []
+  const paths: React.ReactElement[] = []
 
   data.forEach((slice, i) => {
     const angle = (slice.value / total) * 360
