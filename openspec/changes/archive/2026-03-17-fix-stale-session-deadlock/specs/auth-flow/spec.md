@@ -1,26 +1,4 @@
-## ADDED Requirements
-
-### Requirement: Login page
-The app SHALL provide a login page at `/login` where users can sign in via email+PIN or via Google OAuth. The welcome screen MUST display both "登录" (email+PIN) and "通过 Google 登录" (OAuth) options.
-
-#### Scenario: Successful login
-- **WHEN** user enters valid email and PIN
-- **THEN** they are authenticated and redirected to `/`
-
-#### Scenario: Failed login
-- **WHEN** user enters invalid credentials
-- **THEN** an error message is displayed
-
-#### Scenario: Google OAuth login
-- **WHEN** user clicks "通过 Google 登录" on the welcome screen
-- **THEN** the Google OAuth flow is initiated via Supabase
-
-### Requirement: Signup page
-The app SHALL provide a signup page at `/signup` where users enter email, PIN, name, emoji, and color to create an account.
-
-#### Scenario: Successful signup
-- **WHEN** user fills in all fields and submits
-- **THEN** a Supabase auth account is created and a `users` table record is inserted with name, emoji, and color
+## MODIFIED Requirements
 
 ### Requirement: Auth state management
 The app SHALL use a React context (`AuthContext`) to provide the current user throughout the component tree. Auth state changes SHALL be listened to via `onAuthChange`. When a `SIGNED_OUT` event is received, the context MUST immediately set `user` to null and `profileCompleted` to null. When `checkProfileCompleted` fails due to network or auth errors, `profileCompleted` MUST remain null (not be set to false).
@@ -50,6 +28,8 @@ Routes `/` and `/split/:id` SHALL be protected. Unauthenticated users SHALL be r
 - **WHEN** an unauthenticated user visits `/login` directly
 - **THEN** they see the initial welcome screen with login and signup options.
 - **AND** they are NOT redirected to the profile setup flow, regardless of any cached profile state.
+
+## ADDED Requirements
 
 ### Requirement: Setup flow escape hatch
 The profile setup flow (setup-welcome, setup-name, setup-emoji steps) SHALL always provide a way for the user to sign out and return to the welcome screen.
