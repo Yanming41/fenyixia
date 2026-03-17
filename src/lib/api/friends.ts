@@ -42,60 +42,40 @@ export async function getFriends(): Promise<FriendWithAlias[]> {
   const user = await getCurrentUser()
   if (!user) return []
 
-  // Try RPC first, fallback to direct query
-  const { data, error } = await supabase.rpc('get_friends', { uid: user.id })
-
-  if (!error && data) {
-    // RPC returns basic Member[], augment with friendship/alias data
-    const friends: FriendWithAlias[] = (data as Member[]).map(f => ({
-      ...f,
-      friendship_id: '',
-    }))
-    // Try to get alias data from friendships table
-    const [r1, r2] = await Promise.all([
-      supabase.from('friendships').select('id, user_b, alias_a').eq('user_a', user.id).eq('status', 'accepted'),
-      supabase.from('friendships').select('id, user_a, alias_b').eq('user_b', user.id).eq('status', 'accepted'),
-    ])
-    const aliasMap: Record<string, { friendship_id: string; alias?: string }> = {}
-      ; (r1.data || []).forEach((r: any) => {
-        aliasMap[r.user_b] = { friendship_id: r.id, alias: r.alias_a || undefined }
-      })
-      ; (r2.data || []).forEach((r: any) => {
-        aliasMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
-      })
-    friends.forEach(f => {
-      const entry = aliasMap[f.id]
-      if (entry) {
-        f.friendship_id = entry.friendship_id
-        f.alias = entry.alias
-      }
-      f._pinyinInitial = getInitial(f.alias || f.name || '')
-      f._pinyinSortKey = getPinyinSortKey(f.alias || f.name || '')
-    })
-    return friends
-  }
-
-  // Fallback: direct query
+  // Step 1: Get all accepted friendships
   const [r1, r2] = await Promise.all([
-    supabase.from('friendships').select('id, user_b(id,name,emoji,color), alias_a').eq('user_a', user.id).eq('status', 'accepted'),
-    supabase.from('friendships').select('id, user_a(id,name,emoji,color), alias_b').eq('user_b', user.id).eq('status', 'accepted'),
+    supabase.from('friendships').select('id, user_b, alias_a').eq('user_a', user.id).eq('status', 'accepted'),
+    supabase.from('friendships').select('id, user_a, alias_b').eq('user_b', user.id).eq('status', 'accepted'),
   ])
-  const friends: FriendWithAlias[] = [
-    ...(r1.data || []).map((r: any) => ({
-      ...r.user_b,
-      friendship_id: r.id,
-      alias: r.alias_a || undefined,
-    })),
-    ...(r2.data || []).map((r: any) => ({
-      ...r.user_a,
-      friendship_id: r.id,
-      alias: r.alias_b || undefined,
-    })),
-  ]
 
-  friends.forEach(f => {
-    f._pinyinInitial = getInitial(f.alias || f.name || '')
-    f._pinyinSortKey = getPinyinSortKey(f.alias || f.name || '')
+  // Build map: friend_user_id → { friendship_id, alias }
+  const friendMap: Record<string, { friendship_id: string; alias?: string }> = {}
+  ;(r1.data || []).forEach((r: any) => {
+    friendMap[r.user_b] = { friendship_id: r.id, alias: r.alias_a || undefined }
+  })
+  ;(r2.data || []).forEach((r: any) => {
+    friendMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
+  })
+
+  const friendIds = Object.keys(friendMap)
+  if (friendIds.length === 0) return []
+
+  // Step 2: Get user profiles for all friends
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, name, emoji, color')
+    .in('id', friendIds)
+
+  const friends: FriendWithAlias[] = (users || []).map((u: any) => {
+    const entry = friendMap[u.id]!
+    const alias = entry.alias
+    return {
+      ...u,
+      friendship_id: entry.friendship_id,
+      alias,
+      _pinyinInitial: getInitial(alias || u.name || ''),
+      _pinyinSortKey: getPinyinSortKey(alias || u.name || ''),
+    }
   })
 
   return friends
