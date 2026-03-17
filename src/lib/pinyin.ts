@@ -23,15 +23,20 @@ export interface GroupedContacts<T> {
   items: T[]
 }
 
-export function groupByInitial<T>(items: T[], getName: (item: T) => string): GroupedContacts<T>[] {
-  // Sort by pinyin
+export interface PinyinCacheable {
+  _pinyinInitial?: string
+  _pinyinSortKey?: string
+}
+
+export function groupByInitial<T extends PinyinCacheable>(items: T[]): GroupedContacts<T>[] {
+  // Sort by cached _pinyinSortKey
   const sorted = [...items].sort((a, b) =>
-    getPinyinSortKey(getName(a)).localeCompare(getPinyinSortKey(getName(b)))
+    (a._pinyinSortKey || '~').localeCompare(b._pinyinSortKey || '~')
   )
 
   const groups: Record<string, T[]> = {}
   sorted.forEach(item => {
-    const letter = getInitial(getName(item))
+    const letter = item._pinyinInitial || '#'
     if (!groups[letter]) groups[letter] = []
     groups[letter].push(item)
   })
@@ -46,9 +51,9 @@ export function groupByInitial<T>(items: T[], getName: (item: T) => string): Gro
   return result
 }
 
-export function getActiveLetters<T>(items: T[], getName: (item: T) => string): string[] {
+export function getActiveLetters<T extends PinyinCacheable>(items: T[]): string[] {
   const letters = new Set<string>()
-  items.forEach(item => letters.add(getInitial(getName(item))))
+  items.forEach(item => letters.add(item._pinyinInitial || '#'))
   const result: string[] = []
   LETTERS.forEach(l => { if (letters.has(l)) result.push(l) })
   if (letters.has('#')) result.push('#')

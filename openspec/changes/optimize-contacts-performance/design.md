@@ -1,24 +1,23 @@
 ## Context
-The recently merged `wechat-style-contacts` introduced A-Z alphabetized grouping and a global search bar. However, the initial implementation uses a naive strategy: every time the search query changes in `ContactsPage.tsx`, the `filtered` list is passed to `groupByInitial` and `getActiveLetters`, both of which call the heavy `pinyin-pro` library synchronously to extract initials and sort keys for every contact.
+The contacts list utilizes `pinyin-pro` to group and sort Chinese names. Currently, this computation happens synchronously during React's render phase within a `useMemo` hook in `ContactsPage.tsx`. As the number of friends grows, the real-time conversion of Chinese characters to pinyin strings blocks the main thread, resulting in severe lag when typing in the search box or first loading the page.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Eliminate UI thread blocking when typing in the contact search bar.
-- Pre-compute all pinyin strings exactly once per API fetch.
-- Enable pinyin-based searching (e.g. typing "zs" matches "张三").
+- Eliminate the main-thread blocking caused by `pinyin-pro` during UI rendering.
+- Pre-compute pinyin sort keys and initials immediately after fetching friend data from the backend.
+- Enhance the global search functionality to support searching users by their pinyin representations.
 
 **Non-Goals:**
-- Server-side sorting or pagination (the contact list is small enough to handle purely on the client side if the heavy computations are cached).
-- Modifying the remote database schema.
+- Removing `pinyin-pro` entirely. It's still necessary; we are just shifting *when* it runs.
+- Persisting pinyin keys in the Supabase database. These are client-derived strings only for UI sorting/filtering and shouldn't pollute the backend schema.
 
 ## Decisions
-- **Decision: Compute Pinyin at the Data Fetching Layer**
-  - **Rationale:** Instead of memoizing components or hacking React context, the cleanest approach is to modify `getFriends()` in `src/lib/api/friends.ts`. As soon as the raw user data is fetched from Supabase, we map over the array and attach `pinyinName` (the full pinyin string without spaces) and `initial` (the A-Z letter) directly onto the object. The rest of the app then receives "decorated" objects.
-  - **Alternative:** Computing it in a `useEffect` inside `ContactsPage.tsx`. This was rejected because if other parts of the app (like `GroupsPage` or `AddBillOverlay`) eventually need pinyin sorting, doing it at the API layer allows all consumers to benefit from the cached strings.
-- **Decision: Pinyin Search Strategy**
-  - **Rationale:** By converting the name "张三" to a `pinyinName` like "zhangsan", we can simply do `f.pinyinName.includes(searchQuery)` in the filtering logic, alongside the existing name/alias checks.
+- **Decision: Cache pinyin data dynamically on API fetch**
+  - **Rationale:** Instead of storing pinyin in the database (which would require complex sync logic whenever a user changes their name or alias), we simply intercept the `getFriends` API response. We calculate `_pinyinInitial` and `_pinyinSortKey` once per friend and attach it to the `FriendWithAlias` interface. This bounds the computation to a single O(N) pass during the network loading state, rather than O(N log N) during every keystroke re-render.
+- **Decision: Keep `ContactsPage` logic simple and declarative**
+  - **Rationale:** The `groupByInitial` and `getActiveLetters` helpers in `src/lib/pinyin.ts` will be updated to read the pre-computed properties directly instead of executing expensive function calls.
 
 ## Risks / Trade-offs
-- **[Risk] Slower initial load:** Computing pinyin for all friends right after the network request finishes will slightly delay the promise resolution.
-  - **Mitigation:** The computation for a few hundred contacts is typically under 100ms. The UI jank during typing is vastly more noticeable than a 50ms delay during the initial loading spinner.
+- **[Risk] Increased Memory Usage** → Storing an extra string (the full pinyin representation) per user in memory. Since contacts lists on personal apps rarely exceed a few thousand, the memory footprint of an extra 20-30 characters per user is negligible (a few dozen KBs).
+- **[Risk] Slight delay during initial loading** → The computation is shifted to the API layer, which might add a few milliseconds to the "Loading..." state. This is highly preferable over dropping frames during user interaction.

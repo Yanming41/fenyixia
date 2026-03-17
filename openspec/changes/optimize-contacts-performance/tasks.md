@@ -1,13 +1,14 @@
-## 1. Type Declarations
-- [ ] 1.1 Update `FriendWithAlias` interface in `src/lib/api/friends.ts` to include optional `pinyinName?: string` and `initial?: string` properties.
+## 1. Type Definitions Updates
+- [x] 1.1 Update `FriendWithAlias` interface in `src/lib/api/friends.ts` to include `_pinyinInitial` and `_pinyinSortKey`
 
-## 2. Pinyin Caching
-- [ ] 2.1 Refactor `getFriends` function in `src/lib/api/friends.ts` to compute and attach `pinyinName` and `initial` to each friend object before returning.
+## 2. API Layer Updates
+- [x] 2.1 Modify `getFriends` in `src/lib/api/friends.ts` to calculate and append `_pinyinInitial` and `_pinyinSortKey` upon data return
 
-## 3. Sorting Utility Refactor
-- [ ] 3.1 Update `getPinyinSortKey` and `getInitial` in `src/lib/pinyin.ts` to accept the precomputed cached fields instead of synchronously decoding pinyin.
-- [ ] 3.2 Update `groupByInitial` and `getActiveLetters` in `src/lib/pinyin.ts` to use the cached derivations without modifying the original logic.
+## 3. Pinyin Utilities Refactoring
+- [x] 3.1 Update `getInitial` and `getPinyinSortKey` parameters and logic in `src/lib/pinyin.ts` if necessary
+- [x] 3.2 Refactor `groupByInitial` in `src/lib/pinyin.ts` to sort and group using the cached `_pinyinSortKey` and `_pinyinInitial` instead of calling the pinyin library
+- [x] 3.3 Refactor `getActiveLetters` in `src/lib/pinyin.ts` to use cached `_pinyinInitial`
 
-## 4. UI Refactor
-- [ ] 4.1 Update `filtered` useMemo in `ContactsPage.tsx` to include `f.pinyinName?.includes(q)` in the filtering heuristic.
-- [ ] 4.2 Verify A-Z quick jump and contact grouping still behave exactly identically but with improved performance during typing.
+## 4. UI Layer Integration
+- [x] 4.1 Update `ContactsPage.tsx` search filter logic to strictly match against the new `_pinyinSortKey`
+- [x] 4.2 Ensure `ContactsPage.tsx` passes the friend objects correctly to the updated pinyin utility functions

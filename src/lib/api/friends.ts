@@ -1,12 +1,16 @@
 import { supabase } from '../supabase'
 import type { Member } from '../types'
 import { getCurrentUser } from './auth'
+import { getInitial, getPinyinSortKey } from '../pinyin'
+
 
 // ── Types ──
 
 export interface FriendWithAlias extends Member {
   friendship_id: string
   alias?: string  // alias set by current user for this friend
+  _pinyinInitial?: string
+  _pinyinSortKey?: string
 }
 
 export interface FriendRequest {
@@ -53,17 +57,19 @@ export async function getFriends(): Promise<FriendWithAlias[]> {
       supabase.from('friendships').select('id, user_a, alias_b').eq('user_b', user.id).eq('status', 'accepted'),
     ])
     const aliasMap: Record<string, { friendship_id: string; alias?: string }> = {}
-    ;(r1.data || []).forEach((r: any) => {
-      aliasMap[r.user_b] = { friendship_id: r.id, alias: r.alias_a || undefined }
-    })
-    ;(r2.data || []).forEach((r: any) => {
-      aliasMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
-    })
+      ; (r1.data || []).forEach((r: any) => {
+        aliasMap[r.user_b] = { friendship_id: r.id, alias: r.alias_a || undefined }
+      })
+      ; (r2.data || []).forEach((r: any) => {
+        aliasMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
+      })
     friends.forEach(f => {
       if (aliasMap[f.id]) {
         f.friendship_id = aliasMap[f.id].friendship_id
         f.alias = aliasMap[f.id].alias
       }
+      f._pinyinInitial = getInitial(f.alias || f.name || '')
+      f._pinyinSortKey = getPinyinSortKey(f.alias || f.name || '')
     })
     return friends
   }
@@ -85,6 +91,12 @@ export async function getFriends(): Promise<FriendWithAlias[]> {
       alias: r.alias_b || undefined,
     })),
   ]
+
+  friends.forEach(f => {
+    f._pinyinInitial = getInitial(f.alias || f.name || '')
+    f._pinyinSortKey = getPinyinSortKey(f.alias || f.name || '')
+  })
+
   return friends
 }
 
@@ -170,7 +182,7 @@ export async function getReceivedRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.from_user] || null })
   }
   return requests
@@ -193,7 +205,7 @@ export async function getSentRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.to_user] || null })
   }
   return requests

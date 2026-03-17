@@ -40,17 +40,18 @@ export default function ContactsPage({ onAddClick }: { onAddClick?: () => void }
     const q = search.toLowerCase()
     return friends.filter(f =>
       f.name.toLowerCase().includes(q) ||
-      (f.alias && f.alias.toLowerCase().includes(q))
+      (f.alias && f.alias.toLowerCase().includes(q)) ||
+      (f._pinyinSortKey && f._pinyinSortKey.includes(q))
     )
   }, [friends, search])
 
   const grouped = useMemo(() =>
-    groupByInitial(filtered, f => f.alias || f.name),
+    groupByInitial(filtered),
     [filtered]
   )
 
   const activeLetters = useMemo(() =>
-    getActiveLetters(filtered, f => f.alias || f.name),
+    getActiveLetters(filtered),
     [filtered]
   )
 
