@@ -46,7 +46,6 @@ export function useBillStats(
 
     // Filter bills by date range
     const filtered = bills.filter(b => {
-      if (!b.settled) return false
       const d = new Date(b.date)
       return d.getFullYear() === dateRange.year && d.getMonth() + 1 === dateRange.month
     })
