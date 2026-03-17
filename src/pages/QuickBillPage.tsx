@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
-import { getFriends } from '../lib/api/friends'
+import { useFriends } from '../hooks/useFriends'
 import { scanReceipt, buildQuickBillPrompt } from '../lib/api/scan'
 import { createBill } from '../lib/api/bills'
 import { ICON_COLORS } from '../lib/utils'
@@ -25,24 +25,27 @@ export default function QuickBillPage() {
   const [error, setError] = useState('')
 
   // Members
-  const [allMembers, setAllMembers] = useState<Member[]>([])
+  const { friends } = useFriends()
+  const allMembers = useMemo(() => {
+    if (!user) return []
+    const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
+    const hasSelf = friends.some(f => f.id === user.id)
+    return hasSelf ? friends : [me, ...friends]
+  }, [user, friends])
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([])
+
+  // Sync selectedMembers when allMembers first loads
+  useEffect(() => {
+    if (allMembers.length > 0 && selectedMembers.length === 0) {
+      setSelectedMembers(allMembers)
+    }
+  }, [allMembers, selectedMembers.length])
 
   // Result
   const [resultData, setResultData] = useState<ScanResult | null>(null)
   const [items, setItems] = useState<ScanResultItem[]>([])
   const [assignments, setAssignments] = useState<Record<number, Set<string>>>({})
 
-  useEffect(() => {
-    if (!user) return
-    getFriends().then(friends => {
-      const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
-      const hasSelf = friends.some(f => f.id === user.id)
-      const members = hasSelf ? friends : [me, ...friends]
-      setAllMembers(members)
-      setSelectedMembers(members)
-    }).catch(console.error)
-  }, [user])
 
   const generate = useCallback(async () => {
     if (!text.trim()) return

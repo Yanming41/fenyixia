@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
+import useSWR from 'swr'
 import type { UserIdentity } from '@supabase/supabase-js'
 import { getGoogleIdentity, linkGoogle, unlinkGoogle } from '../lib/api/auth'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './useAuth'
 
 interface UseGoogleIdentityReturn {
   googleIdentity: UserIdentity | null
@@ -13,61 +15,47 @@ interface UseGoogleIdentityReturn {
 }
 
 export function useGoogleIdentity(): UseGoogleIdentityReturn {
-  const [googleIdentity, setGoogleIdentity] = useState<UserIdentity | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
-  const refresh = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const identity = await getGoogleIdentity()
-      setGoogleIdentity(identity)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '获取绑定状态失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    refresh()
-  }, [refresh])
+  const { data, isLoading, error: swrError, mutate } = useSWR(
+    user ? 'google-identity' : null,
+    () => getGoogleIdentity(),
+  )
 
   const link = useCallback(async () => {
     try {
-      setError(null)
       await linkGoogle()
       // OAuth will redirect — no need to refresh here
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
       if (msg.includes('already linked') || msg.includes('identity_already_exists')) {
-        setError('此 Google 账号已被其他用户绑定')
-      } else {
-        setError(msg || '绑定失败，请重试')
+        throw new Error('此 Google 账号已被其他用户绑定')
       }
+      throw new Error(msg || '绑定失败，请重试')
     }
   }, [])
 
   const unlink = useCallback(async () => {
-    if (!googleIdentity) return
-
-    try {
-      setError(null)
-      // Check if this is the only identity
-      const { data } = await supabase.auth.getUserIdentities()
-      if (data && data.identities.length <= 1) {
-        setError('无法解绑，这是你唯一的登录方式')
-        return
-      }
-
-      await unlinkGoogle(googleIdentity)
-      setGoogleIdentity(null)
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : ''
-      setError(msg || '解绑失败，请重试')
+    if (!data) return
+    // Check if this is the only identity
+    const { data: identitiesData } = await supabase.auth.getUserIdentities()
+    if (identitiesData && identitiesData.identities.length <= 1) {
+      throw new Error('无法解绑，这是你唯一的登录方式')
     }
-  }, [googleIdentity])
+    await unlinkGoogle(data)
+    mutate(null, { revalidate: false })
+  }, [data, mutate])
 
-  return { googleIdentity, loading, error, link, unlink, refresh }
+  const refresh = useCallback(async () => {
+    await mutate()
+  }, [mutate])
+
+  return {
+    googleIdentity: data ?? null,
+    loading: isLoading,
+    error: swrError ? (swrError instanceof Error ? swrError.message : '获取绑定状态失败') : null,
+    link,
+    unlink,
+    refresh,
+  }
 }

@@ -5,7 +5,7 @@ import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
 import { getPaymentProofs, uploadPaymentProof, toggleManualPayment, getManualPayments } from '../../lib/api/payments'
 import { useAngerStorm } from '../../hooks/useAngerStorm'
-import { getFriends } from '../../lib/api/friends'
+import { useFriends } from '../../hooks/useFriends'
 import { useToast } from '../../contexts/ToastContext'
 import BillSheet from './BillSheet'
 
@@ -20,7 +20,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [proofs, setProofs] = useState<PaymentProof[]>([])
   const [uploading, setUploading] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
-  const [friends, setFriends] = useState<Member[]>([])
+  const { friends } = useFriends()
   const [manualPaid, setManualPaid] = useState<Set<string>>(bill._manualPaidUserIds || new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isPayer = bill.payer_id === currentUserId
@@ -29,7 +29,6 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
 
   useEffect(() => {
     getPaymentProofs(bill.id).then(setProofs).catch(console.error)
-    getFriends().then(setFriends).catch(console.error)
     getManualPayments(bill.id).then(setManualPaid).catch(console.error)
   }, [bill.id])
 

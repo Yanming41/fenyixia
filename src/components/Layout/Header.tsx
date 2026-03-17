@@ -1,13 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
-import { supabase } from '../../lib/supabase'
+import { useState } from 'react'
+import { useProfile } from '../../hooks/useProfile'
 import { useDebugConfig } from '../../contexts/DebugContext'
-
-interface Profile {
-  name: string
-  emoji: string
-  color: string
-}
 
 interface HeaderProps {
   dataFilter?: 'all' | 'mine'
@@ -17,9 +10,8 @@ interface HeaderProps {
 }
 
 export default function Header({ dataFilter, displayMode, onToggleFilter, onToggleDisplay }: HeaderProps) {
-  const { user } = useAuth()
   const { setIsDebugOpen } = useDebugConfig()
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const { profile } = useProfile()
   const [clickCount, setClickCount] = useState(0)
 
   const handleLogoClick = () => {
@@ -32,18 +24,6 @@ export default function Header({ dataFilter, displayMode, onToggleFilter, onTogg
       setTimeout(() => setClickCount(0), 2000)
     }
   }
-
-  useEffect(() => {
-    if (!user) return
-    supabase
-      .from('users')
-      .select('name, emoji, color')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setProfile(data as Profile)
-      })
-  }, [user])
 
   return (
     <div className="header">

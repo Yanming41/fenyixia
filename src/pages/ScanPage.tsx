@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
-import { getFriends } from '../lib/api/friends'
+import { useFriends } from '../hooks/useFriends'
 import { scanReceipt, buildScanPrompt, uploadReceiptImage, insertReceiptScan } from '../lib/api/scan'
 import { createBill } from '../lib/api/bills'
 import { ICON_COLORS } from '../lib/utils'
@@ -35,27 +35,27 @@ export default function ScanPage() {
   const [wasCropped, setWasCropped] = useState(false)
 
   // Members
-  const [allMembers, setAllMembers] = useState<Member[]>([])
+  const { friends } = useFriends()
+  const allMembers = useMemo(() => {
+    if (!user) return []
+    const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
+    const hasSelf = friends.some(f => f.id === user.id)
+    return hasSelf ? friends : [me, ...friends]
+  }, [user, friends])
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([])
+
+  // Sync selectedMembers when allMembers first loads
+  useEffect(() => {
+    if (allMembers.length > 0 && selectedMembers.length === 0) {
+      setSelectedMembers([allMembers[0]!])
+    }
+  }, [allMembers, selectedMembers.length])
 
   // Result
   const [resultData, setResultData] = useState<ScanResultType | null>(null)
   const [items, setItems] = useState<ScanResultItem[]>([])
   const [assignments, setAssignments] = useState<Record<number, Set<string>>>({})
   const [error, setError] = useState('')
-
-  // Load friends + self as members
-  useEffect(() => {
-    if (!user) return
-    getFriends().then(friends => {
-      // Add self to the list
-      const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
-      const hasSelf = friends.some(f => f.id === user.id)
-      const members = hasSelf ? friends : [me, ...friends]
-      setAllMembers(members)
-      setSelectedMembers([members[0]!])
-    }).catch(console.error)
-  }, [user])
 
   const handleImageLoaded = useCallback((_file: File, img: HTMLImageElement, dataUrl: string) => {
     setCurrentFile(_file)

@@ -271,8 +271,8 @@ export default function ContactsPage({ onAddClick }: { onAddClick?: () => void }
 // (Will be extracted to its own file in task 5.4)
 
 import { updateFriendAlias } from '../lib/api/friends'
-import { getTags, getFriendTags, setFriendTags } from '../lib/api/tags'
-import type { Tag } from '../lib/api/tags'
+import { getFriendTags, setFriendTags } from '../lib/api/tags'
+import { useTags } from '../hooks/useTags'
 
 function ContactProfileOverlay({
   friend,
@@ -283,24 +283,15 @@ function ContactProfileOverlay({
 }) {
   const { showToast } = useToast()
   const [alias, setAlias] = useState(friend.alias || '')
-  const [allTags, setAllTags] = useState<Tag[]>([])
+  const { tags: allTags } = useTags()
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [tags, friendTags] = await Promise.all([
-          getTags(),
-          friend.friendship_id ? getFriendTags(friend.friendship_id) : Promise.resolve([]),
-        ])
-        setAllTags(tags)
-        setSelectedTagIds(friendTags.map(t => t.id))
-      } catch (e) {
-        console.error('Failed to load tags:', e)
-      }
-    }
-    load()
+    if (!friend.friendship_id) return
+    getFriendTags(friend.friendship_id)
+      .then(friendTags => setSelectedTagIds(friendTags.map(t => t.id)))
+      .catch(console.error)
   }, [friend.friendship_id])
 
   const handleSave = async () => {

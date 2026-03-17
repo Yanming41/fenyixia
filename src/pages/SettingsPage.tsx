@@ -1,34 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useProfile } from '../hooks/useProfile'
 import { useGoogleIdentity } from '../hooks/useGoogleIdentity'
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import BottomNav from '../components/Layout/BottomNav'
 
-interface Profile {
-    name: string
-    emoji: string
-    color: string
-    email: string
-}
-
 export default function SettingsPage({ onAddClick }: { onAddClick?: () => void }) {
-    const { user, signOut } = useAuth()
+    const { signOut } = useAuth()
     const navigate = useNavigate()
-    const [profile, setProfile] = useState<Profile | null>(null)
+    const { profile } = useProfile()
     const { googleIdentity, loading: googleLoading, error: googleError, link, unlink } = useGoogleIdentity()
-
-    useEffect(() => {
-        if (!user) return
-        supabase
-            .from('users')
-            .select('name, emoji, color, email')
-            .eq('id', user.id)
-            .single()
-            .then(({ data }) => {
-                if (data) setProfile(data as Profile)
-            })
-    }, [user])
 
     const handleSignOut = async () => {
         await signOut()

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
-import { getFriends } from '../lib/api/friends'
-import type { FriendWithAlias } from '../lib/api/friends'
+import { useFriends } from '../hooks/useFriends'
 import { createGroup, deleteGroup } from '../lib/api/groups'
 import { useGroups, mutateGroups } from '../hooks/useGroups'
 import BottomNav from '../components/Layout/BottomNav'
@@ -136,13 +135,9 @@ function CreateGroupOverlay({
   const { showToast } = useToast()
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('👥')
-  const [friends, setFriends] = useState<FriendWithAlias[]>([])
+  const { friends } = useFriends()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
-
-  useEffect(() => {
-    getFriends().then(setFriends).catch(console.error)
-  }, [])
 
   const toggleFriend = (id: string) => {
     setSelectedIds(prev =>

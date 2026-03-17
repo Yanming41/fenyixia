@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
-import { getFriends } from '../../lib/api/friends'
+import { useFriends } from '../../hooks/useFriends'
 import BillSheet from '../SplitDetail/BillSheet'
-import type { Member } from '../../lib/types'
 
 interface AddBillOverlayProps {
     show: boolean
@@ -12,15 +10,9 @@ interface AddBillOverlayProps {
 }
 
 export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOverlayProps) {
-    const { user } = useAuth()
     const navigate = useNavigate()
     const [showSheet, setShowSheet] = useState(false)
-    const [friends, setFriends] = useState<Member[]>([])
-
-    useEffect(() => {
-        if (!user) return
-        getFriends().then(setFriends).catch(console.error)
-    }, [user])
+    const { friends } = useFriends()
 
     if (!show && !showSheet) return null
 
