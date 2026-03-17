@@ -99,7 +99,7 @@ export async function getReceivedRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.from_user] || null })
   }
   return requests
@@ -122,7 +122,7 @@ export async function getSentRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.to_user] || null })
   }
   return requests
