@@ -193,9 +193,11 @@ export default function CropOverlay({ image, onCropped, onSkip }: CropOverlayPro
     if (dragging < 0) return
     const [px, py] = getPointerPos(e)
     const ds = displayScaleRef.current
+    const clampedX = Math.max(0, Math.min(px, canvasRef.current!.clientWidth)) / ds
+    const clampedY = Math.max(0, Math.min(py, canvasRef.current!.clientHeight)) / ds
     setCorners(prev => {
       const next = [...prev] as Corner[]
-      next[dragging] = [px / ds, py / ds]
+      next[dragging] = [clampedX, clampedY]
       return next
     })
   }
