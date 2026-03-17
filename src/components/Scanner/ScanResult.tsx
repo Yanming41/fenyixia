@@ -24,6 +24,7 @@ export default function ScanResult({
 
   const startEdit = (idx: number) => {
     const item = items[idx]
+    if (!item) return
     setEditingIdx(idx)
     setEditName(item.name)
     setEditQty(item.qty || 1)

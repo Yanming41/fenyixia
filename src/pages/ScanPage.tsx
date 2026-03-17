@@ -171,7 +171,7 @@ export default function ScanPage() {
 
       await insertReceiptScan(user.id, imagePath, resultData, billId)
 
-      toast.show('账单已保存')
+      toast.showToast('账单已保存')
       setTimeout(() => navigate('/'), 800)
     } catch (err) {
       setError((err as Error).message)
@@ -283,7 +283,7 @@ function toBase64(blob: Blob): Promise<string> {
     reader.onload = () => {
       const result = reader.result as string
       // Strip data URL prefix
-      const base64 = result.includes(',') ? result.split(',')[1] : result
+      const base64 = result.includes(',') ? result.split(',')[1]! : result
       resolve(base64)
     }
     reader.onerror = reject

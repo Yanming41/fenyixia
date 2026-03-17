@@ -121,7 +121,7 @@ export default function QuickBillPage() {
         items: billItems,
       })
 
-      toast.show('账单已保存')
+      toast.showToast('账单已保存')
       setTimeout(() => navigate('/'), 800)
     } catch (err) {
       setError((err as Error).message)

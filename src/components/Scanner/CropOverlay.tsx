@@ -21,15 +21,15 @@ function detectReceiptCorners(img: HTMLImageElement): Corner[] {
 
   const bright = new Float32Array(W * H)
   for (let i = 0; i < W * H; i++)
-    bright[i] = 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]
+    bright[i] = 0.299 * px[i * 4]! + 0.587 * px[i * 4 + 1]! + 0.114 * px[i * 4 + 2]!
 
   const sorted = Array.from(bright).sort((a, b) => a - b)
-  const medianBright = sorted[Math.floor(sorted.length * 0.7)]
+  const medianBright = sorted[Math.floor(sorted.length * 0.7)] ?? 128
   const threshold = Math.min(medianBright * 0.75, 160)
 
   const mask = new Uint8Array(W * H)
   for (let i = 0; i < W * H; i++)
-    mask[i] = bright[i] > threshold ? 1 : 0
+    mask[i] = bright[i]! > threshold ? 1 : 0
 
   const margin = Math.floor(Math.min(W, H) * 0.03)
   let x0 = W, y0 = H, x1 = 0, y1 = 0, found = false
@@ -124,10 +124,10 @@ export default function CropOverlay({ image, onCropped, onSkip }: CropOverlayPro
     ctx.fillRect(0, 0, w, h)
 
     // Clear crop region
-    const pts = corners.map(c => [c[0] * ds, c[1] * ds])
+    const pts = corners.map(c => [c[0] * ds, c[1] * ds] as const)
     ctx.save()
     ctx.beginPath()
-    ctx.moveTo(pts[0][0], pts[0][1])
+    ctx.moveTo(pts[0]![0], pts[0]![1])
     pts.forEach(p => ctx.lineTo(p[0], p[1]))
     ctx.closePath()
     ctx.clip()
@@ -138,7 +138,7 @@ export default function CropOverlay({ image, onCropped, onSkip }: CropOverlayPro
     ctx.strokeStyle = '#f0c040'
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.moveTo(pts[0][0], pts[0][1])
+    ctx.moveTo(pts[0]![0], pts[0]![1])
     pts.forEach(p => ctx.lineTo(p[0], p[1]))
     ctx.closePath()
     ctx.stroke()
@@ -179,8 +179,8 @@ export default function CropOverlay({ image, onCropped, onSkip }: CropOverlayPro
     const [px, py] = getPointerPos(e)
     const ds = displayScaleRef.current
     for (let i = 0; i < corners.length; i++) {
-      const hx = corners[i][0] * ds
-      const hy = corners[i][1] * ds
+      const hx = corners[i]![0] * ds
+      const hy = corners[i]![1] * ds
       if (Math.hypot(px - hx, py - hy) < HIT_R) {
         setDragging(i)
         ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
@@ -217,7 +217,7 @@ export default function CropOverlay({ image, onCropped, onSkip }: CropOverlayPro
     const octx = oc.getContext('2d')!
 
     octx.beginPath()
-    octx.moveTo(corners[0][0] - x0, corners[0][1] - y0)
+    octx.moveTo(corners[0]![0] - x0, corners[0]![1] - y0)
     corners.forEach(c => octx.lineTo(c[0] - x0, c[1] - y0))
     octx.closePath()
     octx.clip()
