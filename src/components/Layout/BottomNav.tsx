@@ -19,11 +19,11 @@ export default function BottomNav({ onAddClick }: BottomNavProps) {
                 <div>我的账单</div>
             </button>
             <button
-                className={`nb${path === '/friends' ? ' on' : ''}`}
-                onClick={() => navigate('/friends')}
+                className={`nb${path.startsWith('/contacts') ? ' on' : ''}`}
+                onClick={() => navigate('/contacts')}
             >
                 <div className="nb-icon">👥</div>
-                <div>好友</div>
+                <div>通讯录</div>
             </button>
             <button
                 className="add-btn"

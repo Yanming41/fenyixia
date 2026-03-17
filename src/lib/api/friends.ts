@@ -2,35 +2,117 @@ import { supabase } from '../supabase'
 import type { Member } from '../types'
 import { getCurrentUser } from './auth'
 
-// ── Get confirmed friends ──
+// ── Types ──
 
-export async function getFriends(): Promise<Member[]> {
-  const user = await getCurrentUser()
-  if (!user) return []
-
-  const { data, error } = await supabase.rpc('get_friends', { uid: user.id })
-
-  if (error) {
-    const [r1, r2] = await Promise.all([
-      supabase.from('friendships').select('user_b(id,name,emoji,color)').eq('user_a', user.id),
-      supabase.from('friendships').select('user_a(id,name,emoji,color)').eq('user_b', user.id),
-    ])
-    const friends = [
-      ...(r1.data || []).map((r: any) => r.user_b),
-      ...(r2.data || []).map((r: any) => r.user_a),
-    ]
-    return friends
-  }
-  return data || []
+export interface FriendWithAlias extends Member {
+  friendship_id: string
+  alias?: string  // alias set by current user for this friend
 }
 
-// ── Search user by email (RPC) ──
+export interface FriendRequest {
+  id: string
+  from_user: string
+  to_user: string
+  status: string
+  created_at: string
+  user: { id: string; name: string; emoji: string } | null
+}
 
 export interface SearchUserResult {
   id: string
   name: string
   emoji: string
 }
+
+export type AddFriendResult =
+  | { type: 'request_sent' }
+  | { type: 'auto_accepted' }
+  | { type: 'already_friends' }
+  | { type: 'already_requested' }
+  | { type: 'invited'; email: string }
+  | { type: 'already_invited'; email: string }
+
+// ── Get confirmed friends (with alias support) ──
+
+export async function getFriends(): Promise<FriendWithAlias[]> {
+  const user = await getCurrentUser()
+  if (!user) return []
+
+  // Try RPC first, fallback to direct query
+  const { data, error } = await supabase.rpc('get_friends', { uid: user.id })
+
+  if (!error && data) {
+    // RPC returns basic Member[], augment with friendship/alias data
+    const friends: FriendWithAlias[] = (data as Member[]).map(f => ({
+      ...f,
+      friendship_id: '',
+    }))
+    // Try to get alias data from friendships table
+    const [r1, r2] = await Promise.all([
+      supabase.from('friendships').select('id, user_b, alias_a').eq('user_a', user.id).eq('status', 'accepted'),
+      supabase.from('friendships').select('id, user_a, alias_b').eq('user_b', user.id).eq('status', 'accepted'),
+    ])
+    const aliasMap: Record<string, { friendship_id: string; alias?: string }> = {}
+    ;(r1.data || []).forEach((r: any) => {
+      aliasMap[r.user_b] = { friendship_id: r.id, alias: r.alias_a || undefined }
+    })
+    ;(r2.data || []).forEach((r: any) => {
+      aliasMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
+    })
+    friends.forEach(f => {
+      if (aliasMap[f.id]) {
+        f.friendship_id = aliasMap[f.id].friendship_id
+        f.alias = aliasMap[f.id].alias
+      }
+    })
+    return friends
+  }
+
+  // Fallback: direct query
+  const [r1, r2] = await Promise.all([
+    supabase.from('friendships').select('id, user_b(id,name,emoji,color), alias_a').eq('user_a', user.id).eq('status', 'accepted'),
+    supabase.from('friendships').select('id, user_a(id,name,emoji,color), alias_b').eq('user_b', user.id).eq('status', 'accepted'),
+  ])
+  const friends: FriendWithAlias[] = [
+    ...(r1.data || []).map((r: any) => ({
+      ...r.user_b,
+      friendship_id: r.id,
+      alias: r.alias_a || undefined,
+    })),
+    ...(r2.data || []).map((r: any) => ({
+      ...r.user_a,
+      friendship_id: r.id,
+      alias: r.alias_b || undefined,
+    })),
+  ]
+  return friends
+}
+
+// ── Update alias for a friend ──
+
+export async function updateFriendAlias(friendshipId: string, friendId: string, alias: string): Promise<void> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('未登录')
+
+  // Determine which alias column to update based on user position
+  const { data: friendship } = await supabase
+    .from('friendships')
+    .select('user_a, user_b')
+    .eq('id', friendshipId)
+    .single()
+
+  if (!friendship) throw new Error('好友关系不存在')
+
+  const column = friendship.user_a === user.id ? 'alias_a' : 'alias_b'
+  const { error } = await supabase
+    .from('friendships')
+    .update({ [column]: alias || null })
+    .eq('id', friendshipId)
+
+  if (error) throw new Error('更新备注失败')
+}
+
+// ── Search user by email (RPC) ──
 
 export async function searchUserByEmail(email: string): Promise<SearchUserResult | null> {
   const user = await getCurrentUser()
@@ -43,16 +125,7 @@ export async function searchUserByEmail(email: string): Promise<SearchUserResult
   return data && data.length > 0 ? data[0] : null
 }
 
-// ── Friend requests ──
-
-export interface FriendRequest {
-  id: string
-  from_user: string
-  to_user: string
-  status: string
-  created_at: string
-  user: { id: string; name: string; emoji: string } | null
-}
+// ── Friend requests (using friend_requests table for backward compat) ──
 
 export async function sendFriendRequest(toUserId: string): Promise<'sent' | 'auto_accepted'> {
   const user = await getCurrentUser()
@@ -68,12 +141,10 @@ export async function sendFriendRequest(toUserId: string): Promise<'sent' | 'aut
     .maybeSingle()
 
   if (reverse) {
-    // Auto-accept their request
     await supabase.rpc('accept_friend_request', { request_id: reverse.id })
     return 'auto_accepted'
   }
 
-  // Send new request
   const { error } = await supabase.from('friend_requests').upsert(
     { from_user: user.id, to_user: toUserId, status: 'pending' },
     { onConflict: 'from_user,to_user' }
@@ -99,7 +170,7 @@ export async function getReceivedRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.from_user] || null })
   }
   return requests
@@ -122,7 +193,7 @@ export async function getSentRequests(): Promise<FriendRequest[]> {
   if (uids.length > 0) {
     const { data: users } = await supabase.from('users').select('id,name,emoji').in('id', uids)
     const umap: Record<string, { id: string; name: string; emoji: string }> = {}
-      ; (users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
+    ;(users || []).forEach((u: { id: string; name: string; emoji: string }) => { umap[u.id] = u })
     requests.forEach(r => { r.user = umap[r.to_user] || null })
   }
   return requests
@@ -138,15 +209,7 @@ export async function rejectFriendRequest(requestId: string): Promise<void> {
   if (error) throw new Error('拒绝失败: ' + error.message)
 }
 
-// ── Add friend (modified: registered users get request, unregistered get invitation) ──
-
-export type AddFriendResult =
-  | { type: 'request_sent' }
-  | { type: 'auto_accepted' }
-  | { type: 'already_friends' }
-  | { type: 'already_requested' }
-  | { type: 'invited'; email: string }
-  | { type: 'already_invited'; email: string }
+// ── Add friend ──
 
 export async function addFriend(email: string): Promise<AddFriendResult> {
   const user = await getCurrentUser()
@@ -184,7 +247,6 @@ export async function addFriend(email: string): Promise<AddFriendResult> {
 
     if (sentReq) return { type: 'already_requested' }
 
-    // Send request (or auto-accept if they already sent us one)
     const result = await sendFriendRequest(target.id)
     return result === 'auto_accepted' ? { type: 'auto_accepted' } : { type: 'request_sent' }
   }

@@ -5,7 +5,10 @@ import { useBills } from './hooks/useBills'
 import { ToastProvider } from './contexts/ToastContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
-import FriendsPage from './pages/FriendsPage'
+import ContactsPage from './pages/ContactsPage'
+import NewFriendsPage from './pages/NewFriendsPage'
+import GroupsPage from './pages/GroupsPage'
+import TagsPage from './pages/TagsPage'
 import SettingsPage from './pages/SettingsPage'
 import StatsPage from './pages/StatsPage'
 import ScanPage from './pages/ScanPage'
@@ -43,13 +46,39 @@ export default function App() {
           }
         />
         <Route
-          path="/friends"
+          path="/contacts"
           element={
             <ProtectedRoute>
-              <FriendsPage onAddClick={handleAddClick} />
+              <ContactsPage onAddClick={handleAddClick} />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/contacts/new"
+          element={
+            <ProtectedRoute>
+              <NewFriendsPage onAddClick={handleAddClick} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contacts/groups"
+          element={
+            <ProtectedRoute>
+              <GroupsPage onAddClick={handleAddClick} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contacts/tags"
+          element={
+            <ProtectedRoute>
+              <TagsPage onAddClick={handleAddClick} />
+            </ProtectedRoute>
+          }
+        />
+        {/* Redirect old /friends to /contacts */}
+        <Route path="/friends" element={<Navigate to="/contacts" replace />} />
         <Route
           path="/stats"
           element={
