@@ -37,7 +37,7 @@ export async function getGroups(): Promise<Group[]> {
   const membersByGroup: Record<string, Member[]> = {}
   ;(membersData || []).forEach((m: any) => {
     if (!membersByGroup[m.group_id]) membersByGroup[m.group_id] = []
-    if (m.users) membersByGroup[m.group_id].push(m.users)
+    if (m.users) membersByGroup[m.group_id]!.push(m.users)
   })
   groups.forEach(g => { g.members = membersByGroup[g.id] || [] })
 

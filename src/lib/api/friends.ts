@@ -64,9 +64,10 @@ export async function getFriends(): Promise<FriendWithAlias[]> {
         aliasMap[r.user_a] = { friendship_id: r.id, alias: r.alias_b || undefined }
       })
     friends.forEach(f => {
-      if (aliasMap[f.id]) {
-        f.friendship_id = aliasMap[f.id].friendship_id
-        f.alias = aliasMap[f.id].alias
+      const entry = aliasMap[f.id]
+      if (entry) {
+        f.friendship_id = entry.friendship_id
+        f.alias = entry.alias
       }
       f._pinyinInitial = getInitial(f.alias || f.name || '')
       f._pinyinSortKey = getPinyinSortKey(f.alias || f.name || '')

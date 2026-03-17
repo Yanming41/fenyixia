@@ -123,7 +123,7 @@ function TagFormOverlay({
 }) {
   const { showToast } = useToast()
   const [name, setName] = useState(tag?.name || '')
-  const [color, setColor] = useState(tag?.color || TAG_COLORS[0])
+  const [color, setColor] = useState(tag?.color || TAG_COLORS[0]!)
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
