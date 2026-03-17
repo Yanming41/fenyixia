@@ -4,14 +4,14 @@ import { useAuth } from '../hooks/useAuth'
 import { resendVerification, signInWithGoogle } from '../lib/api/auth'
 
 const EMOJI_LIST = [
-  '🐱','🐻','🦊','🐰','🐼','🐨','🦁','🐯','🐸','🐵',
-  '🐶','🐮','🐷','🐔','🦄','🐲','🐙','🦋','🐝','🐢',
-  '😀','😎','🤗','🥰','😈','👻','🤖','👽','🎃','💀',
+  '🐱', '🐻', '🦊', '🐰', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵',
+  '🐶', '🐮', '🐷', '🐔', '🦄', '🐲', '🐙', '🦋', '🐝', '🐢',
+  '😀', '😎', '🤗', '🥰', '😈', '👻', '🤖', '👽', '🎃', '💀',
 ]
 
 const COLOR_LIST = [
-  '#1c1c26','#2d1b69','#1b3a4b','#1b4332','#3d0c11',
-  '#3a1a00','#4a1942','#0c2340','#2c1810','#1a1a2e',
+  '#1c1c26', '#2d1b69', '#1b3a4b', '#1b4332', '#3d0c11',
+  '#3a1a00', '#4a1942', '#0c2340', '#2c1810', '#1a1a2e',
 ]
 
 type Step =
@@ -36,15 +36,24 @@ export default function LoginPage() {
 
   // 已登录用户：检查 profile 完善状态
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      // 核心修复：如果由于网络/Token过期导致用户变为 null，应当把所有误入的 setup 步骤踢回 welcome
+      if (step.startsWith('setup-')) {
+        setStep('welcome')
+      }
+      return
+    }
+
     if (profileCompleted === true) {
       navigate('/', { replace: true })
     } else if (profileCompleted === false) {
-      // 已验证但未完善资料 → 进入 setup 流程
-      setStep('setup-welcome')
+      // 已验证但未完善资料 → 进入 setup 流程 (不覆盖已经在 setup 内部的进度)
+      if (!step.startsWith('setup-')) {
+        setStep('setup-welcome')
+      }
     }
     // profileCompleted === null → still loading, wait
-  }, [user, profileCompleted, navigate])
+  }, [user, profileCompleted, navigate, step])
 
   // 邀请链接自动填充邮箱
   useEffect(() => {
