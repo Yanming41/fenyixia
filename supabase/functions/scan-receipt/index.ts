@@ -25,12 +25,26 @@ serve(async (req) => {
 
     const { image_base64, media_type, prompt } = await req.json();
 
-    if (!image_base64 || !prompt) {
+    if (!prompt) {
       return new Response(
-        JSON.stringify({ error: "missing image_base64 or prompt" }),
+        JSON.stringify({ error: "missing prompt" }),
         { status: 400, headers: { ...CORS, "Content-Type": "application/json" } }
       );
     }
+
+    // Build message content: image + text if image provided, text-only otherwise
+    const content = [];
+    if (image_base64) {
+      content.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: media_type || "image/jpeg",
+          data: image_base64,
+        },
+      });
+    }
+    content.push({ type: "text", text: prompt });
 
     // 调用 Claude API
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -46,17 +60,7 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: media_type || "image/jpeg",
-                  data: image_base64,
-                },
-              },
-              { type: "text", text: prompt },
-            ],
+            content,
           },
         ],
       }),
