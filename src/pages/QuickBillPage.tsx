@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
-import { supabase } from '../lib/supabase'
+import { getFriends } from '../lib/api/friends'
 import { scanReceipt, buildQuickBillPrompt } from '../lib/api/scan'
 import { createBill } from '../lib/api/bills'
 import { ICON_COLORS } from '../lib/utils'
@@ -35,17 +35,13 @@ export default function QuickBillPage() {
 
   useEffect(() => {
     if (!user) return
-    supabase
-      .from('users')
-      .select('id, name, emoji, color')
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          const members = data as Member[]
-          setAllMembers(members)
-          setSelectedMembers(members)
-        }
-      })
+    getFriends().then(friends => {
+      const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
+      const hasSelf = friends.some(f => f.id === user.id)
+      const members = hasSelf ? friends : [me, ...friends]
+      setAllMembers(members)
+      setSelectedMembers(members)
+    }).catch(console.error)
   }, [user])
 
   const generate = useCallback(async () => {

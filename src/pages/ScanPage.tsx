@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
+import { getFriends } from '../lib/api/friends'
 import { scanReceipt, buildScanPrompt, uploadReceiptImage, insertReceiptScan } from '../lib/api/scan'
 import { createBill } from '../lib/api/bills'
 import { ICON_COLORS } from '../lib/utils'
@@ -43,22 +44,17 @@ export default function ScanPage() {
   const [assignments, setAssignments] = useState<Record<number, Set<string>>>({})
   const [error, setError] = useState('')
 
-  // Load all users
+  // Load friends + self as members
   useEffect(() => {
     if (!user) return
-    supabase
-      .from('users')
-      .select('id, name, emoji, color')
-      .order('created_at', { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          const members = data as Member[]
-          setAllMembers(members)
-          // Auto-select current user
-          const me = members.find(m => m.id === user.id)
-          if (me) setSelectedMembers([me])
-        }
-      })
+    getFriends().then(friends => {
+      // Add self to the list
+      const me: Member = { id: user.id, name: user.user_metadata?.name || '我', emoji: user.user_metadata?.emoji || '😀', color: user.user_metadata?.color }
+      const hasSelf = friends.some(f => f.id === user.id)
+      const members = hasSelf ? friends : [me, ...friends]
+      setAllMembers(members)
+      setSelectedMembers([members[0]!])
+    }).catch(console.error)
   }, [user])
 
   const handleImageLoaded = useCallback((_file: File, img: HTMLImageElement, dataUrl: string) => {

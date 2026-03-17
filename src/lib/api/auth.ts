@@ -68,6 +68,34 @@ export async function updateProfile(name: string, emoji: string, color: string) 
     profile_completed: true,
   })
   if (error) throw error
+
+  // Auto-create friend requests from inviters
+  if (user.email) {
+    try {
+      const { data: invitations } = await supabase
+        .from('invitations')
+        .select('inviter_id')
+        .eq('email', user.email)
+        .eq('status', 'pending')
+      if (invitations && invitations.length > 0) {
+        // Mark invitations as accepted
+        await supabase
+          .from('invitations')
+          .update({ status: 'accepted' })
+          .eq('email', user.email)
+          .eq('status', 'pending')
+        // Create friend requests from each inviter to this new user
+        const requests = invitations.map(inv => ({
+          from_user: inv.inviter_id,
+          to_user: user.id,
+          status: 'pending',
+        }))
+        await supabase.from('friend_requests').upsert(requests, { onConflict: 'from_user,to_user' })
+      }
+    } catch (e) {
+      console.error('Auto-friend-request failed:', e)
+    }
+  }
 }
 
 // ── Google OAuth ──────────────────────────────────────

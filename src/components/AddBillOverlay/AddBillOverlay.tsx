@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { supabase } from '../../lib/supabase'
+import { getFriends } from '../../lib/api/friends'
 import BillSheet from '../SplitDetail/BillSheet'
 import type { Member } from '../../lib/types'
 
@@ -19,13 +19,7 @@ export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOver
 
     useEffect(() => {
         if (!user) return
-        supabase
-            .from('users')
-            .select('id, name, emoji, color')
-            .order('created_at', { ascending: true })
-            .then(({ data }) => {
-                if (data) setFriends(data as Member[])
-            })
+        getFriends().then(setFriends).catch(console.error)
     }, [user])
 
     if (!show && !showSheet) return null
