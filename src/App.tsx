@@ -8,6 +8,8 @@ import HomePage from './pages/HomePage'
 import FriendsPage from './pages/FriendsPage'
 import SettingsPage from './pages/SettingsPage'
 import StatsPage from './pages/StatsPage'
+import ScanPage from './pages/ScanPage'
+import QuickBillPage from './pages/QuickBillPage'
 import AddBillOverlay from './components/AddBillOverlay/AddBillOverlay'
 import DebugConsole from './components/Debug/DebugConsole'
 
@@ -61,6 +63,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SettingsPage onAddClick={handleAddClick} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/scan"
+          element={
+            <ProtectedRoute>
+              <ScanPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quick-bill"
+          element={
+            <ProtectedRoute>
+              <QuickBillPage />
             </ProtectedRoute>
           }
         />

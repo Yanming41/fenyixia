@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import BillSheet from '../SplitDetail/BillSheet'
@@ -12,6 +13,7 @@ interface AddBillOverlayProps {
 
 export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOverlayProps) {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const [showSheet, setShowSheet] = useState(false)
     const [friends, setFriends] = useState<Member[]>([])
 
@@ -61,7 +63,7 @@ export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOver
                             📝 手动输入
                         </button>
                         <button
-                            onClick={() => { onClose(); setTimeout(() => { window.location.href = 'receipt-scanner_final.html' }, 250) }}
+                            onClick={() => { onClose(); setTimeout(() => navigate('/scan'), 250) }}
                             style={{
                                 width: '100%', padding: '14px', borderRadius: 12, border: 'none',
                                 background: 'rgba(48,209,88,0.15)', color: 'var(--accent)', fontSize: 16, fontWeight: 600,
@@ -69,6 +71,16 @@ export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOver
                             }}
                         >
                             📷 拍照 / 扫描
+                        </button>
+                        <button
+                            onClick={() => { onClose(); setTimeout(() => navigate('/quick-bill'), 250) }}
+                            style={{
+                                width: '100%', padding: '14px', borderRadius: 12, border: 'none',
+                                background: 'rgba(94,92,230,0.15)', color: '#5e5ce6', fontSize: 16, fontWeight: 600,
+                                cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10,
+                            }}
+                        >
+                            💬 一句话生成
                         </button>
                         <button
                             onClick={onClose}
