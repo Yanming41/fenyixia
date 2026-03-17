@@ -39,10 +39,15 @@ export async function signOut() {
   await supabase.auth.signOut()
 }
 
-export function onAuthChange(callback: (user: SupabaseUser | null) => void) {
-  return supabase.auth.onAuthStateChange((_event, session) => {
-    callback(session?.user || null)
+export function onAuthChange(callback: (user: SupabaseUser | null, event: string) => void) {
+  return supabase.auth.onAuthStateChange((event, session) => {
+    callback(session?.user || null, event)
   })
+}
+
+export async function verifySession(): Promise<boolean> {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  return !error && !!user
 }
 
 // ── Profile ──────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { resendVerification, signInWithGoogle } from '../lib/api/auth'
+import { resendVerification, signInWithGoogle, verifySession } from '../lib/api/auth'
 
 const EMOJI_LIST = [
   '🐱', '🐻', '🦊', '🐰', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵',
@@ -20,7 +20,7 @@ type Step =
   | 'setup-welcome' | 'setup-name' | 'setup-emoji'
 
 export default function LoginPage() {
-  const { user, profileCompleted, signIn, signUp, updateProfile } = useAuth()
+  const { user, profileCompleted, signIn, signUp, signOut, updateProfile } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -47,13 +47,19 @@ export default function LoginPage() {
     if (profileCompleted === true) {
       navigate('/', { replace: true })
     } else if (profileCompleted === false) {
-      // 已验证但未完善资料 → 进入 setup 流程 (不覆盖已经在 setup 内部的进度)
+      // 已验证但未完善资料 → 验证 session 有效后再进入 setup 流程
       if (!step.startsWith('setup-')) {
-        setStep('setup-welcome')
+        verifySession().then(valid => {
+          if (valid) {
+            setStep('setup-welcome')
+          } else {
+            signOut()
+          }
+        })
       }
     }
     // profileCompleted === null → still loading, wait
-  }, [user, profileCompleted, navigate, step])
+  }, [user, profileCompleted, navigate, step, signOut])
 
   // 邀请链接自动填充邮箱
   useEffect(() => {
@@ -317,6 +323,7 @@ export default function LoginPage() {
               <button className="primary-btn" onClick={() => setStep('setup-name')}>
                 开始设置
               </button>
+              <button className="ghost-btn" onClick={() => signOut()}>退出登录</button>
             </div>
           </div>
         )}
@@ -344,6 +351,7 @@ export default function LoginPage() {
                 下一步
               </button>
               <button className="ghost-btn" onClick={() => setStep('setup-welcome')}>返回</button>
+              <button className="ghost-btn" style={{ fontSize: 13, color: 'var(--text3)' }} onClick={() => signOut()}>退出登录</button>
             </div>
           </div>
         )}
@@ -387,6 +395,7 @@ export default function LoginPage() {
                 {loading ? '保存中...' : '完成设置'}
               </button>
               <button className="ghost-btn" onClick={() => setStep('setup-name')}>返回</button>
+              <button className="ghost-btn" style={{ fontSize: 13, color: 'var(--text3)' }} onClick={() => signOut()}>退出登录</button>
             </div>
           </div>
         )}

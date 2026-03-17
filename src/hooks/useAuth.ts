@@ -28,14 +28,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getCurrentUser().then(u => {
       setUser(u)
       setLoading(false)
-      if (u) checkProfileCompleted(u.id).then(setProfileCompleted)
+      if (u) {
+        checkProfileCompleted(u.id)
+          .then(setProfileCompleted)
+          .catch(() => setProfileCompleted(null)) // keep null on error, don't set false
+      }
     }).catch(() => setLoading(false))
 
-    const { data: { subscription } } = onAuthChange(u => {
+    const { data: { subscription } } = onAuthChange((u, event) => {
+      // On explicit sign-out, aggressively clear all state
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setProfileCompleted(null)
+        setLoading(false)
+        return
+      }
+
       setUser(u)
       setLoading(false)
       if (u) {
-        checkProfileCompleted(u.id).then(setProfileCompleted)
+        checkProfileCompleted(u.id)
+          .then(setProfileCompleted)
+          .catch(() => setProfileCompleted(null)) // keep null on error, don't set false
       } else {
         setProfileCompleted(null)
       }
