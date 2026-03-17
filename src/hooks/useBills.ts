@@ -1,39 +1,36 @@
-import { useState, useEffect, useCallback } from 'react'
+import useSWR, { mutate } from 'swr'
 import type { Bill } from '../lib/types'
 import { fetchMyBills } from '../lib/api/bills'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
+async function fetchBillsWithProofs(userId: string): Promise<Bill[]> {
+  const data = await fetchMyBills()
+  await markBillsWithProofs(data, userId)
+  return data
+}
+
 export function useBills() {
   const { user } = useAuth()
-  const [bills, setBills] = useState<Bill[]>([])
-  const [loading, setLoading] = useState(true)
 
-  const loadBills = useCallback(async () => {
-    if (!user) { setBills([]); setLoading(false); return }
-    try {
-      setLoading(true)
-      const data = await fetchMyBills()
-      // Mark bills with payment proofs
-      await markBillsWithProofs(data, user.id)
-      setBills(data)
-    } catch (e) {
-      console.error('[useBills] Failed to load:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [user])
+  const { data: bills, isLoading } = useSWR(
+    user ? 'bills' : null,
+    () => fetchBillsWithProofs(user!.id),
+  )
 
-  useEffect(() => {
-    loadBills()
-  }, [loadBills])
+  return {
+    bills: bills || [],
+    loading: isLoading,
+    reload: () => mutate('bills'),
+  }
+}
 
-  return { bills, loading, reload: loadBills }
+export function mutateBills() {
+  return mutate('bills')
 }
 
 async function markBillsWithProofs(billList: Bill[], currentUserId: string) {
   try {
-    // Load payment proofs
     const { data } = await supabase
       .from('payment_proofs')
       .select('bill_id, user_id')
@@ -51,7 +48,6 @@ async function markBillsWithProofs(billList: Bill[], currentUserId: string) {
       })
     }
 
-    // Load manual payments
     const { data: manualData } = await supabase
       .from('manual_payments')
       .select('bill_id, user_id')

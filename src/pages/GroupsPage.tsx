@@ -1,38 +1,25 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
 import { getFriends } from '../lib/api/friends'
 import type { FriendWithAlias } from '../lib/api/friends'
-import { getGroups, createGroup, deleteGroup } from '../lib/api/groups'
-import type { Group } from '../lib/api/groups'
+import { createGroup, deleteGroup } from '../lib/api/groups'
+import { useGroups, mutateGroups } from '../hooks/useGroups'
 import BottomNav from '../components/Layout/BottomNav'
 
 export default function GroupsPage({ onAddClick }: { onAddClick?: () => void }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
 
-  const [groups, setGroups] = useState<Group[]>([])
-  const [loading, setLoading] = useState(true)
+  const { groups, loading: groupsLoading } = useGroups()
+  const loading = groupsLoading && groups.length === 0
   const [showCreate, setShowCreate] = useState(false)
-
-  const loadGroups = useCallback(async () => {
-    setLoading(true)
-    try {
-      setGroups(await getGroups())
-    } catch (e) {
-      console.error('Failed to load groups:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadGroups() }, [loadGroups])
 
   const handleDelete = async (groupId: string) => {
     try {
       await deleteGroup(groupId)
       showToast('已删除群聊')
-      loadGroups()
+      mutateGroups()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '删除失败')
     }
@@ -128,7 +115,7 @@ export default function GroupsPage({ onAddClick }: { onAddClick?: () => void }) 
       {showCreate && (
         <CreateGroupOverlay
           onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); loadGroups() }}
+          onCreated={() => { setShowCreate(false); mutateGroups() }}
         />
       )}
 

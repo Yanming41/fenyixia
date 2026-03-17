@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
-import { getTags, createTag, updateTag, deleteTag } from '../lib/api/tags'
+import { createTag, updateTag, deleteTag } from '../lib/api/tags'
 import type { Tag } from '../lib/api/tags'
+import { useTags, mutateTags } from '../hooks/useTags'
 import BottomNav from '../components/Layout/BottomNav'
 
 const TAG_COLORS = [
@@ -14,29 +15,16 @@ export default function TagsPage({ onAddClick }: { onAddClick?: () => void }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
 
-  const [tags, setTags] = useState<Tag[]>([])
-  const [loading, setLoading] = useState(true)
+  const { tags, loading: tagsLoading } = useTags()
+  const loading = tagsLoading && tags.length === 0
   const [showCreate, setShowCreate] = useState(false)
   const [editingTag, setEditingTag] = useState<Tag | null>(null)
-
-  const loadTags = useCallback(async () => {
-    setLoading(true)
-    try {
-      setTags(await getTags())
-    } catch (e) {
-      console.error('Failed to load tags:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadTags() }, [loadTags])
 
   const handleDelete = async (tagId: string) => {
     try {
       await deleteTag(tagId)
       showToast('标签已删除')
-      loadTags()
+      mutateTags()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '删除失败')
     }
@@ -101,7 +89,7 @@ export default function TagsPage({ onAddClick }: { onAddClick?: () => void }) {
       {showCreate && (
         <TagFormOverlay
           onClose={() => setShowCreate(false)}
-          onSaved={() => { setShowCreate(false); loadTags() }}
+          onSaved={() => { setShowCreate(false); mutateTags() }}
         />
       )}
 
@@ -110,7 +98,7 @@ export default function TagsPage({ onAddClick }: { onAddClick?: () => void }) {
         <TagFormOverlay
           tag={editingTag}
           onClose={() => setEditingTag(null)}
-          onSaved={() => { setEditingTag(null); loadTags() }}
+          onSaved={() => { setEditingTag(null); mutateTags() }}
           onDelete={() => { handleDelete(editingTag.id); setEditingTag(null) }}
         />
       )}

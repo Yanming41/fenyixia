@@ -1,40 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
 import {
   addFriend,
-  getReceivedRequests,
-  getSentRequests,
   acceptFriendRequest,
   rejectFriendRequest,
 } from '../lib/api/friends'
-import type { FriendRequest } from '../lib/api/friends'
+import { useReceivedRequests, useSentRequests, mutateAllFriendData } from '../hooks/useFriends'
 import BottomNav from '../components/Layout/BottomNav'
 
 export default function NewFriendsPage({ onAddClick }: { onAddClick?: () => void }) {
   const navigate = useNavigate()
   const { showToast } = useToast()
 
-  const [received, setReceived] = useState<FriendRequest[]>([])
-  const [sent, setSent] = useState<FriendRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const { received, loading: receivedLoading } = useReceivedRequests()
+  const { sent, loading: sentLoading } = useSentRequests()
+  const loading = (receivedLoading && received.length === 0) || (sentLoading && sent.length === 0)
+
   const [email, setEmail] = useState('')
   const [adding, setAdding] = useState(false)
-
-  const loadAll = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [r, s] = await Promise.all([getReceivedRequests(), getSentRequests()])
-      setReceived(r)
-      setSent(s)
-    } catch (e) {
-      console.error('Failed to load requests:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadAll() }, [loadAll])
 
   const handleAdd = async () => {
     if (!email.trim()) return
@@ -50,7 +34,7 @@ export default function NewFriendsPage({ onAddClick }: { onAddClick?: () => void
         case 'already_invited': showToast('已邀请过该用户，等待对方注册'); break
       }
       setEmail('')
-      loadAll()
+      mutateAllFriendData()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '操作失败')
     } finally {
@@ -62,7 +46,7 @@ export default function NewFriendsPage({ onAddClick }: { onAddClick?: () => void
     try {
       await acceptFriendRequest(id)
       showToast('已添加好友')
-      loadAll()
+      mutateAllFriendData()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '操作失败')
     }
@@ -72,7 +56,7 @@ export default function NewFriendsPage({ onAddClick }: { onAddClick?: () => void
     try {
       await rejectFriendRequest(id)
       showToast('已拒绝')
-      loadAll()
+      mutateAllFriendData()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '操作失败')
     }

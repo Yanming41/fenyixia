@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../contexts/ToastContext'
-import { getFriends, getReceivedRequests, searchUserByEmail, addFriend } from '../lib/api/friends'
-import type { FriendWithAlias, FriendRequest } from '../lib/api/friends'
+import { addFriend } from '../lib/api/friends'
+import type { FriendWithAlias } from '../lib/api/friends'
+import { useFriends, useReceivedRequests, mutateAllFriendData } from '../hooks/useFriends'
 import { groupByInitial, getActiveLetters, LETTERS } from '../lib/pinyin'
 import BottomNav from '../components/Layout/BottomNav'
 
@@ -11,26 +12,13 @@ export default function ContactsPage({ onAddClick }: { onAddClick?: () => void }
   const { showToast } = useToast()
   const listRef = useRef<HTMLDivElement>(null)
 
-  const [friends, setFriends] = useState<FriendWithAlias[]>([])
-  const [pendingCount, setPendingCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const { friends, loading: friendsLoading } = useFriends()
+  const { received, loading: requestsLoading } = useReceivedRequests()
+  const pendingCount = received.length
+  const loading = friendsLoading && friends.length === 0
+
   const [search, setSearch] = useState('')
   const [selectedContact, setSelectedContact] = useState<FriendWithAlias | null>(null)
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [f, r] = await Promise.all([getFriends(), getReceivedRequests()])
-      setFriends(f)
-      setPendingCount(r.length)
-    } catch (e) {
-      console.error('Failed to load contacts:', e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { loadData() }, [loadData])
 
   // ── Search / Filter ──
   const isEmailSearch = search.includes('@') && search.includes('.')
@@ -77,7 +65,7 @@ export default function ContactsPage({ onAddClick }: { onAddClick?: () => void }
         case 'already_invited': showToast('已邀请过该用户，等待对方注册'); break
       }
       setSearch('')
-      loadData()
+      mutateAllFriendData()
     } catch (e) {
       showToast(e instanceof Error ? e.message : '操作失败')
     } finally {
@@ -270,7 +258,7 @@ export default function ContactsPage({ onAddClick }: { onAddClick?: () => void }
       {selectedContact && (
         <ContactProfileOverlay
           friend={selectedContact}
-          onClose={() => { setSelectedContact(null); loadData() }}
+          onClose={() => { setSelectedContact(null); mutateAllFriendData() }}
         />
       )}
 

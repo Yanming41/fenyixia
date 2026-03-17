@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { SWRConfig } from 'swr'
 import { useAuth } from './hooks/useAuth'
-import { useBills } from './hooks/useBills'
+import { mutateBills } from './hooks/useBills'
 import { ToastProvider } from './contexts/ToastContext'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
@@ -30,10 +31,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const [showAddOptions, setShowAddOptions] = useState(false)
-  const { reload } = useBills()
   const handleAddClick = () => setShowAddOptions(true)
 
   return (
+    <SWRConfig value={{ revalidateOnFocus: true, dedupingInterval: 5000 }}>
     <ToastProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -115,9 +116,10 @@ export default function App() {
       <AddBillOverlay
         show={showAddOptions}
         onClose={() => setShowAddOptions(false)}
-        onCreated={() => { setShowAddOptions(false); reload() }}
+        onCreated={() => { setShowAddOptions(false); mutateBills() }}
       />
       <DebugConsole />
     </ToastProvider>
+    </SWRConfig>
   )
 }
