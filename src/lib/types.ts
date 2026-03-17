@@ -33,6 +33,8 @@ export interface Bill {
   _hasMeProof?: boolean
   /** Set of user IDs who have uploaded proofs for this bill */
   _proofUserIds?: Set<string>
+  /** Set of user IDs manually marked as paid by the payer */
+  _manualPaidUserIds?: Set<string>
 }
 
 export interface PaymentProof {

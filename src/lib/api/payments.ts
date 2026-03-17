@@ -45,3 +45,41 @@ export async function getPaymentProofs(billId: string): Promise<PaymentProof[]> 
   }
   return proofs
 }
+
+// ── Manual payment marking (payer marks members as paid) ──
+
+export async function toggleManualPayment(billId: string, userId: string): Promise<boolean> {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('未登录')
+
+  // Check if already marked
+  const { data: existing } = await supabase
+    .from('manual_payments')
+    .select('id')
+    .eq('bill_id', billId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (existing) {
+    // Unmark
+    await supabase.from('manual_payments').delete().eq('id', existing.id)
+    return false
+  } else {
+    // Mark as paid
+    const { error } = await supabase.from('manual_payments').insert({
+      bill_id: billId,
+      user_id: userId,
+      marked_by: user.id,
+    })
+    if (error) throw error
+    return true
+  }
+}
+
+export async function getManualPayments(billId: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('manual_payments')
+    .select('user_id')
+    .eq('bill_id', billId)
+  return new Set((data || []).map(d => d.user_id))
+}

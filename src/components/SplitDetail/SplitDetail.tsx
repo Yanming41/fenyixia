@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { Bill, PaymentProof, Member } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
-import { getPaymentProofs, uploadPaymentProof } from '../../lib/api/payments'
+import { getPaymentProofs, uploadPaymentProof, toggleManualPayment, getManualPayments } from '../../lib/api/payments'
 import { useAngerStorm } from '../../hooks/useAngerStorm'
 import { getFriends } from '../../lib/api/friends'
 import { useToast } from '../../contexts/ToastContext'
@@ -21,6 +21,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [uploading, setUploading] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [friends, setFriends] = useState<Member[]>([])
+  const [manualPaid, setManualPaid] = useState<Set<string>>(bill._manualPaidUserIds || new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isPayer = bill.payer_id === currentUserId
   const { protestBill } = useAngerStorm()
@@ -29,6 +30,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   useEffect(() => {
     getPaymentProofs(bill.id).then(setProofs).catch(console.error)
     getFriends().then(setFriends).catch(console.error)
+    getManualPayments(bill.id).then(setManualPaid).catch(console.error)
   }, [bill.id])
 
   const handleToggleSettled = async () => {
@@ -62,6 +64,23 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
 
   const handleAnger = () => {
     protestBill(bill.id)
+  }
+
+  const handleTogglePaid = async (userId: string) => {
+    if (!isPayer || userId === bill.payer_id || bill.settled) return
+    try {
+      const nowPaid = await toggleManualPayment(bill.id, userId)
+      setManualPaid(prev => {
+        const next = new Set(prev)
+        if (nowPaid) next.add(userId)
+        else next.delete(userId)
+        return next
+      })
+      showToast(nowPaid ? '已标记为已付款' : '已取消付款标记')
+      onRefresh()
+    } catch (err) {
+      console.error('Toggle paid failed:', err)
+    }
   }
 
   const handleCopyPayment = async (amount: number) => {
@@ -191,22 +210,33 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                   const isMe = m.id === currentUserId
                   const proofUsers = bill._proofUserIds || new Set<string>()
                   const hasProof = proofUsers.has(m.id)
+                  const isManualPaid = manualPaid.has(m.id)
+                  const isMemberPayer = m.id === bill.payer_id
+                  const isPaid = hasProof || isManualPaid || bill.settled
+                  const canToggle = isPayer && !isMemberPayer && !bill.settled
                   return (
-                    <div key={m.id} className={`detail-summary-row ${isMe ? 'me' : ''}`}>
+                    <div
+                      key={m.id}
+                      className={`detail-summary-row ${isMe ? 'me' : ''} ${!isMemberPayer && isPaid ? 'paid' : ''} ${canToggle ? 'tappable' : ''}`}
+                      onClick={() => canToggle && handleTogglePaid(m.id)}
+                    >
                       <div className="detail-summary-avatar" style={{ background: 'var(--bg4)' }}>
                         {m.emoji}
                       </div>
                       <div className="detail-summary-name">
                         {m.name}
-                        {m.id === bill.payer_id && (
+                        {isMemberPayer && (
                           <span className="detail-summary-label"> (垫付人)</span>
+                        )}
+                        {!isMemberPayer && isPaid && (
+                          <span className="detail-summary-paid-badge">✓ 已付</span>
                         )}
                       </div>
                       <div className="detail-summary-amount">
-                        {m.id === bill.payer_id ? (
+                        {isMemberPayer ? (
                           <span style={{ color: 'var(--label3)' }}>—</span>
                         ) : (
-                          <span style={{ color: hasProof || bill.settled ? 'var(--green)' : 'var(--orange)' }}>
+                          <span className={isPaid ? 'amount-paid' : 'amount-unpaid'}>
                             {fmtMoney(share)}
                           </span>
                         )}
