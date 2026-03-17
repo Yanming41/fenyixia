@@ -89,9 +89,10 @@ export default function ScanResult({
                 <input
                   className="scanner-item-edit-input qty"
                   type="number"
-                  min={1}
+                  min={0.1}
+                  step="any"
                   value={editQty}
-                  onChange={e => setEditQty(parseInt(e.target.value) || 1)}
+                  onChange={e => setEditQty(parseFloat(e.target.value) || 1)}
                 />
                 <input
                   className="scanner-item-edit-input price"

@@ -74,7 +74,7 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
         const itemsPayload = items.map(it => ({
             name: it.name.trim(),
             price: parseFloat(it.price),
-            qty: parseInt(it.qty) || 1,
+            qty: parseFloat(it.qty) || 1,
             member_ids: it.memberIds,
         }))
 
@@ -215,7 +215,7 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
                                 <div className="fg">
                                     <span className="fl">数量</span>
                                     <input
-                                        className="fi" type="number" inputMode="numeric" placeholder="1"
+                                        className="fi" type="number" inputMode="decimal" step="any" placeholder="1"
                                         value={item.qty} onChange={e => updateItem(idx, { qty: e.target.value })}
                                     />
                                 </div>
