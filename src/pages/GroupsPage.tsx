@@ -168,85 +168,88 @@ function CreateGroupOverlay({
         style={{
           background: 'var(--bg2)', borderRadius: '20px 20px 0 0',
           width: '100%', maxWidth: 430,
-          padding: '24px 20px calc(env(safe-area-inset-bottom, 16px) + 20px)',
-          maxHeight: '80vh', overflowY: 'auto',
+          maxHeight: '80vh',
+          display: 'flex', flexDirection: 'column',
         }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--label1)', marginBottom: 16 }}>
-          创建群聊
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 16px' }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--label1)', marginBottom: 16 }}>
+            创建群聊
+          </div>
+
+          {/* Group name */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <input
+              type="text"
+              value={emoji}
+              onChange={e => setEmoji(e.target.value)}
+              style={{
+                width: 48, padding: '10px', borderRadius: 10, textAlign: 'center',
+                border: '1px solid var(--sep)', background: 'var(--bg3)',
+                color: 'var(--label1)', fontSize: 20, fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="群聊名称"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={{
+                flex: 1, padding: '10px 14px', borderRadius: 10,
+                border: '1px solid var(--sep)', background: 'var(--bg3)',
+                color: 'var(--label1)', fontSize: 14, fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Select friends */}
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--label2)', marginBottom: 8 }}>
+            选择成员 ({selectedIds.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {friends.map(f => {
+              const selected = selectedIds.includes(f.id)
+              return (
+                <div
+                  key={f.id}
+                  onClick={() => toggleFriend(f.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
+                    background: selected ? 'rgba(10, 132, 255, 0.1)' : 'var(--bg3)',
+                    border: selected ? '1px solid var(--blue)' : '1px solid transparent',
+                  }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: f.color || 'var(--bg4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, flexShrink: 0,
+                  }}>
+                    {f.emoji || '😀'}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 14, color: 'var(--label1)' }}>
+                    {f.alias || f.name}
+                  </div>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    border: selected ? 'none' : '2px solid var(--sep)',
+                    background: selected ? 'var(--blue)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: 14, fontWeight: 700,
+                  }}>
+                    {selected ? '✓' : ''}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Group name */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-          <input
-            type="text"
-            value={emoji}
-            onChange={e => setEmoji(e.target.value)}
-            style={{
-              width: 48, padding: '10px', borderRadius: 10, textAlign: 'center',
-              border: '1px solid var(--sep)', background: 'var(--bg3)',
-              color: 'var(--label1)', fontSize: 20, fontFamily: 'inherit', outline: 'none',
-            }}
-          />
-          <input
-            type="text"
-            placeholder="群聊名称"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            style={{
-              flex: 1, padding: '10px 14px', borderRadius: 10,
-              border: '1px solid var(--sep)', background: 'var(--bg3)',
-              color: 'var(--label1)', fontSize: 14, fontFamily: 'inherit', outline: 'none',
-            }}
-          />
-        </div>
-
-        {/* Select friends */}
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--label2)', marginBottom: 8 }}>
-          选择成员 ({selectedIds.length})
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
-          {friends.map(f => {
-            const selected = selectedIds.includes(f.id)
-            return (
-              <div
-                key={f.id}
-                onClick={() => toggleFriend(f.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 14px', borderRadius: 10, cursor: 'pointer',
-                  background: selected ? 'rgba(10, 132, 255, 0.1)' : 'var(--bg3)',
-                  border: selected ? '1px solid var(--blue)' : '1px solid transparent',
-                }}
-              >
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  background: f.color || 'var(--bg4)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16, flexShrink: 0,
-                }}>
-                  {f.emoji || '😀'}
-                </div>
-                <div style={{ flex: 1, fontSize: 14, color: 'var(--label1)' }}>
-                  {f.alias || f.name}
-                </div>
-                <div style={{
-                  width: 22, height: 22, borderRadius: '50%',
-                  border: selected ? 'none' : '2px solid var(--sep)',
-                  background: selected ? 'var(--blue)' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: 14, fontWeight: 700,
-                }}>
-                  {selected ? '✓' : ''}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: 10 }}>
+        {/* Fixed buttons at bottom */}
+        <div style={{ padding: '12px 20px calc(env(safe-area-inset-bottom, 16px) + 12px)', display: 'flex', gap: 10, borderTop: '1px solid var(--sep)' }}>
           <button
             onClick={onClose}
             style={{
