@@ -1522,6 +1522,8 @@ body {
   margin: 0 auto;
   padding: 0 0 calc(env(safe-area-inset-bottom, 16px) + 80px);
   min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--bg);
 }
 
