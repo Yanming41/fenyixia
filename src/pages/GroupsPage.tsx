@@ -168,13 +168,13 @@ function CreateGroupOverlay({
         style={{
           background: 'var(--bg2)', borderRadius: 20,
           width: 'calc(100% - 32px)', maxWidth: 430,
-          maxHeight: '80vh',
+          maxHeight: '80vh', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 16px' }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 20px 16px' }}>
           <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--label1)', marginBottom: 16 }}>
             创建群聊
           </div>
@@ -249,7 +249,7 @@ function CreateGroupOverlay({
         </div>
 
         {/* Fixed buttons at bottom */}
-        <div style={{ padding: '12px 20px 20px', display: 'flex', gap: 10, borderTop: '1px solid var(--sep)' }}>
+        <div style={{ flexShrink: 0, padding: '12px 20px 20px', display: 'flex', gap: 10, borderTop: '1px solid var(--sep)' }}>
           <button
             onClick={onClose}
             style={{
