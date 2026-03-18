@@ -2,13 +2,19 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Bill, BillItem, Member, UpdateBillData, CreateBillData } from '../../lib/types'
 import { updateBill, createBill } from '../../lib/api/bills'
+import type { FriendWithAlias } from '../../lib/api/friends'
+import type { Group } from '../../lib/api/groups'
+import type { Tag } from '../../lib/api/tags'
+import MemberPickerSheet from '../MemberPicker/MemberPickerSheet'
 
 const ICON_LIST = ['🍔', '🍕', '🍣', '🍜', '🧋', '☕', '🍰', '🎮', '🎬', '🛒',
     '✈️', '🏨', '⛽', '💊', '🎁', '🎪', '🎵', '🏋️', '🛁', '💡', '🧴', '🛵', '🚌', '🍻']
 
 interface BillSheetProps {
     bill?: Bill | null
-    friends: Member[]
+    friends: FriendWithAlias[]
+    groups: Group[]
+    tags: Tag[]
     onClose: () => void
     onSaved: () => void
 }
@@ -33,7 +39,7 @@ function newItem(): EditItem {
     return { name: '', price: '', qty: '1', memberIds: [] }
 }
 
-export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheetProps) {
+export default function BillSheet({ bill, friends, groups, tags, onClose, onSaved }: BillSheetProps) {
     const isCreate = !bill
     const [icon, setIcon] = useState(bill?.icon || '🧾')
     const [title, setTitle] = useState(bill?.title || '')
@@ -219,28 +225,16 @@ export default function BillSheet({ bill, friends, onClose, onSaved }: BillSheet
                                         value={item.qty} onChange={e => updateItem(idx, { qty: e.target.value })}
                                     />
                                 </div>
-                                {/* Member assignment */}
-                                <div className="fg" style={{ flexWrap: 'wrap', gap: 6, paddingTop: 10 }}>
+                                {/* Member assignment — 3-module picker */}
+                                <div style={{ paddingTop: 10 }}>
                                     <span className="fl" style={{ width: '100%', marginBottom: 4 }}>分给</span>
-                                    {friends.map(m => {
-                                        const selected = item.memberIds.includes(m.id)
-                                        return (
-                                            <button
-                                                key={m.id}
-                                                onClick={() => toggleMember(idx, m.id)}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: 4,
-                                                    padding: '4px 10px', borderRadius: 20,
-                                                    border: selected ? '1.5px solid var(--accent)' : '1.5px solid var(--sep)',
-                                                    background: selected ? 'rgba(48,209,88,0.15)' : 'none',
-                                                    color: selected ? 'var(--accent)' : 'var(--label2)',
-                                                    fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-                                                }}
-                                            >
-                                                {m.emoji} {m.name}
-                                            </button>
-                                        )
-                                    })}
+                                    <MemberPickerSheet
+                                        friends={friends}
+                                        groups={groups}
+                                        tags={tags}
+                                        selectedIds={item.memberIds}
+                                        onChange={(ids) => updateItem(idx, { memberIds: ids })}
+                                    />
                                 </div>
                             </div>
                         ))}

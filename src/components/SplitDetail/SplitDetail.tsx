@@ -6,6 +6,8 @@ import { toggleSettled, deleteBill } from '../../lib/api/bills'
 import { getPaymentProofs, uploadPaymentProof, toggleManualPayment, getManualPayments } from '../../lib/api/payments'
 import { useAngerStorm } from '../../hooks/useAngerStorm'
 import { useFriends } from '../../hooks/useFriends'
+import { useGroups } from '../../hooks/useGroups'
+import { useTags } from '../../hooks/useTags'
 import { useToast } from '../../contexts/ToastContext'
 import BillSheet from './BillSheet'
 
@@ -21,6 +23,8 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [uploading, setUploading] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const { friends } = useFriends()
+  const { groups } = useGroups()
+  const { tags } = useTags()
   const [manualPaid, setManualPaid] = useState<Set<string>>(bill._manualPaidUserIds || new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isPayer = bill.payer_id === currentUserId
@@ -320,7 +324,9 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
       {showEdit && (
         <BillSheet
           bill={bill}
-          friends={[...bill.members, ...friends.filter(f => !bill.members.some(m => m.id === f.id))]}
+          friends={friends}
+          groups={groups}
+          tags={tags}
           onClose={() => setShowEdit(false)}
           onSaved={() => { onRefresh(); setShowEdit(false) }}
         />

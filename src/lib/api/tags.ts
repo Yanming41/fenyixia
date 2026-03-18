@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import { getCurrentUser } from './auth'
+import type { Member } from '../types'
 
 export interface Tag {
   id: string
@@ -89,4 +90,41 @@ export async function setFriendTags(friendshipId: string, tagIds: string[]): Pro
     const { error } = await supabase.from('friend_tags').insert(rows)
     if (error) throw new Error('设置标签失败')
   }
+}
+
+// ── Get all friends with a given tag ──
+
+export async function getFriendsByTag(tagId: string): Promise<Member[]> {
+  const user = await getCurrentUser()
+  if (!user) return []
+
+  // friend_tags → friendships → users
+  const { data, error } = await supabase
+    .from('friend_tags')
+    .select(`
+      friendship_id,
+      friendships:friendship_id(
+        user_a, user_b,
+        user_a_profile:user_a(id, name, emoji, color),
+        user_b_profile:user_b(id, name, emoji, color)
+      )
+    `)
+    .eq('tag_id', tagId)
+
+  if (error) throw new Error('获取标签好友失败')
+
+  const members: Member[] = []
+  const seen = new Set<string>()
+    ; (data || []).forEach((row: any) => {
+      const f = row.friendships
+      if (!f) return
+      // The friend is the other side of the friendship
+      const friend = f.user_a === user.id ? f.user_b_profile : f.user_a_profile
+      if (friend && !seen.has(friend.id)) {
+        seen.add(friend.id)
+        members.push(friend)
+      }
+    })
+
+  return members
 }

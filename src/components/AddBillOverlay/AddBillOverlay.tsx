@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFriends } from '../../hooks/useFriends'
+import { useGroups } from '../../hooks/useGroups'
+import { useTags } from '../../hooks/useTags'
 import BillSheet from '../SplitDetail/BillSheet'
 
 interface AddBillOverlayProps {
@@ -13,6 +15,8 @@ export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOver
     const navigate = useNavigate()
     const [showSheet, setShowSheet] = useState(false)
     const { friends } = useFriends()
+    const { groups } = useGroups()
+    const { tags } = useTags()
 
     if (!show && !showSheet) return null
 
@@ -86,6 +90,8 @@ export default function AddBillOverlay({ show, onClose, onCreated }: AddBillOver
             {showSheet && (
                 <BillSheet
                     friends={friends}
+                    groups={groups}
+                    tags={tags}
                     onClose={() => setShowSheet(false)}
                     onSaved={() => { setShowSheet(false); onCreated() }}
                 />
