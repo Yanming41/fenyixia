@@ -73,7 +73,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
         if (items.length === 0) { setError('至少需要一个商品'); return }
         for (const it of items) {
             if (!it.name.trim()) { setError('商品名不能为空'); return }
-            if (isNaN(parseFloat(it.price)) || parseFloat(it.price) <= 0) { setError('商品价格必须大于0'); return }
+            if (isNaN(parseFloat(it.price)) || parseFloat(it.price) === 0) { setError('商品价格不能为0'); return }
             if (it.memberIds.length === 0) { setError('每个商品至少分给一人'); return }
         }
 
