@@ -56,6 +56,7 @@ export default function ScanPage() {
   const [items, setItems] = useState<ScanResultItem[]>([])
   const [assignments, setAssignments] = useState<Record<number, Set<string>>>({})
   const [error, setError] = useState('')
+  const [userHint, setUserHint] = useState('')
 
   const handleImageLoaded = useCallback((_file: File, img: HTMLImageElement, dataUrl: string) => {
     setCurrentFile(_file)
@@ -102,7 +103,7 @@ export default function ScanPage() {
 
     try {
       const memberNames = selectedMembers.map(m => m.name || m.emoji || '?')
-      const prompt = buildScanPrompt(receiptType, memberNames, memberNames.length || 1)
+      const prompt = buildScanPrompt(receiptType, memberNames, memberNames.length || 1, userHint.trim() || undefined)
       const src = croppedBlob || currentFile
       const b64 = await toBase64(src)
       const mime = croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg')
@@ -123,7 +124,7 @@ export default function ScanPage() {
       setError((err as Error).message)
       setStep('member-select')
     }
-  }, [currentFile, croppedBlob, receiptType, selectedMembers])
+  }, [currentFile, croppedBlob, receiptType, selectedMembers, userHint])
 
   const saveBill = useCallback(async () => {
     if (!resultData || !user) return
@@ -225,6 +226,16 @@ export default function ScanPage() {
             selected={selectedMembers}
             onToggle={handleToggleMember}
           />
+          <div className="scanner-hint-section">
+            <div className="scanner-section-title">识别备注（可选）</div>
+            <input
+              className="scanner-hint-input"
+              type="text"
+              placeholder="如：这是Costco的小票、忽略最后一项退款..."
+              value={userHint}
+              onChange={e => setUserHint(e.target.value)}
+            />
+          </div>
           <button className="scanner-btn-primary" onClick={startScan} style={{ margin: '16px 20px' }}>
             ✨ 开始识别
           </button>

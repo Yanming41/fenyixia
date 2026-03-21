@@ -2135,6 +2135,34 @@ body {
   opacity: 1;
 }
 
+/* Hint input */
+.scanner-hint-section {
+  padding: 0 20px;
+  margin-top: 12px;
+}
+
+.scanner-hint-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  background: var(--bg2);
+  color: var(--label1);
+  font-size: 15px;
+  font-family: inherit;
+  margin-top: 8px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.scanner-hint-input:focus {
+  border-color: var(--tint);
+}
+
+.scanner-hint-input::placeholder {
+  color: var(--label3);
+}
+
 /* Buttons */
 .scanner-btn-primary {
   display: block;
