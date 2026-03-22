@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { Bill, PaymentProof, Member } from '../../lib/types'
+import type { Bill, PaymentProof, Member, BillDispute } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
 import { getPaymentProofs, uploadPaymentProof, toggleManualPayment, getManualPayments } from '../../lib/api/payments'
+import { fetchDispute, resolveDispute } from '../../lib/api/disputes'
 import { useAngerStorm } from '../../hooks/useAngerStorm'
 import { useFriends } from '../../hooks/useFriends'
 import { useGroups } from '../../hooks/useGroups'
 import { useTags } from '../../hooks/useTags'
 import { useToast } from '../../contexts/ToastContext'
 import BillSheet from './BillSheet'
+import DisputeSheet from './DisputeSheet'
 
 interface SplitDetailProps {
   bill: Bill
@@ -22,6 +24,9 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [proofs, setProofs] = useState<PaymentProof[]>([])
   const [uploading, setUploading] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showDispute, setShowDispute] = useState(false)
+  const [dispute, setDispute] = useState<BillDispute | null>(bill._dispute || null)
+  const [showDisputeReview, setShowDisputeReview] = useState(false)
   const { friends } = useFriends()
   const { groups } = useGroups()
   const { tags } = useTags()
@@ -34,7 +39,10 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   useEffect(() => {
     getPaymentProofs(bill.id).then(setProofs).catch(console.error)
     getManualPayments(bill.id).then(setManualPaid).catch(console.error)
-  }, [bill.id])
+    if (!bill._dispute) {
+      fetchDispute(bill.id).then(setDispute).catch(console.error)
+    }
+  }, [bill.id, bill._dispute])
 
   const handleToggleSettled = async () => {
     await toggleSettled(bill.id, !bill.settled)
@@ -83,6 +91,33 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
       onRefresh()
     } catch (err) {
       console.error('Toggle paid failed:', err)
+    }
+  }
+
+  const handleDisputeSubmitted = () => {
+    setShowDispute(false)
+    fetchDispute(bill.id).then(setDispute).catch(console.error)
+    onRefresh()
+    showToast('质疑已提交，等待垫付人审核')
+  }
+
+  const handleResolveDispute = async (accepted: boolean) => {
+    if (!dispute) return
+    try {
+      await resolveDispute(
+        dispute.id,
+        bill.id,
+        accepted,
+        accepted ? dispute.suggested_items : undefined,
+        accepted ? bill.title : undefined,
+        accepted ? bill.icon : undefined
+      )
+      setDispute(null)
+      setShowDisputeReview(false)
+      onRefresh()
+      showToast(accepted ? '已接受修改' : '已拒绝质疑')
+    } catch (err) {
+      console.error('Resolve dispute failed:', err)
     }
   }
 
@@ -174,6 +209,53 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                 <span>{bannerText}</span>
                 <span className="role-amount">{fmtMoney(bannerAmount)}</span>
               </div>
+
+              {/* Dispute banner */}
+              {dispute && (
+                <div className="dispute-banner" onClick={() => isPayer && setShowDisputeReview(!showDisputeReview)}>
+                  <span className="dispute-banner-icon">⚖️</span>
+                  <span>裁决中 — {dispute.challenger?.emoji || '👤'} {dispute.challenger?.name || '成员'} 发起了质疑</span>
+                </div>
+              )}
+
+              {/* Payer dispute review */}
+              {isPayer && dispute && showDisputeReview && (
+                <div className="dispute-review">
+                  <div className="dispute-review-title">争议详情</div>
+                  <div className="dispute-review-reason">
+                    <strong>{dispute.challenger?.emoji} {dispute.challenger?.name}：</strong>
+                    {dispute.reason}
+                  </div>
+                  <div className="dispute-label" style={{ fontSize: 13 }}>建议修改</div>
+                  <div className="dispute-review-diff">
+                    {dispute.suggested_items.map((sItem, idx) => {
+                      const origItem = bill.items[idx]
+                      const origIds = new Set(origItem?.members.map(m => m.id) || [])
+                      const newIds = new Set(sItem.member_ids)
+                      return (
+                        <div key={idx} className="dispute-diff-item">
+                          <div className="dispute-diff-name">{sItem.name}</div>
+                          <div className="dispute-diff-members">
+                            {bill.members.filter(m => m.id !== bill.payer_id).map(m => {
+                              const wasIn = origIds.has(m.id)
+                              const nowIn = newIds.has(m.id)
+                              let cls = 'dispute-diff-chip'
+                              if (wasIn && !nowIn) cls += ' removed'
+                              else if (!wasIn && nowIn) cls += ' added'
+                              if (!wasIn && !nowIn) return null
+                              return <span key={m.id} className={cls}>{m.emoji} {m.name}</span>
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="dispute-review-actions">
+                    <button className="dispute-btn-reject" onClick={() => handleResolveDispute(false)}>拒绝</button>
+                    <button className="dispute-btn-accept" onClick={() => handleResolveDispute(true)}>接受修改</button>
+                  </div>
+                </div>
+              )}
 
               {/* Meta */}
               <div className="detail-meta">
@@ -311,9 +393,16 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                   </>
                 )}
                 {!isPayer && !bill.settled && !bill._hasMeProof && (
-                  <button className="detail-btn-protest" onClick={handleAnger}>
-                    😡 异议!
-                  </button>
+                  <>
+                    <button className="detail-btn-protest" onClick={handleAnger}>
+                      😡 异议!
+                    </button>
+                    {!dispute && (
+                      <button className="detail-btn-dispute" onClick={() => setShowDispute(true)}>
+                        ⚖️ 质疑
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -329,6 +418,15 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
           tags={tags}
           onClose={() => setShowEdit(false)}
           onSaved={() => { onRefresh(); setShowEdit(false) }}
+        />
+      )}
+
+      {showDispute && (
+        <DisputeSheet
+          bill={bill}
+          currentUserId={currentUserId}
+          onClose={() => setShowDispute(false)}
+          onSubmitted={handleDisputeSubmitted}
         />
       )}
     </>

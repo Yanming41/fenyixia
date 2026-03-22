@@ -35,6 +35,8 @@ export interface Bill {
   _proofUserIds?: Set<string>
   /** Set of user IDs manually marked as paid by the payer */
   _manualPaidUserIds?: Set<string>
+  /** Active pending dispute on this bill, if any */
+  _dispute?: BillDispute | null
 }
 
 export interface PaymentProof {
@@ -53,6 +55,24 @@ export interface BillReaction {
   anger_count: number
   seen: boolean
   user?: Member | null
+}
+
+export interface DisputeSuggestedItem {
+  name: string
+  price: number
+  qty: number
+  member_ids: string[]
+}
+
+export interface BillDispute {
+  id: string
+  bill_id: string
+  challenger_id: string
+  challenger?: Member
+  reason: string
+  suggested_items: DisputeSuggestedItem[]
+  status: 'pending' | 'accepted' | 'rejected'
+  created_at: string
 }
 
 export interface CreateBillData {
