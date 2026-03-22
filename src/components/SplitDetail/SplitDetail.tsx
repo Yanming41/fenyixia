@@ -152,6 +152,18 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     bannerClass = 'paid'
     bannerText = '✓ 已结清'
     bannerAmount = isPayer ? collectTotal : (memberShares[currentUserId] || 0)
+  } else if (dispute) {
+    bannerClass = 'dispute'
+    if (isPayer) {
+      bannerText = '⚖️ 有成员发起质疑，待你裁决'
+      bannerAmount = collectTotal
+    } else if (dispute.challenger_id === currentUserId) {
+      bannerText = '⚖️ 你已提交质疑，等待裁决'
+      bannerAmount = memberShares[currentUserId] || 0
+    } else {
+      bannerText = '⚖️ 裁决中'
+      bannerAmount = memberShares[currentUserId] || 0
+    }
   } else if (isPayer) {
     bannerClass = 'collect'
     bannerText = '💰 你是垫付人，待收款'

@@ -658,6 +658,18 @@ body {
   border: 0.5px solid rgba(48, 209, 88, 0.3);
 }
 
+.detail-role-banner.dispute {
+  background: rgba(175, 130, 255, 0.15);
+  color: #AF82FF;
+  border: 1.5px solid rgba(175, 130, 255, 0.5);
+  animation: dispute-banner-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dispute-banner-pulse {
+  0%, 100% { border-color: rgba(175, 130, 255, 0.5); }
+  50% { border-color: rgba(175, 130, 255, 0.9); }
+}
+
 .detail-role-banner .role-amount {
   font-size: 18px;
   font-weight: 700;
