@@ -1174,16 +1174,31 @@ body {
   cursor: not-allowed;
 }
 
-/* Bill card dispute badge */
+/* Bill card dispute state */
+.card-disputed {
+  box-shadow: 0 0 0 2px rgba(175, 130, 255, 0.6), 0 0 20px rgba(175, 130, 255, 0.25);
+  animation: dispute-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dispute-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(175, 130, 255, 0.6), 0 0 20px rgba(175, 130, 255, 0.25); }
+  50% { box-shadow: 0 0 0 2px rgba(175, 130, 255, 0.9), 0 0 30px rgba(175, 130, 255, 0.4); }
+}
+
+.card-role-tag.dispute {
+  background: rgba(175, 130, 255, 0.2);
+  color: #AF82FF;
+}
+
 .card-dispute-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 2px 8px;
-  border-radius: 8px;
-  background: rgba(175, 130, 255, 0.85);
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(175, 130, 255, 0.9);
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   z-index: 2;
 }
