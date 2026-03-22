@@ -5,7 +5,7 @@ import type { BillDispute, DisputeSuggestedItem } from '../types'
 export async function fetchDispute(billId: string): Promise<BillDispute | null> {
   const { data, error } = await supabase
     .from('bill_disputes')
-    .select('*, challenger:users!bill_disputes_challenger_id_fkey(id,name,emoji)')
+    .select('*')
     .eq('bill_id', billId)
     .eq('status', 'pending')
     .maybeSingle()
@@ -13,11 +13,20 @@ export async function fetchDispute(billId: string): Promise<BillDispute | null> 
   if (error) throw error
   if (!data) return null
 
+  // Fetch challenger info from public.users
+  let challenger: { id: string; name: string; emoji: string } | undefined
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, name, emoji')
+    .eq('id', data.challenger_id)
+    .maybeSingle()
+  if (user) challenger = user
+
   return {
     id: data.id,
     bill_id: data.bill_id,
     challenger_id: data.challenger_id,
-    challenger: data.challenger || undefined,
+    challenger,
     reason: data.reason,
     suggested_items: data.suggested_items as DisputeSuggestedItem[],
     status: data.status,
