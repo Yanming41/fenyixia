@@ -25,10 +25,17 @@ export default function BillCard({ bill, currentUserId, style, onClick }: BillCa
   let heroLabel: string
   let heroAmount: number
 
+  const hasDispute = !!bill._dispute
+
   if (bill.settled) {
     roleTagClass = 'settled'
     roleTagText = '\u2713 已结清'
     heroLabel = isPayer ? '已收回' : '已支付'
+    heroAmount = isPayer ? collectTotal : myShare
+  } else if (hasDispute) {
+    roleTagClass = 'dispute'
+    roleTagText = '⚖️ 裁决中'
+    heroLabel = isPayer ? '待裁决' : '已质疑'
     heroAmount = isPayer ? collectTotal : myShare
   } else if (isPayer) {
     roleTagClass = 'collect'
@@ -49,11 +56,11 @@ export default function BillCard({ bill, currentUserId, style, onClick }: BillCa
   }
 
   return (
-    <div className="bill-card" style={style} onClick={onClick}>
-      <div className="card-bg" style={{ background: bill.color }} />
+    <div className={`bill-card${hasDispute ? ' card-disputed' : ''}`} style={style} onClick={onClick}>
+      <div className="card-bg" style={{ background: hasDispute ? '#2a1a3e' : bill.color }} />
       <div className="card-highlight" />
       <div className="card-noise" />
-      {bill._dispute && <div className="card-dispute-badge">⚖️ 裁决中</div>}
+      {hasDispute && <div className="card-dispute-badge">⚖️ 裁决中</div>}
       <div className="card-inner">
         <div className="card-top">
           <div className="card-icon-box">{bill.icon}</div>
