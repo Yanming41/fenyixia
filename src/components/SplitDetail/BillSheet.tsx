@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import type { Bill, BillItem, Member, UpdateBillData, CreateBillData } from '../../lib/types'
 import { updateBill, createBill } from '../../lib/api/bills'
 import type { FriendWithAlias } from '../../lib/api/friends'
 import type { Group } from '../../lib/api/groups'
 import type { Tag } from '../../lib/api/tags'
 import MemberPickerSheet from '../MemberPicker/MemberPickerSheet'
+import BottomSheet from '../shared/BottomSheet'
 
 const ICON_LIST = ['🍔', '🍕', '🍣', '🍜', '🧋', '☕', '🍰', '🎮', '🎬', '🛒',
     '✈️', '🏨', '⛽', '💊', '🎁', '🎪', '🎵', '🏋️', '🛁', '💡', '🧴', '🛵', '🚌', '🍻']
@@ -114,35 +114,16 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
     }
 
     return (
-        <AnimatePresence>
-            <motion.div
-                className="overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.28 }}
-                onClick={onClose}
-            >
-                <motion.div
-                    className="sheet"
-                    style={{ maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    transition={{ type: 'tween', duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="sh" />
-                    {/* Title bar */}
-                    <div className="sheet-titlebar">
-                        <button className="sheet-cancel" onClick={onClose}>取消</button>
-                        <div className="sh-title">{isCreate ? '新建账单' : '编辑账单'}</div>
-                        <button className="sheet-cancel" style={{ fontWeight: 700 }} onClick={handleSave} disabled={saving}>
-                            {saving ? '保存...' : '保存'}
-                        </button>
-                    </div>
-
-                    <div className="sheet-body" style={{ overflowY: 'auto', flex: 1 }}>
+        <BottomSheet
+            onClose={onClose}
+            title={isCreate ? '新建账单' : '编辑账单'}
+            maxHeight="92vh"
+            headerRight={
+                <button className="sheet-cancel" style={{ fontWeight: 700 }} onClick={handleSave} disabled={saving}>
+                    {saving ? '保存...' : '保存'}
+                </button>
+            }
+        >
                         {/* Icon picker */}
                         <div className="fg-label">图标</div>
                         <div className="icon-picker">
@@ -248,9 +229,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                         <button className="sb" onClick={handleSave} disabled={saving}>
                             {saving ? (isCreate ? '创建中...' : '保存中...') : (isCreate ? '✓ 创建账单' : '✓ 保存更改')}
                         </button>
-                    </div>
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+        </BottomSheet>
     )
 }

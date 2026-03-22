@@ -1012,21 +1012,6 @@ body {
 }
 
 /* Dispute Sheet */
-.dispute-sheet {
-  max-height: 85vh;
-}
-
-.dispute-content {
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.dispute-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--label1);
-  margin-bottom: 16px;
-}
 
 .dispute-label {
   font-size: 14px;

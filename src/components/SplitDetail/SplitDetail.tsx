@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import type { Bill, PaymentProof, Member, BillDispute } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
@@ -12,6 +11,7 @@ import { useTags } from '../../hooks/useTags'
 import { useToast } from '../../contexts/ToastContext'
 import BillSheet from './BillSheet'
 import DisputeSheet from './DisputeSheet'
+import BottomSheet from '../shared/BottomSheet'
 
 interface SplitDetailProps {
   bill: Bill
@@ -168,24 +168,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
 
   return (
     <>
-      <AnimatePresence>
-        <motion.div
-          className="overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.28 }}
-          onClick={onClose}
-        >
-          <motion.div
-            className="sheet detail-sheet"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'tween', duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="sh" />
+      <BottomSheet onClose={onClose} className="detail-sheet">
             <div className="detail-content">
               {/* Header */}
               <div className="detail-header">
@@ -406,9 +389,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                 )}
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
+      </BottomSheet>
 
       {showEdit && (
         <BillSheet
