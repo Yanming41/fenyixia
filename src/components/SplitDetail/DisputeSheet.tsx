@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import type { Bill, Member, DisputeSuggestedItem } from '../../lib/types'
 import { scanReceipt, buildDisputePrompt } from '../../lib/api/scan'
 import type { DisputeSuggestionResult, DisputeItemInput } from '../../lib/api/scan'
 import { createDispute } from '../../lib/api/disputes'
+import BottomSheet from '../shared/BottomSheet'
 
 interface DisputeSheetProps {
   bill: Bill
@@ -112,26 +112,7 @@ export default function DisputeSheet({ bill, currentUserId, onClose, onSubmitted
   }, [bill.id, currentUserId, reason, suggestedItems, onSubmitted])
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-      >
-        <motion.div
-          className="sheet dispute-sheet"
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'tween', duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="sh" />
-          <div className="dispute-content">
-            <div className="dispute-title">⚖️ 质疑账单</div>
-
+    <BottomSheet onClose={onClose} title="⚖️ 质疑账单">
             {error && (
               <div className="dispute-error">
                 {error}
@@ -211,9 +192,6 @@ export default function DisputeSheet({ bill, currentUserId, onClose, onSubmitted
                 </div>
               </>
             )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+    </BottomSheet>
   )
 }
