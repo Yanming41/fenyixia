@@ -175,6 +175,54 @@ export async function insertReceiptScan(
   if (error) throw new Error('保存扫描记录失败: ' + error.message)
 }
 
+// ── Build prompt for dispute arbitration ──
+
+export interface DisputeItemInput {
+  name: string
+  price: number
+  qty: number
+  member_names: string[]
+}
+
+export interface DisputeSuggestionResult {
+  items: { name: string; price: number; qty: number; member_names: string[] }[]
+  explanation: string
+}
+
+export function buildDisputePrompt(
+  items: DisputeItemInput[],
+  allMembers: string[],
+  challengerName: string,
+  reason: string
+): string {
+  return `你是一个公平的账单裁决助手。一位成员对账单的分摊方式提出了质疑，你需要根据其理由重新分配各商品的分摊成员。
+
+【原账单明细】：
+${JSON.stringify(items, null, 2)}
+
+【所有成员】：${JSON.stringify(allMembers)}
+
+【质疑人】：${challengerName}
+
+【质疑理由】：${reason}
+
+请根据质疑理由，合理调整每个商品的 member_names（分摊成员）。规则：
+- 只调整 member_names，不要修改 name、price、qty
+- 每个商品至少保留一个分摊成员
+- member_names 中的名字必须来自【所有成员】列表
+- 如果质疑理由合理（如"这道菜我没吃"），就将该成员从对应商品中移除
+- 如果质疑理由不合理或无法判断，保持原样
+
+严格按以下 JSON 格式输出，不含任何额外文字或 markdown：
+
+{
+  "items": [
+    { "name": "<商品名>", "price": <单价>, "qty": <数量>, "member_names": ["<成员名>", ...] }
+  ],
+  "explanation": "<简短解释你为什么这样调整，1-2句话>"
+}`
+}
+
 // ── Types ──
 
 export interface ScanResultItem {

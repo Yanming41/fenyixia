@@ -7,6 +7,7 @@ import { useAuth } from './useAuth'
 async function fetchBillsWithProofs(userId: string): Promise<Bill[]> {
   const data = await fetchMyBills()
   await markBillsWithProofs(data, userId)
+  await markBillsWithDisputes(data)
   return data
 }
 
@@ -27,6 +28,39 @@ export function useBills() {
 
 export function mutateBills() {
   return mutate('bills')
+}
+
+async function markBillsWithDisputes(billList: Bill[]) {
+  try {
+    const billIds = billList.map(b => b.id)
+    const { data } = await supabase
+      .from('bill_disputes')
+      .select('id, bill_id, challenger_id, reason, suggested_items, status, created_at, challenger:users!bill_disputes_challenger_id_fkey(id,name,emoji)')
+      .in('bill_id', billIds)
+      .eq('status', 'pending')
+
+    if (data) {
+      const disputeByBill: Record<string, typeof data[0]> = {}
+      data.forEach(d => { disputeByBill[d.bill_id] = d })
+      billList.forEach(b => {
+        const d = disputeByBill[b.id]
+        if (d) {
+          b._dispute = {
+            id: d.id,
+            bill_id: d.bill_id,
+            challenger_id: d.challenger_id,
+            challenger: (d.challenger as unknown as import('../lib/types').Member) || undefined,
+            reason: d.reason,
+            suggested_items: d.suggested_items as import('../lib/types').DisputeSuggestedItem[],
+            status: d.status as 'pending',
+            created_at: d.created_at,
+          }
+        }
+      })
+    }
+  } catch (e) {
+    console.error('markBillsWithDisputes:', e)
+  }
 }
 
 async function markBillsWithProofs(billList: Bill[], currentUserId: string) {

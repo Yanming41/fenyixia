@@ -890,6 +890,319 @@ body {
   color: #4CD964;
 }
 
+.detail-btn-dispute {
+  background: rgba(175, 130, 255, 0.15);
+  color: #AF82FF;
+}
+
+/* Dispute banner */
+.dispute-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  border-radius: 10px;
+  background: rgba(175, 130, 255, 0.12);
+  color: #AF82FF;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dispute-banner-icon {
+  font-size: 16px;
+}
+
+/* Dispute review (payer view) */
+.dispute-review {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--bg3);
+  border-radius: 12px;
+  border: 1px solid rgba(175, 130, 255, 0.2);
+}
+
+.dispute-review-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #AF82FF;
+  margin-bottom: 8px;
+}
+
+.dispute-review-reason {
+  font-size: 13px;
+  color: var(--label2);
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: var(--bg2);
+  border-radius: 8px;
+}
+
+.dispute-review-diff {
+  margin-bottom: 12px;
+}
+
+.dispute-diff-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--separator);
+}
+
+.dispute-diff-item:last-child {
+  border-bottom: none;
+}
+
+.dispute-diff-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--label1);
+  margin-bottom: 4px;
+}
+
+.dispute-diff-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dispute-diff-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg4);
+  color: var(--label2);
+}
+
+.dispute-diff-chip.removed {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+  text-decoration: line-through;
+}
+
+.dispute-diff-chip.added {
+  background: rgba(48, 209, 88, 0.15);
+  color: #30D158;
+}
+
+.dispute-review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.dispute-review-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dispute-btn-accept {
+  background: rgba(48, 209, 88, 0.18);
+  color: #30D158;
+}
+
+.dispute-btn-reject {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+/* Dispute Sheet */
+.dispute-sheet {
+  max-height: 85vh;
+}
+
+.dispute-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.dispute-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--label1);
+  margin-bottom: 16px;
+}
+
+.dispute-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--label2);
+  margin-bottom: 8px;
+}
+
+.dispute-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  background: var(--bg2);
+  color: var(--label1);
+  font-size: 15px;
+  font-family: inherit;
+  resize: none;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.dispute-textarea:focus {
+  border-color: #AF82FF;
+}
+
+.dispute-textarea::placeholder {
+  color: var(--label3);
+}
+
+.dispute-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 59, 48, 0.12);
+  color: #FF3B30;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.dispute-error button {
+  background: none;
+  border: none;
+  color: #FF3B30;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dispute-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+  color: var(--label2);
+  font-size: 15px;
+}
+
+.dispute-explanation {
+  padding: 10px 14px;
+  background: rgba(175, 130, 255, 0.1);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--label2);
+  margin-bottom: 12px;
+}
+
+.dispute-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.dispute-item {
+  padding: 10px;
+  background: var(--bg3);
+  border-radius: 10px;
+}
+
+.dispute-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dispute-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--label1);
+}
+
+.dispute-item-price {
+  font-size: 13px;
+  color: var(--label2);
+}
+
+.dispute-item-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dispute-member-chip {
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--separator);
+  background: transparent;
+  color: var(--label2);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.dispute-member-chip.active {
+  background: rgba(175, 130, 255, 0.15);
+  border-color: #AF82FF;
+  color: #AF82FF;
+}
+
+.dispute-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-bottom: 16px;
+}
+
+.dispute-btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--bg3);
+  color: var(--label2);
+}
+
+.dispute-btn-submit {
+  flex: 2;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  background: rgba(175, 130, 255, 0.18);
+  color: #AF82FF;
+}
+
+.dispute-btn-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Bill card dispute badge */
+.card-dispute-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(175, 130, 255, 0.85);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 2;
+}
+
 /* Payment proof */
 .proof-section {
   margin-top: 12px;

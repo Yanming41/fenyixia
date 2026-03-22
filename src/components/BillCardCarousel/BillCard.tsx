@@ -53,6 +53,7 @@ export default function BillCard({ bill, currentUserId, style, onClick }: BillCa
       <div className="card-bg" style={{ background: bill.color }} />
       <div className="card-highlight" />
       <div className="card-noise" />
+      {bill._dispute && <div className="card-dispute-badge">⚖️ 裁决中</div>}
       <div className="card-inner">
         <div className="card-top">
           <div className="card-icon-box">{bill.icon}</div>
