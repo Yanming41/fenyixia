@@ -439,6 +439,9 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                 )}
                 {!isPayer && !bill.settled && !bill._hasMeProof && (
                   <>
+                    <button className="detail-btn-pay" onClick={() => setShowPaySheet(true)}>
+                      💳 付款
+                    </button>
                     <button className="detail-btn-protest" onClick={handleAnger}>
                       😡 异议!
                     </button>
