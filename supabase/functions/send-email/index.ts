@@ -3,9 +3,12 @@
 // 部署: supabase functions deploy send-email --no-verify-jwt
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "https://fenyixia.com";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -101,6 +104,20 @@ serve(async (req) => {
     }
 
     const result = await res.json();
+
+    // Log to admin_email_log (best-effort, don't fail the request if this fails)
+    if (SUPABASE_URL && SERVICE_ROLE_KEY) {
+      try {
+        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+        await adminClient.from("admin_email_log").insert({
+          recipient_email: to,
+          email_type: type,
+        });
+      } catch (_) { /* ignore log errors */ }
+    }
+
     return json({ success: true, id: result.id });
   } catch (err) {
     return json({ error: (err as Error).message }, 500);

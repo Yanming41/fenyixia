@@ -1915,6 +1915,226 @@ body {
 /* ══════════════════════════════════════════
    Scanner & Quick Bill
 ══════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════
+   Admin Panel
+══════════════════════════════════════════ */
+.admin-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 0 80px;
+  min-height: 100dvh;
+}
+.admin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 8px;
+  position: sticky;
+  top: 0;
+  background: var(--bg1);
+  z-index: 10;
+}
+.admin-back {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.admin-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--label1);
+  margin: 0;
+}
+.admin-error {
+  margin: 12px 20px;
+  padding: 10px 14px;
+  background: rgba(255, 59, 48, 0.12);
+  color: #FF3B30;
+  border-radius: 10px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.admin-error button {
+  background: none;
+  border: none;
+  color: #FF3B30;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+}
+.admin-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--label3);
+  font-size: 15px;
+}
+.admin-section {
+  margin: 16px 20px 0;
+  background: var(--bg2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.admin-section-title {
+  padding: 14px 16px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label1);
+  border-bottom: 1px solid var(--sep);
+}
+.admin-section-note {
+  font-weight: 400;
+  color: var(--label3);
+  font-size: 11px;
+  margin-left: 4px;
+}
+.admin-count {
+  color: var(--label3);
+  font-weight: 400;
+}
+.admin-empty {
+  padding: 20px 16px;
+  color: var(--label3);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Stat cards */
+.admin-stat-cards {
+  display: flex;
+  gap: 1px;
+  background: var(--sep);
+}
+.admin-stat-card {
+  flex: 1;
+  padding: 14px 16px;
+  background: var(--bg2);
+}
+.admin-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--label1);
+  line-height: 1;
+}
+.admin-stat-label {
+  font-size: 12px;
+  color: var(--label3);
+}
+.admin-stat-limit {
+  font-size: 11px;
+  color: var(--label4);
+  margin-top: 4px;
+}
+.admin-rate-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Email log */
+.admin-email-log {
+  border-top: 1px solid var(--sep);
+}
+.admin-log-header {
+  padding: 10px 16px 6px;
+  font-size: 12px;
+  color: var(--label3);
+  font-weight: 600;
+}
+.admin-log-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  font-size: 12px;
+  border-top: 1px solid var(--sep);
+}
+.admin-log-time {
+  color: var(--label3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.admin-log-type {
+  color: var(--blue);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.admin-log-email {
+  color: var(--label2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* User rows */
+.admin-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--sep);
+}
+.admin-user-row:first-of-type {
+  border-top: none;
+}
+.admin-user-avatar {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+.admin-user-info {
+  flex: 1;
+  min-width: 0;
+}
+.admin-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label1);
+}
+.admin-user-email {
+  font-size: 13px;
+  color: var(--label2);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-user-meta {
+  font-size: 11px;
+  color: var(--label4);
+  margin-top: 2px;
+}
+.admin-impersonate-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--blue);
+  background: none;
+  color: var(--blue);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-impersonate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .scanner-page {
   max-width: 520px;
   margin: 0 auto;
