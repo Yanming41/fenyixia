@@ -49,6 +49,18 @@ export async function createDispute(
   if (error) throw error
 }
 
+export async function updateDispute(
+  disputeId: string,
+  suggestedItems: DisputeSuggestedItem[]
+): Promise<void> {
+  const { error } = await supabase
+    .from('bill_disputes')
+    .update({ suggested_items: suggestedItems })
+    .eq('id', disputeId)
+    .eq('status', 'pending')
+  if (error) throw error
+}
+
 export async function resolveDispute(
   disputeId: string,
   billId: string,

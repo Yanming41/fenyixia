@@ -3,7 +3,7 @@ import type { Bill, PaymentProof, Member, BillDispute } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
 import { getPaymentProofs, uploadPaymentProof, toggleManualPayment, getManualPayments } from '../../lib/api/payments'
-import { fetchDispute, resolveDispute } from '../../lib/api/disputes'
+import { fetchDispute, resolveDispute, updateDispute } from '../../lib/api/disputes'
 import { useAngerStorm } from '../../hooks/useAngerStorm'
 import { useFriends } from '../../hooks/useFriends'
 import { useGroups } from '../../hooks/useGroups'
@@ -26,7 +26,9 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const [showEdit, setShowEdit] = useState(false)
   const [showDispute, setShowDispute] = useState(false)
   const [dispute, setDispute] = useState<BillDispute | null>(bill._dispute || null)
-  const [showDisputeReview, setShowDisputeReview] = useState(false)
+  const [editableItems, setEditableItems] = useState<import('../../lib/types').DisputeSuggestedItem[]>(
+    bill._dispute?.suggested_items ?? []
+  )
   const { friends } = useFriends()
   const { groups } = useGroups()
   const { tags } = useTags()
@@ -40,7 +42,10 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     getPaymentProofs(bill.id).then(setProofs).catch(console.error)
     getManualPayments(bill.id).then(setManualPaid).catch(console.error)
     if (!bill._dispute) {
-      fetchDispute(bill.id).then(setDispute).catch(console.error)
+      fetchDispute(bill.id).then(d => {
+        setDispute(d)
+        if (d?.suggested_items) setEditableItems(d.suggested_items)
+      }).catch(console.error)
     }
   }, [bill.id, bill._dispute])
 
@@ -108,16 +113,40 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
         dispute.id,
         bill.id,
         accepted,
-        accepted ? dispute.suggested_items : undefined,
+        accepted ? editableItems : undefined,
         accepted ? bill.title : undefined,
         accepted ? bill.icon : undefined
       )
       setDispute(null)
-      setShowDisputeReview(false)
+      setEditableItems([])
       onRefresh()
       showToast(accepted ? '已接受修改' : '已拒绝质疑')
     } catch (err) {
       console.error('Resolve dispute failed:', err)
+    }
+  }
+
+  const isChallenger = dispute?.challenger_id === currentUserId
+
+  const handleToggleEditableItem = async (itemIdx: number, memberId: string) => {
+    if (!dispute) return
+    const item = editableItems[itemIdx]
+    if (!item) return
+    const isIn = item.member_ids.includes(memberId)
+    if (isIn && item.member_ids.length <= 1) return // keep at least one member
+    const newIds = isIn
+      ? item.member_ids.filter(id => id !== memberId)
+      : [...item.member_ids, memberId]
+    const newItems = editableItems.map((it, i) =>
+      i === itemIdx ? { ...it, member_ids: newIds } : it
+    )
+    setEditableItems(newItems)
+    try {
+      await updateDispute(dispute.id, newItems)
+      setDispute({ ...dispute, suggested_items: newItems })
+    } catch (err) {
+      console.error('Failed to update dispute:', err)
+      setEditableItems(editableItems) // revert on error
     }
   }
 
@@ -205,50 +234,70 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                 <span className="role-amount">{fmtMoney(bannerAmount)}</span>
               </div>
 
-              {/* Dispute banner */}
+              {/* Dispute review - visible to all members */}
               {dispute && (
-                <div className="dispute-banner" onClick={() => isPayer && setShowDisputeReview(!showDisputeReview)}>
-                  <span className="dispute-banner-icon">⚖️</span>
-                  <span>裁决中 — {dispute.challenger?.emoji || '👤'} {dispute.challenger?.name || '成员'} 发起了质疑</span>
-                </div>
-              )}
-
-              {/* Payer dispute review */}
-              {isPayer && dispute && showDisputeReview && (
                 <div className="dispute-review">
-                  <div className="dispute-review-title">争议详情</div>
-                  <div className="dispute-review-reason">
-                    <strong>{dispute.challenger?.emoji} {dispute.challenger?.name}：</strong>
-                    {dispute.reason}
+                  <div className="dispute-review-title">
+                    ⚖️ 裁决中 — {dispute.challenger?.emoji || '👤'} {dispute.challenger?.name || '成员'} 发起了质疑
                   </div>
-                  <div className="dispute-label" style={{ fontSize: 13 }}>建议修改</div>
+                  <div className="dispute-review-reason">
+                    <strong>质疑理由：</strong>{dispute.reason}
+                  </div>
+                  <div className="dispute-label" style={{ fontSize: 13 }}>
+                    {isChallenger ? '你的建议修改（点击成员可编辑）' : '建议修改'}
+                  </div>
                   <div className="dispute-review-diff">
-                    {dispute.suggested_items.map((sItem, idx) => {
-                      const origItem = bill.items[idx]
-                      const origIds = new Set(origItem?.members.map(m => m.id) || [])
-                      const newIds = new Set(sItem.member_ids)
-                      return (
+                    {isChallenger ? (
+                      editableItems.map((sItem, idx) => (
                         <div key={idx} className="dispute-diff-item">
                           <div className="dispute-diff-name">{sItem.name}</div>
                           <div className="dispute-diff-members">
                             {bill.members.filter(m => m.id !== bill.payer_id).map(m => {
-                              const wasIn = origIds.has(m.id)
-                              const nowIn = newIds.has(m.id)
-                              let cls = 'dispute-diff-chip'
-                              if (wasIn && !nowIn) cls += ' removed'
-                              else if (!wasIn && nowIn) cls += ' added'
-                              if (!wasIn && !nowIn) return null
-                              return <span key={m.id} className={cls}>{m.emoji} {m.name}</span>
+                              const isSelected = sItem.member_ids.includes(m.id)
+                              return (
+                                <span
+                                  key={m.id}
+                                  className={`dispute-diff-chip${isSelected ? ' added' : ' chip-inactive'}`}
+                                  onClick={() => handleToggleEditableItem(idx, m.id)}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  {m.emoji} {m.name}
+                                </span>
+                              )
                             })}
                           </div>
                         </div>
-                      )
-                    })}
+                      ))
+                    ) : (
+                      dispute.suggested_items.map((sItem, idx) => {
+                        const origItem = bill.items[idx]
+                        const origIds = new Set(origItem?.members.map(m => m.id) || [])
+                        const newIds = new Set(sItem.member_ids)
+                        return (
+                          <div key={idx} className="dispute-diff-item">
+                            <div className="dispute-diff-name">{sItem.name}</div>
+                            <div className="dispute-diff-members">
+                              {bill.members.filter(m => m.id !== bill.payer_id).map(m => {
+                                const wasIn = origIds.has(m.id)
+                                const nowIn = newIds.has(m.id)
+                                let cls = 'dispute-diff-chip'
+                                if (wasIn && !nowIn) cls += ' removed'
+                                else if (!wasIn && nowIn) cls += ' added'
+                                if (!wasIn && !nowIn) return null
+                                return <span key={m.id} className={cls}>{m.emoji} {m.name}</span>
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
-                  <div className="dispute-review-actions">
-                    <button className="dispute-btn-reject" onClick={() => handleResolveDispute(false)}>拒绝</button>
-                    <button className="dispute-btn-accept" onClick={() => handleResolveDispute(true)}>接受修改</button>
-                  </div>
+                  {isPayer && (
+                    <div className="dispute-review-actions">
+                      <button className="dispute-btn-reject" onClick={() => handleResolveDispute(false)}>拒绝</button>
+                      <button className="dispute-btn-accept" onClick={() => handleResolveDispute(true)}>接受修改</button>
+                    </div>
+                  )}
                 </div>
               )}
 
