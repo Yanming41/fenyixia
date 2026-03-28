@@ -24,6 +24,7 @@ interface EditItem {
     price: string
     qty: string
     memberIds: string[]
+    spreadDiscount?: boolean
 }
 
 function itemToEdit(item: BillItem): EditItem {
@@ -39,6 +40,50 @@ function newItem(): EditItem {
     return { name: '', price: '', qty: '1', memberIds: [] }
 }
 
+/** Spread each negative item with spreadDiscount=true proportionally into positive items.
+ *  Returns a new items array without the spread discount rows. */
+function applyDiscountSpread(items: EditItem[]): EditItem[] {
+    let result = items.map(it => ({ ...it }))
+    const spreadItems = result.filter(it => it.spreadDiscount && parseFloat(it.price) < 0)
+    for (const disc of spreadItems) {
+        const discTotal = Math.abs(parseFloat(disc.price) * (parseFloat(disc.qty) || 1))
+        const positives = result.filter(it => !it.spreadDiscount && parseFloat(it.price) > 0)
+        const posTotal = positives.reduce((s, it) => s + parseFloat(it.price) * (parseFloat(it.qty) || 1), 0)
+        if (posTotal <= 0) continue
+        result = result.map(it => {
+            if (it.spreadDiscount || parseFloat(it.price) <= 0) return it
+            const itemTotal = parseFloat(it.price) * (parseFloat(it.qty) || 1)
+            const share = discTotal * (itemTotal / posTotal)
+            const newPrice = Math.round((parseFloat(it.price) - share / (parseFloat(it.qty) || 1)) * 100) / 100
+            return { ...it, price: String(newPrice) }
+        })
+    }
+    return result.filter(it => !it.spreadDiscount || parseFloat(it.price) >= 0)
+}
+
+/** Compute preview adjusted prices for positive items given current spread discounts.
+ *  Returns a map of item index → adjusted price string, or null if no active spreads. */
+function computePreviewPrices(items: EditItem[]): Map<number, string> | null {
+    const hasSpread = items.some(it => it.spreadDiscount && parseFloat(it.price) < 0)
+    if (!hasSpread) return null
+    const preview = new Map<number, string>()
+    const totalDiscount = items
+        .filter(it => it.spreadDiscount && parseFloat(it.price) < 0)
+        .reduce((s, it) => s + Math.abs(parseFloat(it.price) * (parseFloat(it.qty) || 1)), 0)
+    const posTotal = items
+        .filter(it => !it.spreadDiscount && parseFloat(it.price) > 0)
+        .reduce((s, it) => s + parseFloat(it.price) * (parseFloat(it.qty) || 1), 0)
+    if (posTotal <= 0) return null
+    items.forEach((it, idx) => {
+        if (it.spreadDiscount || parseFloat(it.price) <= 0) return
+        const itemTotal = parseFloat(it.price) * (parseFloat(it.qty) || 1)
+        const share = totalDiscount * (itemTotal / posTotal)
+        const newPrice = Math.round((parseFloat(it.price) - share / (parseFloat(it.qty) || 1)) * 100) / 100
+        preview.set(idx, String(newPrice))
+    })
+    return preview
+}
+
 export default function BillSheet({ bill, friends, groups, tags, onClose, onSaved }: BillSheetProps) {
     const isCreate = !bill
     const [icon, setIcon] = useState(bill?.icon || '🧾')
@@ -47,6 +92,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
     const [items, setItems] = useState<EditItem[]>(bill ? bill.items.map(itemToEdit) : [newItem()])
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
+    const previewPrices = computePreviewPrices(items)
 
     const updateItem = (index: number, patch: Partial<EditItem>) => {
         setItems(prev => prev.map((it, i) => i === index ? { ...it, ...patch } : it))
@@ -77,7 +123,8 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
             if (it.memberIds.length === 0) { setError('每个商品至少分给一人'); return }
         }
 
-        const itemsPayload = items.map(it => ({
+        const spreadItems = applyDiscountSpread(items)
+        const itemsPayload = spreadItems.map(it => ({
             name: it.name.trim(),
             price: parseFloat(it.price),
             qty: parseFloat(it.qty) || 1,
@@ -177,7 +224,11 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                             </button>
                         </div>
 
-                        {items.map((item, idx) => (
+                        {items.map((item, idx) => {
+                            const isDiscount = parseFloat(item.price) < 0
+                            const hasPositives = items.some((it, i) => i !== idx && parseFloat(it.price) > 0)
+                            const preview = previewPrices?.get(idx)
+                            return (
                             <div key={idx} className="form-group" style={{ marginBottom: 12 }}>
                                 <div className="fg">
                                     <span className="fl">名称</span>
@@ -198,6 +249,9 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                         className="fi" type="number" inputMode="decimal" placeholder="0.00"
                                         value={item.price} onChange={e => updateItem(idx, { price: e.target.value })}
                                     />
+                                    {preview && (
+                                        <span className="discount-preview-label">→ ¥{preview}</span>
+                                    )}
                                 </div>
                                 <div className="fg">
                                     <span className="fl">数量</span>
@@ -206,7 +260,20 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                         value={item.qty} onChange={e => updateItem(idx, { qty: e.target.value })}
                                     />
                                 </div>
+                                {isDiscount && (
+                                    <div className="fg">
+                                        <span className="fl">优惠</span>
+                                        <button
+                                            className={`discount-spread-toggle${item.spreadDiscount ? ' active' : ''}`}
+                                            disabled={!hasPositives}
+                                            onClick={() => updateItem(idx, { spreadDiscount: !item.spreadDiscount })}
+                                        >
+                                            {item.spreadDiscount ? '✓ 已分摊到商品' : '分摊到商品'}
+                                        </button>
+                                    </div>
+                                )}
                                 {/* Member assignment — 3-module picker */}
+                                {!item.spreadDiscount && (
                                 <div style={{ paddingTop: 10 }}>
                                     <span className="fl" style={{ width: '100%', marginBottom: 4 }}>分给</span>
                                     <MemberPickerSheet
@@ -217,8 +284,10 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                         onChange={(ids) => updateItem(idx, { memberIds: ids })}
                                     />
                                 </div>
+                                )}
                             </div>
-                        ))}
+                            )
+                        })}
 
                         {error && (
                             <div style={{ color: 'var(--red)', fontSize: 13, textAlign: 'center', padding: '8px 0' }}>

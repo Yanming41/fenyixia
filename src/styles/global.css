@@ -1444,6 +1444,33 @@ body {
   background: rgba(48, 209, 88, 0.12);
 }
 
+.discount-spread-toggle {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--label4);
+  background: none;
+  color: var(--label3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+.discount-spread-toggle.active {
+  border-color: #30D158;
+  color: #30D158;
+  background: rgba(48, 209, 88, 0.10);
+}
+.discount-spread-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.discount-preview-label {
+  font-size: 11px;
+  color: #30D158;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
 .sb {
   width: 100%;
   padding: 16px;
