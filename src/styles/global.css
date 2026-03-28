@@ -1527,6 +1527,24 @@ body {
 .bs-palette::-webkit-scrollbar { display: none; }
 
 /* Friend avatar in palette */
+/* Drag ghost — appended to document.body, escapes all overflow:hidden */
+.bs-drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.55);
+  transform: scale(1.18);
+  border: 2px solid var(--accent);
+}
+
 .bs-pal-friend {
   display: flex;
   flex-direction: column;
@@ -1541,9 +1559,10 @@ body {
   font-family: inherit;
   flex-shrink: 0;
   user-select: none;
+  touch-action: pan-x;  /* allow horizontal scroll, capture vertical for drag */
 }
 
-.bs-pal-friend:active { cursor: grabbing; }
+.bs-pal-friend:active { transform: scale(0.9); }
 
 /* Group chip in palette */
 .bs-pal-group {
@@ -1559,9 +1578,10 @@ body {
   font-size: 14px;
   flex-shrink: 0;
   user-select: none;
+  touch-action: pan-x;
 }
 
-.bs-pal-group:active { cursor: grabbing; }
+.bs-pal-group:active { transform: scale(0.9); }
 
 /* Tag chip in palette */
 .bs-pal-tag {
@@ -1577,9 +1597,10 @@ body {
   font-weight: 500;
   flex-shrink: 0;
   user-select: none;
+  touch-action: pan-x;
 }
 
-.bs-pal-tag:active { cursor: grabbing; }
+.bs-pal-tag:active { transform: scale(0.9); }
 
 .bs-pal-emoji { font-size: 22px; }
 .bs-pal-name { font-size: 10px; color: var(--label2); max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

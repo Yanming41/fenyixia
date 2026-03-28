@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import type { Bill, BillItem, Member, UpdateBillData, CreateBillData } from '../../lib/types'
 import { updateBill, createBill } from '../../lib/api/bills'
 import type { FriendWithAlias } from '../../lib/api/friends'
@@ -98,7 +97,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
     const [expandedIdx, setExpandedIdx] = useState<number | null>(isCreate ? 0 : null)
 
     // Drag-to-assign state
-    const [dragPayload, setDragPayload] = useState<DragPayload | null>(null)
+    const [isDragging, setIsDragging] = useState(false)
     const [dropTarget, setDropTarget] = useState<number | null>(null)
     const itemCardRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -136,16 +135,72 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
     }
 
     // ── Drag helpers ──
-    const findDropTarget = (point: { x: number; y: number }) => {
+    const findDropTarget = (x: number, y: number) => {
         let found: number | null = null
         itemCardRefs.current.forEach((ref, idx) => {
             if (!ref) return
             const r = ref.getBoundingClientRect()
-            if (point.x >= r.left && point.x <= r.right && point.y >= r.top && point.y <= r.bottom) {
-                found = idx
-            }
+            if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) found = idx
         })
         return found
+    }
+
+    // Native pointer drag — ghost appended to body so it escapes all overflow:hidden
+    const handlePalettePointerDown = (
+        e: React.PointerEvent<HTMLButtonElement>,
+        payload: DragPayload,
+        ghostContent: string,
+    ) => {
+        const startX = e.clientX
+        const startY = e.clientY
+        let dragStarted = false
+        let ghost: HTMLDivElement | null = null
+
+        const startDrag = (x: number, y: number) => {
+            dragStarted = true
+            ghost = document.createElement('div')
+            ghost.className = 'bs-drag-ghost'
+            ghost.textContent = ghostContent
+            ghost.style.left = (x - 30) + 'px'
+            ghost.style.top = (y - 30) + 'px'
+            document.body.appendChild(ghost)
+            setIsDragging(true)
+        }
+
+        const onMove = (ev: PointerEvent) => {
+            const dx = ev.clientX - startX
+            const dy = ev.clientY - startY
+            if (!dragStarted) {
+                // Vertical gesture → start drag; horizontal → let scroll win
+                if (Math.abs(dy) > 6 && Math.abs(dy) > Math.abs(dx) * 0.9) startDrag(ev.clientX, ev.clientY)
+                else if (Math.abs(dx) > 8) cleanup()
+                return
+            }
+            if (ghost) {
+                ghost.style.left = (ev.clientX - 30) + 'px'
+                ghost.style.top = (ev.clientY - 30) + 'px'
+            }
+            setDropTarget(findDropTarget(ev.clientX, ev.clientY))
+        }
+
+        const onUp = (ev: PointerEvent) => {
+            if (dragStarted) {
+                const target = findDropTarget(ev.clientX, ev.clientY)
+                if (target !== null) applyDrop(target, payload)
+            }
+            cleanup()
+        }
+
+        const cleanup = () => {
+            ghost?.remove()
+            setIsDragging(false)
+            setDropTarget(null)
+            document.removeEventListener('pointermove', onMove)
+            document.removeEventListener('pointerup', onUp)
+        }
+
+        document.addEventListener('pointermove', onMove, { passive: true })
+        document.addEventListener('pointerup', onUp, { once: true })
     }
 
     const applyDrop = (itemIdx: number, drag: DragPayload) => {
@@ -210,8 +265,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
         }
     }
 
-    const isDragging = dragPayload !== null
-
     return (
         <BottomSheet
             onClose={onClose}
@@ -262,92 +315,45 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                     <div className="bs-palette">
                         {/* Friends */}
                         {friends.map(f => (
-                            <motion.button
+                            <button
                                 key={f.id}
                                 className="bs-pal-friend"
-                                drag
-                                dragSnapToOrigin
-                                dragMomentum={false}
-                                dragElastic={0.6}
-                                onDragStart={() => setDragPayload({ type: 'friend', id: f.id })}
-                                onDrag={(_, info) => setDropTarget(findDropTarget(info.point))}
-                                onDragEnd={(_, info) => {
-                                    const target = findDropTarget(info.point)
-                                    if (target !== null) applyDrop(target, { type: 'friend', id: f.id })
-                                    setDragPayload(null)
-                                    setDropTarget(null)
-                                }}
-                                onClick={() => {
-                                    if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'friend', id: f.id })
-                                }}
-                                whileDrag={{ scale: 1.15, zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}
-                                whileTap={{ scale: 0.88 }}
-                                style={{ touchAction: 'none' }}
+                                onPointerDown={e => handlePalettePointerDown(e, { type: 'friend', id: f.id }, f.emoji)}
+                                onClick={() => { if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'friend', id: f.id }) }}
                             >
                                 <span className="bs-pal-emoji">{f.emoji}</span>
                                 <span className="bs-pal-name">{f.alias || f.name}</span>
-                            </motion.button>
+                            </button>
                         ))}
 
-                        {/* Separator */}
                         {groups.length > 0 && <div className="bs-pal-sep" />}
 
                         {/* Groups */}
                         {groups.map(g => (
-                            <motion.button
+                            <button
                                 key={g.id}
                                 className="bs-pal-group"
-                                drag
-                                dragSnapToOrigin
-                                dragMomentum={false}
-                                dragElastic={0.6}
-                                onDragStart={() => setDragPayload({ type: 'group', id: g.id })}
-                                onDrag={(_, info) => setDropTarget(findDropTarget(info.point))}
-                                onDragEnd={(_, info) => {
-                                    const target = findDropTarget(info.point)
-                                    if (target !== null) applyDrop(target, { type: 'group', id: g.id })
-                                    setDragPayload(null)
-                                    setDropTarget(null)
-                                }}
-                                onClick={() => {
-                                    if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'group', id: g.id })
-                                }}
-                                whileDrag={{ scale: 1.12, zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}
-                                whileTap={{ scale: 0.88 }}
-                                style={{ touchAction: 'none' }}
+                                onPointerDown={e => handlePalettePointerDown(e, { type: 'group', id: g.id }, g.emoji)}
+                                onClick={() => { if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'group', id: g.id }) }}
                             >
                                 <span>{g.emoji}</span>
                                 <span className="bs-pal-name">{g.name}</span>
-                            </motion.button>
+                            </button>
                         ))}
 
-                        {/* Tags */}
                         {tags.length > 0 && <div className="bs-pal-sep" />}
+
+                        {/* Tags */}
                         {tags.map(t => (
-                            <motion.button
+                            <button
                                 key={t.id}
                                 className="bs-pal-tag"
-                                style={{ borderColor: t.color, color: t.color, touchAction: 'none' }}
-                                drag
-                                dragSnapToOrigin
-                                dragMomentum={false}
-                                dragElastic={0.6}
-                                onDragStart={() => setDragPayload({ type: 'tag', id: t.id })}
-                                onDrag={(_, info) => setDropTarget(findDropTarget(info.point))}
-                                onDragEnd={(_, info) => {
-                                    const target = findDropTarget(info.point)
-                                    if (target !== null) applyDrop(target, { type: 'tag', id: t.id })
-                                    setDragPayload(null)
-                                    setDropTarget(null)
-                                }}
-                                onClick={() => {
-                                    if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'tag', id: t.id })
-                                }}
-                                whileDrag={{ scale: 1.12, zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}
-                                whileTap={{ scale: 0.88 }}
+                                style={{ borderColor: t.color, color: t.color }}
+                                onPointerDown={e => handlePalettePointerDown(e, { type: 'tag', id: t.id }, t.name)}
+                                onClick={() => { if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'tag', id: t.id }) }}
                             >
                                 {t.name}
-                            </motion.button>
+                            </button>
                         ))}
                     </div>
                 </div>
