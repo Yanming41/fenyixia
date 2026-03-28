@@ -996,6 +996,12 @@ body {
   color: #30D158;
 }
 
+.dispute-diff-chip.chip-inactive {
+  background: var(--bg3);
+  color: var(--label4);
+  opacity: 0.45;
+}
+
 .dispute-review-actions {
   display: flex;
   gap: 10px;
