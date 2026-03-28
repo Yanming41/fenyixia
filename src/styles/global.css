@@ -1953,6 +1953,63 @@ body {
 /* item needs position: relative for drop overlay */
 .bs-item { position: relative; }
 
+/* ── Payment info sheet ── */
+.pay-sheet-desc {
+  font-size: 14px;
+  color: var(--label2);
+  line-height: 1.6;
+  padding: 0 0 16px;
+}
+
+.pay-sheet-rows {
+  background: var(--bg3);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pay-sheet-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  border-bottom: 0.5px solid var(--sep);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  gap: 10px;
+}
+
+.pay-sheet-row:last-child { border-bottom: none; }
+.pay-sheet-row:active { background: rgba(120,120,128,0.1); }
+
+.pay-sheet-label {
+  font-size: 15px;
+  color: var(--label2);
+  min-width: 60px;
+}
+
+.pay-sheet-value {
+  flex: 1;
+  font-size: 15px;
+  color: var(--label);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.pay-sheet-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.pay-sheet-copy {
+  font-size: 13px;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
 .sb {
   width: 100%;
   padding: 16px;

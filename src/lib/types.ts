@@ -23,6 +23,7 @@ export interface Bill {
   payer_id: string
   payer_name: string
   payer_emoji: string
+  payer_email: string
   settled: boolean
   color: string
   items: BillItem[]

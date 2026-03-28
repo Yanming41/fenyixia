@@ -33,6 +33,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const { groups } = useGroups()
   const { tags } = useTags()
   const [manualPaid, setManualPaid] = useState<Set<string>>(bill._manualPaidUserIds || new Set())
+  const [showPaySheet, setShowPaySheet] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isPayer = bill.payer_id === currentUserId
   const { protestBill } = useAngerStorm()
@@ -150,12 +151,12 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     }
   }
 
-  const handleCopyPayment = async (amount: number) => {
+  const handleCopy = async (text: string, label: string) => {
     try {
-      await navigator.clipboard.writeText(amount.toString())
-      showToast(`已复制金额：${amount}`)
-    } catch (err) {
-      showToast('复制金额失败')
+      await navigator.clipboard.writeText(text)
+      showToast(`已复制${label}`)
+    } catch {
+      showToast('复制失败')
     }
   }
 
@@ -227,7 +228,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
               {/* Role banner */}
               <div
                 className={`detail-role-banner ${bannerClass}`}
-                onClick={bannerClass === 'pay' ? () => handleCopyPayment(bannerAmount) : undefined}
+                onClick={bannerClass === 'pay' ? () => setShowPaySheet(true) : undefined}
                 style={{ cursor: bannerClass === 'pay' ? 'pointer' : 'default' }}
               >
                 <span>{bannerText}</span>
@@ -470,6 +471,32 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
           onClose={() => setShowDispute(false)}
           onSubmitted={handleDisputeSubmitted}
         />
+      )}
+
+      {showPaySheet && (
+        <BottomSheet onClose={() => setShowPaySheet(false)} title="付款信息">
+          <div className="pay-sheet-desc">
+            请将以下金额转账给垫付人 {bill.payer_emoji} {bill.payer_name}，转账时备注你的名字
+          </div>
+          <div className="pay-sheet-rows">
+            <button
+              className="pay-sheet-row"
+              onClick={() => handleCopy(bill.payer_email, '邮箱')}
+            >
+              <span className="pay-sheet-label">转账邮箱</span>
+              <span className="pay-sheet-value">{bill.payer_email || '未设置'}</span>
+              <span className="pay-sheet-copy">复制</span>
+            </button>
+            <button
+              className="pay-sheet-row"
+              onClick={() => handleCopy(bannerAmount.toFixed(2), '金额')}
+            >
+              <span className="pay-sheet-label">金额</span>
+              <span className="pay-sheet-value pay-sheet-amount">¥{bannerAmount.toFixed(2)}</span>
+              <span className="pay-sheet-copy">复制</span>
+            </button>
+          </div>
+        </BottomSheet>
       )}
     </>
   )

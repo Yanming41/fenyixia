@@ -22,7 +22,7 @@ interface RawBill {
   payer_id: string
   settled: boolean
   color: string | null
-  payer: { id: string; name: string; emoji: string } | null
+  payer: { id: string; name: string; emoji: string; email: string } | null
   items: RawBillItem[]
 }
 
@@ -64,6 +64,7 @@ function normalizeBill(raw: RawBill, currentUserId: string): Bill {
     payer_id: raw.payer_id,
     payer_name: raw.payer?.name || '未知',
     payer_emoji: raw.payer?.emoji || '😀',
+    payer_email: raw.payer?.email || '',
     settled: raw.settled,
     color: raw.color || ICON_COLORS[raw.icon] || ICON_COLORS['🧾'] || '',
     items,
@@ -81,7 +82,7 @@ export async function fetchMyBills(): Promise<Bill[]> {
     .from('bills')
     .select(`
       *,
-      payer:users!bills_payer_id_fkey(id,name,emoji),
+      payer:users!bills_payer_id_fkey(id,name,emoji,email),
       items:bill_items(
         id, name, price, qty, sort_order,
         members:bill_item_members(
