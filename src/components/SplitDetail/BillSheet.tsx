@@ -150,6 +150,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
 
     const applyDrop = (itemIdx: number, drag: DragPayload) => {
         const item = items[itemIdx]
+        if (!item) return
         if (drag.type === 'friend') {
             const has = item.memberIds.includes(drag.id)
             updateItem(itemIdx, {
@@ -277,13 +278,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                     setDropTarget(null)
                                 }}
                                 onClick={() => {
-                                    if (expandedIdx !== null) {
-                                        const item = items[expandedIdx]
-                                        const has = item.memberIds.includes(f.id)
-                                        updateItem(expandedIdx, {
-                                            memberIds: has ? item.memberIds.filter(id => id !== f.id) : [...item.memberIds, f.id]
-                                        })
-                                    }
+                                    if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'friend', id: f.id })
                                 }}
                                 whileDrag={{ scale: 1.15, zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}
                                 whileTap={{ scale: 0.88 }}
@@ -332,7 +327,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                             <motion.button
                                 key={t.id}
                                 className="bs-pal-tag"
-                                style={{ borderColor: t.color, color: t.color }}
+                                style={{ borderColor: t.color, color: t.color, touchAction: 'none' }}
                                 drag
                                 dragSnapToOrigin
                                 dragMomentum={false}
@@ -350,7 +345,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                 }}
                                 whileDrag={{ scale: 1.12, zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}
                                 whileTap={{ scale: 0.88 }}
-                                style={{ borderColor: t.color, color: t.color, touchAction: 'none' }}
                             >
                                 {t.name}
                             </motion.button>
