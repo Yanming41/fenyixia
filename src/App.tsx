@@ -14,6 +14,7 @@ import SettingsPage from './pages/SettingsPage'
 import StatsPage from './pages/StatsPage'
 import ScanPage from './pages/ScanPage'
 import QuickBillPage from './pages/QuickBillPage'
+import AdminPage from './pages/AdminPage'
 import AddBillOverlay from './components/AddBillOverlay/AddBillOverlay'
 import DebugConsole from './components/Debug/DebugConsole'
 
@@ -109,6 +110,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <QuickBillPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
             </ProtectedRoute>
           }
         />
