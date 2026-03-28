@@ -1471,6 +1471,258 @@ body {
   white-space: nowrap;
 }
 
+/* ═══════════════════════════════════════════
+   BillSheet redesign
+═══════════════════════════════════════════ */
+
+/* Header card: big icon + title/description */
+.bs-header-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.bs-icon-btn {
+  width: 54px;
+  height: 54px;
+  font-size: 28px;
+  border-radius: 14px;
+  background: var(--bg2);
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s, background 0.18s, transform 0.18s;
+}
+
+.bs-icon-btn:active { transform: scale(0.92); }
+
+.bs-icon-btn-active {
+  border-color: var(--accent);
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.bs-header-inputs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bs-title-input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--label);
+  width: 100%;
+}
+
+.bs-title-input::placeholder { color: var(--label3); font-weight: 400; }
+
+.bs-desc-input {
+  background: none;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--label2);
+  width: 100%;
+}
+
+.bs-desc-input::placeholder { color: var(--label4); }
+
+/* Inline icon grid */
+.bs-icon-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 20px;
+}
+
+/* Items list header */
+.bs-items-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bs-add-btn {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0 4px;
+}
+
+/* Item cards */
+.bs-items-list { margin-bottom: 16px; }
+
+.bs-item {
+  background: var(--bg3);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+/* Shimmer sweep animation for editable rows */
+@keyframes bs-shimmer {
+  0%   { background-position: 200% center; }
+  50%  { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.bs-item--closed .bs-item-hdr,
+.bs-member-row {
+  position: relative;
+  overflow: hidden;
+}
+
+.bs-item--closed .bs-item-hdr::after,
+.bs-member-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.055) 50%,
+    transparent 80%
+  );
+  background-size: 300% 100%;
+  animation: bs-shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Item header (clickable) */
+.bs-item-hdr {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 12px;
+  font-family: inherit;
+}
+
+.bs-item-hdr:active { opacity: 0.7; }
+
+.bs-item-hdr-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.bs-item-hdr-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--label);
+}
+
+.bs-item-placeholder { color: var(--label3); font-weight: 400; }
+
+/* Avatars row in collapsed view */
+.bs-avatars { display: flex; gap: 1px; }
+.bs-av { font-size: 14px; line-height: 1; }
+.bs-av-more { font-size: 11px; color: var(--label3); padding-left: 3px; align-self: center; }
+
+.bs-item-hdr-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.bs-price {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--label2);
+}
+
+.bs-price-preview {
+  font-size: 15px;
+  font-weight: 500;
+  color: #30D158;
+}
+
+.bs-chevron {
+  font-size: 20px;
+  color: var(--label3);
+  transition: transform 0.25s ease;
+  display: inline-block;
+  line-height: 1;
+}
+
+.bs-chevron--up { transform: rotate(90deg); }
+
+/* Expanded item body */
+.bs-item-body { border-top: 0.5px solid var(--sep); }
+
+.bs-remove-btn {
+  background: none;
+  border: none;
+  color: var(--red);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* Member row (tappable, opens sub-sheet) */
+.bs-member-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 0.5px solid var(--sep);
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.bs-member-chips {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.bs-member-chip {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: rgba(120, 120, 128, 0.18);
+  color: var(--label);
+  white-space: nowrap;
+}
+
+.bs-member-placeholder {
+  font-size: 14px;
+  color: var(--label3);
+}
+
 .sb {
   width: 100%;
   padding: 16px;
