@@ -3378,3 +3378,277 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ═══════════════════════════════════════════
+   MemberPicker v2 — fixed top + sections
+═══════════════════════════════════════════ */
+
+/* Override sheet-body for the member picker sheet so it doesn't double-scroll */
+.mp-sheet .sheet-body {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+}
+
+/* Root layout: flex column, fills the sheet-body */
+.mp2-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ── Fixed top: selected members ── */
+.mp2-selected-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--sep);
+  background: var(--bg2);
+  gap: 8px;
+}
+
+.mp2-empty-hint {
+  font-size: 13px;
+  color: var(--label3);
+  flex: 1;
+}
+
+.mp2-chips-scroll {
+  flex: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 6px;
+  scrollbar-width: none;
+}
+
+.mp2-chips-scroll::-webkit-scrollbar { display: none; }
+
+.mp2-sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px 5px 6px;
+  border-radius: 20px;
+  background: rgba(10, 132, 255, 0.14);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.mp2-sel-emoji { font-size: 16px; }
+.mp2-sel-name { font-size: 12px; color: var(--blue); }
+.mp2-sel-x { font-size: 13px; color: var(--label3); margin-left: 2px; }
+
+.mp2-sel-count {
+  font-size: 12px;
+  color: var(--label3);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Scroll area ── */
+.mp2-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 0 20px;
+}
+
+/* ── Section ── */
+.mp2-section {
+  padding: 14px 16px 4px;
+}
+
+.mp2-sec-label {
+  font-size: 11px;
+  color: var(--label3);
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ── Horizontal scroll row ── */
+.mp2-horiz {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+}
+
+.mp2-horiz::-webkit-scrollbar { display: none; }
+
+/* ── Group cards ── */
+.mp2-group-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+  padding: 10px 10px 8px;
+  border-radius: 14px;
+  background: var(--bg3);
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.18s, background 0.18s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  touch-action: pan-x;
+}
+
+.mp2-group-card.active {
+  border-color: var(--accent);
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.mp2-g-emoji { font-size: 26px; }
+.mp2-g-name { font-size: 11px; color: var(--label); font-weight: 500; }
+
+.mp2-g-av-row {
+  display: flex;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+.mp2-mini-av {
+  font-size: 11px;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+.mp2-mini-av.sel { opacity: 1; }
+.mp2-mini-more { font-size: 10px; color: var(--label3); align-self: center; }
+
+/* ── Add card ── */
+.mp2-add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 60px;
+  padding: 10px 10px 8px;
+  border-radius: 14px;
+  background: none;
+  border: 1.5px dashed var(--sep);
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.mp2-add-plus { font-size: 20px; color: var(--label3); }
+.mp2-add-label { font-size: 11px; color: var(--label3); }
+
+/* ── Tag chips row ── */
+.mp2-tags-row {
+  align-items: center;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  gap: 8px;
+}
+
+.mp2-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.18s, color 0.18s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  touch-action: pan-x;
+}
+
+.mp2-add-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1.5px dashed var(--sep);
+  background: none;
+  color: var(--label3);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Friends grid ── */
+.mp2-search {
+  width: 100%;
+  background: var(--bg3);
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--label);
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.mp2-search::placeholder { color: var(--label3); }
+
+.mp2-friends-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mp2-friend-av {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border-radius: 14px;
+  background: var(--bg3);
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mp2-friend-av.sel {
+  border-color: var(--accent);
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.mp2-fav-emoji { font-size: 26px; }
+.mp2-fav-name { font-size: 10px; color: var(--label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+.mp2-fav-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.mp2-no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--label3);
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+.mp2-friends-section { padding-bottom: 40px; }

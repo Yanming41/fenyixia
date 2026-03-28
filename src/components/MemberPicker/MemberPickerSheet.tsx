@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { Member } from '../../lib/types'
 import type { Group } from '../../lib/api/groups'
 import type { Tag } from '../../lib/api/tags'
@@ -7,7 +8,6 @@ import { createGroup } from '../../lib/api/groups'
 import { createTag } from '../../lib/api/tags'
 import { mutateGroups } from '../../hooks/useGroups'
 import { mutateTags } from '../../hooks/useTags'
-import { groupByInitial } from '../../lib/pinyin'
 import type { FriendWithAlias } from '../../lib/api/friends'
 
 interface MemberPickerProps {
@@ -18,20 +18,12 @@ interface MemberPickerProps {
     onChange: (ids: string[]) => void
 }
 
-/* ── helpers ── */
-function memberMap(groups: Group[]): Map<string, Member> {
-    const m = new Map<string, Member>()
-    groups.forEach(g => g.members.forEach(mem => { if (!m.has(mem.id)) m.set(mem.id, mem) }))
-    return m
-}
-
 export default function MemberPickerSheet({ friends, groups, tags, selectedIds, onChange }: MemberPickerProps) {
     const selected = useMemo(() => new Set(selectedIds), [selectedIds])
     const [search, setSearch] = useState('')
     const [tagMembers, setTagMembers] = useState<Record<string, Member[]>>({})
     const [loadingTag, setLoadingTag] = useState<string | null>(null)
 
-    /* inline creation dialogs */
     const [showNewGroup, setShowNewGroup] = useState(false)
     const [showNewTag, setShowNewTag] = useState(false)
     const [newGroupName, setNewGroupName] = useState('')
@@ -39,14 +31,13 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
     const [newTagName, setNewTagName] = useState('')
     const [newTagColor, setNewTagColor] = useState('#0A84FF')
 
-    /* all known members (friends + group members who aren't friends) */
     const allMembersById = useMemo(() => {
-        const m = memberMap(groups)
+        const m = new Map<string, Member>()
+        groups.forEach(g => g.members.forEach(mem => { if (!m.has(mem.id)) m.set(mem.id, mem) }))
         friends.forEach(f => m.set(f.id, { id: f.id, name: f.alias || f.name, emoji: f.emoji, color: f.color }))
         return m
     }, [friends, groups])
 
-    /* ── toggle helpers ── */
     const toggle = (id: string) => {
         const next = new Set(selected)
         if (next.has(id)) next.delete(id); else next.add(id)
@@ -65,7 +56,6 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
         onChange([...next])
     }
 
-    /* ── group logic ── */
     const isGroupActive = (g: Group) => g.members.length > 0 && g.members.every(m => selected.has(m.id))
 
     const toggleGroup = (g: Group) => {
@@ -73,7 +63,6 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
         if (isGroupActive(g)) batchRemove(ids); else batchAdd(ids)
     }
 
-    /* ── tag logic ── */
     const resolveTag = async (tagId: string) => {
         if (tagMembers[tagId]) return tagMembers[tagId]
         setLoadingTag(tagId)
@@ -99,7 +88,6 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
         if (isTagActive(t)) batchRemove(ids); else batchAdd(ids)
     }
 
-    /* ── friends A-Z ── */
     const filtered = useMemo(() => {
         if (!search.trim()) return friends
         const q = search.toLowerCase()
@@ -110,9 +98,6 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
         )
     }, [friends, search])
 
-    const grouped = useMemo(() => groupByInitial(filtered), [filtered])
-
-    /* ── inline creation ── */
     const handleCreateGroup = async () => {
         if (!newGroupName.trim()) return
         try {
@@ -121,9 +106,8 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
             setShowNewGroup(false)
             setNewGroupName('')
             setNewGroupEmoji('👥')
-            // Auto-select the new group (has only current user)
             if (g.members) toggleGroup(g)
-        } catch { /* toast could go here */ }
+        } catch { /* ignore */ }
     }
 
     const handleCreateTag = async () => {
@@ -134,103 +118,160 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
             setShowNewTag(false)
             setNewTagName('')
             setNewTagColor('#0A84FF')
-        } catch { /* toast could go here */ }
+        } catch { /* ignore */ }
     }
 
     return (
-        <div className="mp-container">
-            {/* ── Personalization placeholder (hidden) ── */}
-            {/* <div className="mp-section mp-personalized">Future: last-used group, frequent contacts</div> */}
-
-            {/* ── Groups ── */}
-            <div className="mp-section">
-                <div className="mp-label">📁 群组</div>
-                <div className="mp-chips">
-                    {groups.map(g => (
-                        <button
-                            key={g.id}
-                            className={`mp-chip ${isGroupActive(g) ? 'mp-chip-active' : ''}`}
-                            onClick={() => toggleGroup(g)}
-                        >
-                            <span className="mp-chip-emoji">{g.emoji}</span>
-                            <span>{g.name}</span>
-                            <span className="mp-chip-count">({g.members.length})</span>
-                        </button>
-                    ))}
-                    <button className="mp-chip mp-chip-add" onClick={() => setShowNewGroup(true)}>＋ 新群组</button>
-                </div>
-            </div>
-
-            {/* ── Tags ── */}
-            <div className="mp-section">
-                <div className="mp-label">🏷️ 标签</div>
-                <div className="mp-chips">
-                    {tags.map(t => (
-                        <button
-                            key={t.id}
-                            className={`mp-chip ${isTagActive(t) ? 'mp-chip-active' : ''}`}
-                            onClick={() => toggleTag(t)}
-                            disabled={loadingTag === t.id}
-                            style={{ borderColor: t.color }}
-                        >
-                            {loadingTag === t.id ? '...' : t.name}
-                        </button>
-                    ))}
-                    <button className="mp-chip mp-chip-add" onClick={() => setShowNewTag(true)}>＋ 新标签</button>
-                </div>
-            </div>
-
-            {/* ── Friends A-Z ── */}
-            <div className="mp-section mp-friends-section">
-                <div className="mp-label">👤 好友</div>
-                <input
-                    className="mp-search"
-                    type="text"
-                    placeholder="🔍 搜索好友..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                />
-                <div className="mp-friends-list">
-                    {grouped.map(group => (
-                        <div key={group.letter}>
-                            <div className="mp-letter-header">{group.letter}</div>
-                            {group.items.map(f => (
-                                <button
-                                    key={f.id}
-                                    className={`mp-friend-row ${selected.has(f.id) ? 'mp-friend-selected' : ''}`}
-                                    onClick={() => toggle(f.id)}
-                                >
-                                    <span className="mp-check">{selected.has(f.id) ? '☑' : '☐'}</span>
-                                    <span className="mp-friend-emoji">{f.emoji}</span>
-                                    <span className="mp-friend-name">{f.alias || f.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    ))}
-                    {grouped.length === 0 && <div className="mp-empty">没有找到好友</div>}
-                </div>
-            </div>
-
-            {/* ── Bubble bar ── */}
-            {selectedIds.length > 0 && (
-                <div className="mp-bubble-bar">
-                    <div className="mp-bubble-scroll">
-                        {selectedIds.map(id => {
-                            const m = allMembersById.get(id)
-                            if (!m) return null
-                            return (
-                                <span key={id} className="mp-bubble">
-                                    {m.emoji} {m.name}
-                                    <button className="mp-bubble-x" onClick={() => toggle(id)}>✕</button>
-                                </span>
-                            )
-                        })}
+        <div className="mp2-wrap">
+            {/* ── Fixed top: selected members ── */}
+            <div className="mp2-selected-bar">
+                {selectedIds.length === 0 ? (
+                    <span className="mp2-empty-hint">点击选择，或向上拖拽群组 / 标签</span>
+                ) : (
+                    <div className="mp2-chips-scroll">
+                        <AnimatePresence>
+                            {selectedIds.map(id => {
+                                const m = allMembersById.get(id)
+                                return m ? (
+                                    <motion.button
+                                        key={id}
+                                        className="mp2-sel-chip"
+                                        onClick={() => toggle(id)}
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0, opacity: 0 }}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                        layout
+                                    >
+                                        <span className="mp2-sel-emoji">{m.emoji}</span>
+                                        <span className="mp2-sel-name">{m.name}</span>
+                                        <span className="mp2-sel-x">×</span>
+                                    </motion.button>
+                                ) : null
+                            })}
+                        </AnimatePresence>
                     </div>
-                    <div className="mp-bubble-count">已选 {selectedIds.length} 人</div>
-                </div>
-            )}
+                )}
+                {selectedIds.length > 0 && (
+                    <span className="mp2-sel-count">{selectedIds.length} 人</span>
+                )}
+            </div>
 
-            {/* ── Inline Create Group Dialog ── */}
+            {/* ── Scroll area ── */}
+            <div className="mp2-scroll">
+                {/* Groups */}
+                {groups.length > 0 && (
+                    <div className="mp2-section">
+                        <div className="mp2-sec-label">群组</div>
+                        <div className="mp2-horiz">
+                            {groups.map(g => (
+                                <motion.button
+                                    key={g.id}
+                                    className={`mp2-group-card${isGroupActive(g) ? ' active' : ''}`}
+                                    drag="y"
+                                    dragConstraints={{ top: -400, bottom: 0 }}
+                                    dragElastic={{ top: 0.55, bottom: 0 }}
+                                    dragSnapToOrigin
+                                    dragMomentum={false}
+                                    onDragEnd={(_, info) => {
+                                        if (info.offset.y < -80) toggleGroup(g)
+                                    }}
+                                    onClick={() => toggleGroup(g)}
+                                    whileTap={{ scale: 0.9 }}
+                                    whileDrag={{ scale: 1.08, zIndex: 60, boxShadow: '0 12px 28px rgba(0,0,0,0.38)' }}
+                                >
+                                    <span className="mp2-g-emoji">{g.emoji}</span>
+                                    <span className="mp2-g-name">{g.name}</span>
+                                    <div className="mp2-g-av-row">
+                                        {g.members.slice(0, 4).map(m => (
+                                            <span key={m.id} className={`mp2-mini-av${selected.has(m.id) ? ' sel' : ''}`}>{m.emoji}</span>
+                                        ))}
+                                        {g.members.length > 4 && (
+                                            <span className="mp2-mini-more">+{g.members.length - 4}</span>
+                                        )}
+                                    </div>
+                                </motion.button>
+                            ))}
+                            <button className="mp2-add-card" onClick={() => setShowNewGroup(true)}>
+                                <span className="mp2-add-plus">＋</span>
+                                <span className="mp2-add-label">群组</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tags */}
+                {(tags.length > 0 || true) && (
+                    <div className="mp2-section">
+                        <div className="mp2-sec-label">标签</div>
+                        <div className="mp2-horiz mp2-tags-row">
+                            {tags.map(t => (
+                                <motion.button
+                                    key={t.id}
+                                    className={`mp2-tag-chip${isTagActive(t) ? ' active' : ''}`}
+                                    style={{
+                                        borderColor: t.color,
+                                        color: isTagActive(t) ? '#fff' : t.color,
+                                        background: isTagActive(t) ? t.color : 'transparent',
+                                    }}
+                                    drag="y"
+                                    dragConstraints={{ top: -400, bottom: 0 }}
+                                    dragElastic={{ top: 0.55, bottom: 0 }}
+                                    dragSnapToOrigin
+                                    dragMomentum={false}
+                                    onDragEnd={(_, info) => {
+                                        if (info.offset.y < -80) toggleTag(t)
+                                    }}
+                                    onClick={() => toggleTag(t)}
+                                    whileTap={{ scale: 0.9 }}
+                                    whileDrag={{ scale: 1.08, zIndex: 60, boxShadow: '0 12px 28px rgba(0,0,0,0.38)' }}
+                                    disabled={loadingTag === t.id}
+                                >
+                                    {loadingTag === t.id ? '...' : t.name}
+                                </motion.button>
+                            ))}
+                            <button className="mp2-add-tag-btn" onClick={() => setShowNewTag(true)}>＋ 标签</button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Friends */}
+                <div className="mp2-section mp2-friends-section">
+                    <div className="mp2-sec-label">好友</div>
+                    <input
+                        className="mp2-search"
+                        type="text"
+                        placeholder="🔍 搜索好友..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                    />
+                    <div className="mp2-friends-grid">
+                        {filtered.map(f => (
+                            <motion.button
+                                key={f.id}
+                                className={`mp2-friend-av${selected.has(f.id) ? ' sel' : ''}`}
+                                onClick={() => toggle(f.id)}
+                                whileTap={{ scale: 0.82 }}
+                            >
+                                <span className="mp2-fav-emoji">{f.emoji}</span>
+                                <span className="mp2-fav-name">{f.alias || f.name}</span>
+                                {selected.has(f.id) && (
+                                    <motion.span
+                                        className="mp2-fav-check"
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                    >✓</motion.span>
+                                )}
+                            </motion.button>
+                        ))}
+                        {filtered.length === 0 && (
+                            <div className="mp2-no-results">没有找到好友</div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Create Group dialog ── */}
             {showNewGroup && (
                 <div className="mp-dialog-overlay" onClick={() => setShowNewGroup(false)}>
                     <div className="mp-dialog" onClick={e => e.stopPropagation()}>
@@ -251,7 +292,7 @@ export default function MemberPickerSheet({ friends, groups, tags, selectedIds, 
                 </div>
             )}
 
-            {/* ── Inline Create Tag Dialog ── */}
+            {/* ── Create Tag dialog ── */}
             {showNewTag && (
                 <div className="mp-dialog-overlay" onClick={() => setShowNewTag(false)}>
                     <div className="mp-dialog" onClick={e => e.stopPropagation()}>

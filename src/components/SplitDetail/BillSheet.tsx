@@ -355,6 +355,7 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                     onClose={() => setMemberPickerFor(null)}
                     title="选择成员"
                     maxHeight="85vh"
+                    className="mp-sheet"
                     headerRight={
                         <button className="sheet-cancel" onClick={() => setMemberPickerFor(null)}>完成</button>
                     }
