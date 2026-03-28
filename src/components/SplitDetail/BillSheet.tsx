@@ -6,6 +6,8 @@ import type { Group } from '../../lib/api/groups'
 import type { Tag } from '../../lib/api/tags'
 import { getFriendsByTag } from '../../lib/api/tags'
 import BottomSheet from '../shared/BottomSheet'
+import { useAuth } from '../../hooks/useAuth'
+import { useProfile } from '../../hooks/useProfile'
 
 const ICON_LIST = ['🍔', '🍕', '🍣', '🍜', '🧋', '☕', '🍰', '🎮', '🎬', '🛒',
     '✈️', '🏨', '⛽', '💊', '🎁', '🎪', '🎵', '🏋️', '🛁', '💡', '🧴', '🛵', '🚌', '🍻']
@@ -31,6 +33,7 @@ type DragPayload =
     | { type: 'friend'; id: string }
     | { type: 'group'; id: string }
     | { type: 'tag'; id: string }
+    | { type: 'self' }
 
 function itemToEdit(item: BillItem): EditItem {
     return {
@@ -87,6 +90,9 @@ function computePreviewPrices(items: EditItem[]): Map<number, string> | null {
 
 export default function BillSheet({ bill, friends, groups, tags, onClose, onSaved }: BillSheetProps) {
     const isCreate = !bill
+    const { user } = useAuth()
+    const { profile } = useProfile()
+
     const [icon, setIcon] = useState(bill?.icon || '🧾')
     const [title, setTitle] = useState(bill?.title || '')
     const [description, setDescription] = useState(bill?.description || '')
@@ -113,12 +119,19 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
 
     const previewPrices = computePreviewPrices(items)
 
+    // Self member derived from auth profile
+    const selfMember: Member | null = useMemo(() => {
+        if (!user || !profile) return null
+        return { id: user.id, name: profile.name || '我', emoji: profile.emoji || '😀', color: profile.color }
+    }, [user, profile])
+
     const allMembersById = useMemo(() => {
         const m = new Map<string, Member>()
         groups.forEach(g => g.members.forEach(mem => { if (!m.has(mem.id)) m.set(mem.id, mem) }))
         friends.forEach(f => m.set(f.id, { id: f.id, name: f.alias || f.name, emoji: f.emoji, color: f.color }))
+        if (selfMember) m.set(selfMember.id, selfMember)
         return m
-    }, [friends, groups])
+    }, [friends, groups, selfMember])
 
     const updateItem = (index: number, patch: Partial<EditItem>) =>
         setItems(prev => prev.map((it, i) => i === index ? { ...it, ...patch } : it))
@@ -171,7 +184,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
             const dx = ev.clientX - startX
             const dy = ev.clientY - startY
             if (!dragStarted) {
-                // Vertical gesture → start drag; horizontal → let scroll win
                 if (Math.abs(dy) > 6 && Math.abs(dy) > Math.abs(dx) * 0.9) startDrag(ev.clientX, ev.clientY)
                 else if (Math.abs(dx) > 8) cleanup()
                 return
@@ -206,7 +218,13 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
     const applyDrop = (itemIdx: number, drag: DragPayload) => {
         const item = items[itemIdx]
         if (!item) return
-        if (drag.type === 'friend') {
+        if (drag.type === 'self') {
+            if (!selfMember) return
+            const has = item.memberIds.includes(selfMember.id)
+            updateItem(itemIdx, {
+                memberIds: has ? item.memberIds.filter(id => id !== selfMember.id) : [...item.memberIds, selfMember.id]
+            })
+        } else if (drag.type === 'friend') {
             const has = item.memberIds.includes(drag.id)
             updateItem(itemIdx, {
                 memberIds: has ? item.memberIds.filter(id => id !== drag.id) : [...item.memberIds, drag.id]
@@ -313,6 +331,19 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                         {isDragging ? '拖到下方条目来分配' : '拖拽或点击分配成员'}
                     </div>
                     <div className="bs-palette">
+                        {/* Self — always first */}
+                        {selfMember && (
+                            <button
+                                key="self"
+                                className="bs-pal-friend bs-pal-self"
+                                onPointerDown={e => handlePalettePointerDown(e, { type: 'self' }, selfMember.emoji)}
+                                onClick={() => { if (expandedIdx !== null) applyDrop(expandedIdx, { type: 'self' }) }}
+                            >
+                                <span className="bs-pal-emoji">{selfMember.emoji}</span>
+                                <span className="bs-pal-name">我</span>
+                            </button>
+                        )}
+
                         {/* Friends */}
                         {friends.map(f => (
                             <button
@@ -396,17 +427,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                     <span className="bs-item-hdr-name">
                                         {item.name || <span className="bs-item-placeholder">未命名商品</span>}
                                     </span>
-                                    {item.memberIds.length > 0 && (
-                                        <div className="bs-avatars">
-                                            {item.memberIds.slice(0, 8).map(id => {
-                                                const m = allMembersById.get(id)
-                                                return m ? <span key={id} className="bs-av">{m.emoji}</span> : null
-                                            })}
-                                            {item.memberIds.length > 8 && (
-                                                <span className="bs-av bs-av-more">+{item.memberIds.length - 8}</span>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                                 <div className="bs-item-hdr-right">
                                     {preview
@@ -416,6 +436,37 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                     <span className={`bs-chevron${isExpanded ? ' bs-chevron--up' : ''}`}>›</span>
                                 </div>
                             </button>
+
+                            {/* Member avatar grid — always visible */}
+                            {!item.spreadDiscount && (
+                                <div className="bs-member-grid">
+                                    {item.memberIds.map((id, chipIdx) => {
+                                        const m = allMembersById.get(id)
+                                        if (!m) return null
+                                        const isSelf = selfMember && id === selfMember.id
+                                        return (
+                                            <div
+                                                key={id}
+                                                className={`bs-member-card${isSelf ? ' bs-member-card--self' : ''}`}
+                                                style={{ animationDelay: `${chipIdx * 0.07}s` }}
+                                            >
+                                                <button
+                                                    className="bs-member-card-del"
+                                                    onClick={e => {
+                                                        e.stopPropagation()
+                                                        updateItem(idx, { memberIds: item.memberIds.filter(mid => mid !== id) })
+                                                    }}
+                                                >×</button>
+                                                <span className="bs-member-card-emoji">{m.emoji}</span>
+                                                <span className="bs-member-card-name">{isSelf ? '我' : m.name}</span>
+                                            </div>
+                                        )
+                                    })}
+                                    {item.memberIds.length === 0 && (
+                                        <div className="bs-member-grid-empty">从上方点击或拖拽分配成员</div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Drop zone indicator overlay */}
                             {isDragging && (
@@ -455,26 +506,6 @@ export default function BillSheet({ bill, friends, groups, tags, onClose, onSave
                                                 {item.spreadDiscount ? '✓ 已分摊到商品' : '分摊到商品'}
                                             </button>
                                         </div>
-                                    )}
-                                    {/* Member chips with remove */}
-                                    {!item.spreadDiscount && item.memberIds.length > 0 && (
-                                        <div className="bs-assigned-members">
-                                            {item.memberIds.map(id => {
-                                                const m = allMembersById.get(id)
-                                                return m ? (
-                                                    <button
-                                                        key={id}
-                                                        className="bs-assigned-chip"
-                                                        onClick={() => updateItem(idx, { memberIds: item.memberIds.filter(mid => mid !== id) })}
-                                                    >
-                                                        {m.emoji} {m.name} ×
-                                                    </button>
-                                                ) : null
-                                            })}
-                                        </div>
-                                    )}
-                                    {!item.spreadDiscount && item.memberIds.length === 0 && (
-                                        <div className="bs-no-members">从上方拖拽或点击头像来分配成员</div>
                                     )}
                                 </div>
                             )}
