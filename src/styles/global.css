@@ -1472,7 +1472,147 @@ body {
 }
 
 /* ═══════════════════════════════════════════
-   BillSheet redesign
+   BillSheet — fixed-top + drag-to-assign
+═══════════════════════════════════════════ */
+
+/* Override sheet-body so we can have fixed top + internal scroll */
+.bill-sheet .sheet-body {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+}
+
+/* Fixed top section (header card + palette + label) */
+.bs-fixed-top {
+  flex-shrink: 0;
+  padding: 16px 16px 0;
+  background: var(--bg2);
+  border-bottom: 0.5px solid var(--sep);
+}
+
+/* Scrollable items area */
+.bs-items-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px calc(env(safe-area-inset-bottom, 20px) + 20px);
+}
+
+/* ── Member palette ── */
+.bs-palette-wrap {
+  margin: 0 -16px;
+  border-top: 0.5px solid var(--sep);
+  border-bottom: 0.5px solid var(--sep);
+  background: var(--bg3);
+}
+
+.bs-palette-hint {
+  font-size: 11px;
+  color: var(--label3);
+  padding: 7px 16px 0;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.bs-palette {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.bs-palette::-webkit-scrollbar { display: none; }
+
+/* Friend avatar in palette */
+.bs-pal-friend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 52px;
+  padding: 8px 6px 6px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: none;
+  cursor: grab;
+  font-family: inherit;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.bs-pal-friend:active { cursor: grabbing; }
+
+/* Group chip in palette */
+.bs-pal-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: var(--bg2);
+  border: none;
+  cursor: grab;
+  font-family: inherit;
+  font-size: 14px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.bs-pal-group:active { cursor: grabbing; }
+
+/* Tag chip in palette */
+.bs-pal-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  background: none;
+  cursor: grab;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.bs-pal-tag:active { cursor: grabbing; }
+
+.bs-pal-emoji { font-size: 22px; }
+.bs-pal-name { font-size: 10px; color: var(--label2); max-width: 52px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Separator between palette sections */
+.bs-pal-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--sep);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+/* Items label row (reuse) */
+.bs-items-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 8px;
+}
+
+.bs-add-btn {
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0 4px;
+}
+
+/* ═══════════════════════════════════════════
+   BillSheet redesign (item cards)
 ═══════════════════════════════════════════ */
 
 /* Header card: big icon + title/description */
@@ -1722,6 +1862,75 @@ body {
   font-size: 14px;
   color: var(--label3);
 }
+
+/* Drop zone states */
+.bs-item--droppable {
+  transition: border-color 0.15s;
+}
+
+.bs-item--droppable .bs-item-hdr {
+  animation: none; /* pause shimmer during drag */
+}
+
+.bs-item--drop-target {
+  border: 2px solid var(--accent) !important;
+  background: rgba(48, 209, 88, 0.07);
+}
+
+.bs-item--drop-target .bs-item-hdr-name {
+  color: var(--accent);
+}
+
+/* Drop overlay shown during drag */
+.bs-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: var(--label3);
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+.bs-item--drop-target .bs-drop-overlay {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Assigned members in expanded item */
+.bs-assigned-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 12px;
+  border-top: 0.5px solid var(--sep);
+}
+
+.bs-assigned-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: rgba(120, 120, 128, 0.15);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--label);
+}
+
+.bs-no-members {
+  padding: 10px 16px 12px;
+  font-size: 13px;
+  color: var(--label3);
+  border-top: 0.5px solid var(--sep);
+}
+
+/* item needs position: relative for drop overlay */
+.bs-item { position: relative; }
 
 .sb {
   width: 100%;
