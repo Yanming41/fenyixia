@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 
 const ADMIN_OPS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-ops`
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 async function callAdminOps(action: string, params: Record<string, unknown> = {}) {
   const { data: { session } } = await supabase.auth.getSession()
@@ -12,6 +13,7 @@ async function callAdminOps(action: string, params: Record<string, unknown> = {}
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
+      'apikey': ANON_KEY,
     },
     body: JSON.stringify({ action, ...params }),
   })
