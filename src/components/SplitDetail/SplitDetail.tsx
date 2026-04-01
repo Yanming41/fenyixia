@@ -178,6 +178,11 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     .filter(([id]) => id !== bill.payer_id)
     .reduce((s, [, v]) => s + v, 0)
 
+  const proofUserIds = bill._proofUserIds || new Set<string>()
+  const nonPayerMembers = bill.members.filter(m => m.id !== bill.payer_id)
+  const allCollected = nonPayerMembers.length > 0 &&
+    nonPayerMembers.every(m => proofUserIds.has(m.id) || manualPaid.has(m.id))
+
   if (bill.settled) {
     bannerClass = 'paid'
     bannerText = '✓ 已结清'
@@ -195,8 +200,8 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
       bannerAmount = memberShares[currentUserId] || 0
     }
   } else if (isPayer) {
-    bannerClass = 'collect'
-    bannerText = '💰 你是垫付人，待收款'
+    bannerClass = allCollected ? 'paid' : 'collect'
+    bannerText = allCollected ? '✅ 已收齐，可标记结清' : '💰 你是垫付人，待收款'
     bannerAmount = collectTotal
   } else if (bill._hasMeProof) {
     bannerClass = 'paid'
