@@ -12,12 +12,17 @@ import type { ScanResult as ScanResultType, ScanResultItem } from '../lib/api/sc
 import ScanTypeSelector from '../components/Scanner/ScanTypeSelector'
 import ImageUploader from '../components/Scanner/ImageUploader'
 import CropOverlay from '../components/Scanner/CropOverlay'
-import ImagePreview from '../components/Scanner/ImagePreview'
 import MemberSelector from '../components/Scanner/MemberSelector'
 import ScanResultView from '../components/Scanner/ScanResult'
 import MemberAssignment from '../components/Scanner/MemberAssignment'
 
 type Step = 'type-select' | 'upload' | 'crop' | 'preview' | 'member-select' | 'scanning' | 'result' | 'saving'
+
+// One uploaded (possibly cropped) image ready for scanning
+interface ImageEntry {
+  src: string   // object URL or data URL for display
+  blob: Blob
+}
 
 export default function ScanPage() {
   const navigate = useNavigate()
@@ -27,12 +32,13 @@ export default function ScanPage() {
   const [step, setStep] = useState<Step>('type-select')
   const [receiptType, setReceiptType] = useState<'physical' | 'digital'>('physical')
 
-  // Image state
-  const [currentFile, setCurrentFile] = useState<File | null>(null)
-  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null)
-  const [previewSrc, setPreviewSrc] = useState('')
-  const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null)
-  const [wasCropped, setWasCropped] = useState(false)
+  // Accumulated images (multi-upload)
+  const [images, setImages] = useState<ImageEntry[]>([])
+
+  // Temporary state for the image currently being uploaded/cropped
+  const [pendingOriginal, setPendingOriginal] = useState<HTMLImageElement | null>(null)
+  const [pendingBlob, setPendingBlob] = useState<Blob | null>(null)
+  const [pendingSrc, setPendingSrc] = useState('')
 
   // Members
   const { friends } = useFriends()
@@ -44,7 +50,6 @@ export default function ScanPage() {
   }, [user, friends])
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([])
 
-  // Sync selectedMembers when allMembers first loads
   useEffect(() => {
     if (allMembers.length > 0 && selectedMembers.length === 0) {
       setSelectedMembers([allMembers[0]!])
@@ -58,34 +63,47 @@ export default function ScanPage() {
   const [error, setError] = useState('')
   const [userHint, setUserHint] = useState('')
 
+  // ── Image upload/crop handlers ──
+
   const handleImageLoaded = useCallback((_file: File, img: HTMLImageElement, dataUrl: string) => {
-    setCurrentFile(_file)
-    setOriginalImage(img)
-    setPreviewSrc(dataUrl)
-    setCroppedBlob(null)
-    setWasCropped(false)
+    setPendingOriginal(img)
+    setPendingBlob(null)
+    setPendingSrc(dataUrl)
 
     if (receiptType === 'physical') {
       setStep('crop')
     } else {
+      // For digital: add directly to images array and go to preview
+      const blob = dataUrlToBlob(dataUrl)
+      setImages(prev => [...prev, { src: dataUrl, blob }])
       setStep('preview')
     }
   }, [receiptType])
 
   const handleCropped = useCallback((blob: Blob) => {
-    setCroppedBlob(blob)
-    setWasCropped(true)
-    setPreviewSrc(URL.createObjectURL(blob))
+    const src = URL.createObjectURL(blob)
+    setPendingBlob(blob)
+    setPendingSrc(src)
+    setImages(prev => [...prev, { src, blob }])
     setStep('preview')
   }, [])
 
   const handleSkipCrop = useCallback(() => {
+    // Use the original image data URL as-is
+    const blob = dataUrlToBlob(pendingSrc)
+    setImages(prev => [...prev, { src: pendingSrc, blob }])
     setStep('preview')
+  }, [pendingSrc])
+
+  const handleAddMore = useCallback(() => {
+    setPendingOriginal(null)
+    setPendingBlob(null)
+    setPendingSrc('')
+    setStep('upload')
   }, [])
 
-  const handleRotated = useCallback((blob: Blob) => {
-    setCroppedBlob(blob)
-    setPreviewSrc(URL.createObjectURL(blob))
+  const removeImage = useCallback((idx: number) => {
+    setImages(prev => prev.filter((_, i) => i !== idx))
   }, [])
 
   const handleToggleMember = useCallback((member: Member) => {
@@ -96,24 +114,30 @@ export default function ScanPage() {
     })
   }, [])
 
+  // ── Scan ──
+
   const startScan = useCallback(async () => {
-    if (!currentFile) return
+    if (images.length === 0) return
     setStep('scanning')
     setError('')
 
     try {
       const memberNames = selectedMembers.map(m => m.name || m.emoji || '?')
-      const prompt = buildScanPrompt(receiptType, memberNames, memberNames.length || 1, userHint.trim() || undefined)
-      const src = croppedBlob || currentFile
-      const b64 = await toBase64(src)
-      const mime = croppedBlob ? 'image/jpeg' : (currentFile.type || 'image/jpeg')
+      const prompt = buildScanPrompt(receiptType, memberNames, memberNames.length || 1, userHint.trim() || undefined, images.length)
 
-      const result = await scanReceipt(b64, mime, prompt)
+      // Convert all image blobs to base64
+      const imagePayloads = await Promise.all(
+        images.map(async img => ({
+          base64: await blobToBase64(img.blob),
+          mediaType: img.blob.type || 'image/jpeg',
+        }))
+      )
+
+      const result = await scanReceipt(imagePayloads, prompt)
       setResultData(result)
       const resultItems = result.items || []
       setItems(resultItems)
 
-      // Init assignments: all selected members for all items
       const ids = selectedMembers.map(m => m.id)
       const initAssign: Record<number, Set<string>> = {}
       resultItems.forEach((_, idx) => { initAssign[idx] = new Set(ids) })
@@ -124,31 +148,29 @@ export default function ScanPage() {
       setError((err as Error).message)
       setStep('member-select')
     }
-  }, [currentFile, croppedBlob, receiptType, selectedMembers, userHint])
+  }, [images, receiptType, selectedMembers, userHint])
+
+  // ── Save ──
 
   const saveBill = useCallback(async () => {
-    if (!resultData || !user) return
+    if (!resultData || !user || images.length === 0) return
     setStep('saving')
 
     try {
-      // Upload image
-      const imageBlob = croppedBlob || currentFile!
-      const ext = croppedBlob ? 'jpg' : (currentFile!.name.split('.').pop() || 'jpg')
-      const imagePath = await uploadReceiptImage(user.id, imageBlob, ext)
+      // Upload first image (primary)
+      const firstImage = images[0]!
+      const ext = firstImage.blob.type === 'image/png' ? 'png' : 'jpg'
+      const imagePath = await uploadReceiptImage(user.id, firstImage.blob, ext)
 
-      // Parse date
       const dateStr = resultData.date || ''
       const dateMatch = dateStr.match(/(\d+)月(\d+)日/)
       const isoDate = dateMatch
         ? `${new Date().getFullYear()}-${String(dateMatch[1]).padStart(2, '0')}-${String(dateMatch[2]).padStart(2, '0')}`
         : new Date().toISOString().slice(0, 10)
 
-      // Build items with member assignments
       const billItems = items.map((item, idx) => {
         const assignedSet = assignments[idx]
-        const memberIds = assignedSet && assignedSet.size > 0
-          ? [...assignedSet]
-          : [user.id]
+        const memberIds = assignedSet && assignedSet.size > 0 ? [...assignedSet] : [user.id]
         return {
           name: item.name,
           price: Number(item.price),
@@ -174,9 +196,8 @@ export default function ScanPage() {
       setError((err as Error).message)
       setStep('result')
     }
-  }, [resultData, items, assignments, croppedBlob, currentFile, user, navigate, toast])
+  }, [resultData, items, assignments, images, user, navigate, toast])
 
-  // Calculate totals
   const totalAmount = items.reduce((s, i) => s + i.price * (i.qty || 1), 0)
   const memberCount = selectedMembers.length || 1
   const perAmount = totalAmount / memberCount
@@ -196,27 +217,48 @@ export default function ScanPage() {
       )}
 
       {step === 'type-select' && (
-        <>
-          <ScanTypeSelector value={receiptType} onChange={(t) => { setReceiptType(t); setStep('upload') }} />
-        </>
+        <ScanTypeSelector value={receiptType} onChange={(t) => { setReceiptType(t); setStep('upload') }} />
       )}
 
       {step === 'upload' && (
         <ImageUploader type={receiptType} onImageLoaded={handleImageLoaded} />
       )}
 
-      {step === 'crop' && originalImage && (
-        <CropOverlay image={originalImage} onCropped={handleCropped} onSkip={handleSkipCrop} />
+      {step === 'crop' && pendingOriginal && (
+        <CropOverlay image={pendingOriginal} onCropped={handleCropped} onSkip={handleSkipCrop} />
       )}
 
-      {step === 'preview' && previewSrc && (
-        <ImagePreview
-          src={previewSrc}
-          wasCropped={wasCropped}
-          type={receiptType}
-          onRotated={handleRotated}
-          onContinue={() => setStep('member-select')}
-        />
+      {/* ── Multi-image preview ── */}
+      {step === 'preview' && (
+        <div className="scanner-multi-preview">
+          <div className="scanner-multi-title">
+            已添加 {images.length} 张图片
+          </div>
+          <div className="scanner-img-grid">
+            {images.map((img, idx) => (
+              <div key={idx} className="scanner-img-thumb">
+                <img src={img.src} alt={`图片 ${idx + 1}`} />
+                <button
+                  className="scanner-img-thumb-del"
+                  onClick={() => removeImage(idx)}
+                >×</button>
+                <div className="scanner-img-thumb-num">{idx + 1}</div>
+              </div>
+            ))}
+            <button className="scanner-img-add" onClick={handleAddMore}>
+              <span>＋</span>
+              <span className="scanner-img-add-label">添加</span>
+            </button>
+          </div>
+          <button
+            className="scanner-btn-primary"
+            onClick={() => setStep('member-select')}
+            disabled={images.length === 0}
+            style={{ margin: '8px 20px 0' }}
+          >
+            继续 →
+          </button>
+        </div>
       )}
 
       {step === 'member-select' && (
@@ -245,7 +287,7 @@ export default function ScanPage() {
       {step === 'scanning' && (
         <div className="scanner-loading">
           <div className="scanner-spinner" />
-          <div>AI 正在识别中...</div>
+          <div>AI 正在识别 {images.length} 张图片...</div>
         </div>
       )}
 
@@ -284,16 +326,25 @@ export default function ScanPage() {
   )
 }
 
-function toBase64(blob: Blob): Promise<string> {
+// ── Helpers ──
+
+function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
       const result = reader.result as string
-      // Strip data URL prefix
-      const base64 = result.includes(',') ? result.split(',')[1]! : result
-      resolve(base64)
+      resolve(result.includes(',') ? result.split(',')[1]! : result)
     }
     reader.onerror = reject
     reader.readAsDataURL(blob)
   })
+}
+
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, data] = dataUrl.split(',')
+  const mime = header!.match(/:(.*?);/)?.[1] || 'image/jpeg'
+  const binary = atob(data!)
+  const arr = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+  return new Blob([arr], { type: mime })
 }

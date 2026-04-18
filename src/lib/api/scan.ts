@@ -6,16 +6,14 @@ const EDGE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-rece
 // ── Scan receipt via Edge Function ──
 
 export async function scanReceipt(
-  imageBase64: string,
-  mediaType: string,
+  images: { base64: string; mediaType: string }[],
   prompt: string
 ): Promise<ScanResult> {
   const res = await fetch(EDGE_FN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      image_base64: imageBase64,
-      media_type: mediaType,
+      images: images.map(img => ({ base64: img.base64, media_type: img.mediaType })),
       prompt,
     }),
   })
@@ -33,7 +31,7 @@ export async function scanReceipt(
 
 // ── Build prompt for physical/digital receipt ──
 
-export function buildScanPrompt(type: 'physical' | 'digital', members: string[], n: number, userHint?: string): string {
+export function buildScanPrompt(type: 'physical' | 'digital', members: string[], n: number, userHint?: string, imageCount = 1): string {
   const tpl = `{
   "icon": "<最合适的消费类别 emoji>",
   "title": "<商户名+消费类型，如'海底捞外卖'、'Costco采购'，优先用商户名而非泛泛分类>",
@@ -87,7 +85,7 @@ ${tpl}
 【其他要点】：
 - 日期统一转为"M月D日"
 - 提取所有商品行，一条不漏，包括折扣行（price 为负数）
-- 返回纯 JSON，不要有任何其他文字${userHint ? `\n\n【用户补充说明】：${userHint}` : ''}`
+- 返回纯 JSON，不要有任何其他文字${imageCount > 1 ? `\n\n【注意】：共有 ${imageCount} 张图片，是同一张小票的不同部分，请合并识别所有内容，items 汇总所有图片中的商品` : ''}${userHint ? `\n\n【用户补充说明】：${userHint}` : ''}`
   }
 
   return `你是专业的 App 订单截图识别助手，处理打车、外卖等数字收据截图。
@@ -109,7 +107,7 @@ ${tpl}
 - 打车类（Uber/Lyft）：title 用具体名称如"Uber打车"，desc="平台·起点→终点"，items 分解各费用（车费、服务费、税→含入price、小费），折扣负数，category=transport
 - 外卖类（DoorDash/Uber Eats）：title 用"餐厅名+外卖"如"海底捞外卖"，desc="平台·餐厅名"，每道菜名写"英文全称 (中文翻译)"+配送费+服务费（税含入各项price），小费单列，折扣负数，category=dining
 - 所有英文菜名/商品名都附上中文翻译，格式："English Name (中文)"
-- 返回纯 JSON，不要有任何其他文字${userHint ? `\n\n【用户补充说明】：${userHint}` : ''}`
+- 返回纯 JSON，不要有任何其他文字${imageCount > 1 ? `\n\n【注意】：共有 ${imageCount} 张截图，请合并识别所有内容，items 汇总所有图片中的商品和费用` : ''}${userHint ? `\n\n【用户补充说明】：${userHint}` : ''}`
 }
 
 // ── Build prompt for quick bill (一句话生成) ──

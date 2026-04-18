@@ -23,7 +23,8 @@ serve(async (req) => {
       throw new Error("ANTHROPIC_API_KEY not configured");
     }
 
-    const { image_base64, media_type, prompt } = await req.json();
+    const body = await req.json();
+    const { prompt } = body;
 
     if (!prompt) {
       return new Response(
@@ -32,15 +33,24 @@ serve(async (req) => {
       );
     }
 
-    // Build message content: image + text if image provided, text-only otherwise
-    const content = [];
-    if (image_base64) {
+    // Support both old single-image format and new multi-image array format
+    type ImageEntry = { base64: string; media_type?: string; mediaType?: string };
+    let imageList: ImageEntry[] = [];
+    if (Array.isArray(body.images) && body.images.length > 0) {
+      imageList = body.images;
+    } else if (body.image_base64) {
+      imageList = [{ base64: body.image_base64, media_type: body.media_type || "image/jpeg" }];
+    }
+
+    // Build message content: all images first, then the prompt text
+    const content: unknown[] = [];
+    for (const img of imageList) {
       content.push({
         type: "image",
         source: {
           type: "base64",
-          media_type: media_type || "image/jpeg",
-          data: image_base64,
+          media_type: img.media_type || img.mediaType || "image/jpeg",
+          data: img.base64,
         },
       });
     }
@@ -55,7 +65,7 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: image_base64 ? "claude-opus-4-20250514" : "claude-haiku-4-5-20251001",
+        model: imageList.length > 0 ? "claude-opus-4-20250514" : "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         messages: [
           {
