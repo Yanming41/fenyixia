@@ -3,12 +3,32 @@ import { getCurrentUser } from './auth'
 
 const EDGE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/scan-receipt`
 
+// ── Token usage ──
+
+export interface TokenUsage {
+  input_tokens: number
+  output_tokens: number
+  model: string
+}
+
+export async function recordTokenUsage(userId: string, feature: string, usage: TokenUsage): Promise<void> {
+  supabase.from('token_usage').insert({
+    user_id: userId,
+    feature,
+    model: usage.model,
+    input_tokens: usage.input_tokens,
+    output_tokens: usage.output_tokens,
+  }).then(({ error }) => {
+    if (error) console.warn('Failed to record token usage:', error.message)
+  })
+}
+
 // ── Scan receipt via Edge Function ──
 
 export async function scanReceipt(
   images: { base64: string; mediaType: string }[],
   prompt: string
-): Promise<ScanResult> {
+): Promise<{ result: ScanResult; usage: TokenUsage | null }> {
   const res = await fetch(EDGE_FN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,6 +44,10 @@ export async function scanReceipt(
   }
 
   const data = await res.json()
+  const usage: TokenUsage | null = data.usage
+    ? { input_tokens: data.usage.input_tokens, output_tokens: data.usage.output_tokens, model: data._model || '' }
+    : null
+
   let txt = (data.content || []).map((c: { text?: string }) => c.text || '').join('').trim()
   // Robustly extract the outermost JSON object, ignoring any surrounding markdown/text
   const start = txt.indexOf('{')
@@ -31,7 +55,7 @@ export async function scanReceipt(
   if (start !== -1 && end !== -1 && end > start) {
     txt = txt.slice(start, end + 1)
   }
-  return JSON.parse(txt)
+  return { result: JSON.parse(txt), usage }
 }
 
 // ── Build prompt for physical/digital receipt ──

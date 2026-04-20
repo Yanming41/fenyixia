@@ -57,3 +57,19 @@ export async function adminGenerateMagicLink(email: string): Promise<string> {
 export async function adminGetEmailStats(): Promise<EmailStats> {
   return callAdminOps('get_email_stats')
 }
+
+export interface TokenStat {
+  user_id: string
+  name: string
+  emoji: string
+  email: string
+  calls: number
+  input_tokens: number
+  output_tokens: number
+  last_at: string
+}
+
+export async function adminGetTokenStats(): Promise<TokenStat[]> {
+  const data = await callAdminOps('get_token_stats')
+  return data.stats
+}

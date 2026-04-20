@@ -51,6 +51,9 @@ serve(async (req) => {
   if (action === "get_email_stats") {
     return handleGetEmailStats(adminClient);
   }
+  if (action === "get_token_stats") {
+    return handleGetTokenStats(adminClient);
+  }
 
   return json({ error: "Unknown action" }, 400);
 });
@@ -102,6 +105,57 @@ async function handleGenerateMagicLink(
   if (error) return json({ error: error.message }, 500);
 
   return json({ action_link: data.properties?.action_link });
+}
+
+// ── get_token_stats ──
+async function handleGetTokenStats(adminClient: ReturnType<typeof createClient>) {
+  // Aggregate token usage per user
+  const { data, error } = await adminClient
+    .from("token_usage")
+    .select("user_id, feature, model, input_tokens, output_tokens, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) return json({ error: error.message }, 500);
+
+  // Fetch user profiles for display names
+  const userIds = [...new Set((data ?? []).map((r: { user_id: string }) => r.user_id))];
+  const { data: profiles } = await adminClient
+    .from("users")
+    .select("id, name, emoji, email")
+    .in("id", userIds);
+
+  const profileMap = new Map(
+    (profiles ?? []).map((p: { id: string; name: string; emoji: string; email: string }) => [p.id, p])
+  );
+
+  // Group by user
+  type Row = { user_id: string; feature: string; model: string; input_tokens: number; output_tokens: number; created_at: string };
+  const byUser = new Map<string, { input: number; output: number; calls: number; last_at: string }>();
+  for (const row of (data ?? []) as Row[]) {
+    const existing = byUser.get(row.user_id) ?? { input: 0, output: 0, calls: 0, last_at: '' };
+    byUser.set(row.user_id, {
+      input: existing.input + row.input_tokens,
+      output: existing.output + row.output_tokens,
+      calls: existing.calls + 1,
+      last_at: existing.last_at || row.created_at,
+    });
+  }
+
+  const stats = [...byUser.entries()].map(([userId, totals]) => {
+    const profile = profileMap.get(userId) as { name?: string; emoji?: string; email?: string } | undefined;
+    return {
+      user_id: userId,
+      name: profile?.name ?? '未知',
+      emoji: profile?.emoji ?? '👤',
+      email: profile?.email ?? '',
+      calls: totals.calls,
+      input_tokens: totals.input,
+      output_tokens: totals.output,
+      last_at: totals.last_at,
+    };
+  }).sort((a, b) => (b.input_tokens + b.output_tokens) - (a.input_tokens + a.output_tokens));
+
+  return json({ stats });
 }
 
 // ── get_email_stats ──

@@ -2613,6 +2613,71 @@ body {
   text-align: center;
 }
 
+/* Token usage table */
+.admin-token-table {
+  background: var(--bg2);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.admin-token-header,
+.admin-token-row,
+.admin-token-total {
+  display: grid;
+  grid-template-columns: 1fr 60px 90px 90px 70px;
+  gap: 4px;
+  padding: 10px 14px;
+  align-items: center;
+}
+
+.admin-token-header {
+  background: var(--bg3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.admin-token-row {
+  border-top: 0.5px solid var(--sep);
+}
+
+.admin-token-total {
+  border-top: 1px solid var(--sep);
+  font-weight: 600;
+  color: var(--label2);
+  background: var(--bg3);
+}
+
+.admin-token-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-token-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--label);
+}
+
+.admin-token-num {
+  text-align: right;
+  color: var(--label2);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-token-cost {
+  text-align: right;
+  color: var(--orange);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Stat cards */
 .admin-stat-cards {
   display: flex;

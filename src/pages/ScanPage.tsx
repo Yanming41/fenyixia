@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../hooks/useToast'
 import { supabase } from '../lib/supabase'
 import { useFriends } from '../hooks/useFriends'
-import { scanReceipt, buildScanPrompt, uploadReceiptImage, insertReceiptScan } from '../lib/api/scan'
+import { scanReceipt, buildScanPrompt, uploadReceiptImage, insertReceiptScan, recordTokenUsage } from '../lib/api/scan'
 import { createBill } from '../lib/api/bills'
 import { ICON_COLORS } from '../lib/utils'
 import type { Member } from '../lib/types'
@@ -133,7 +133,9 @@ export default function ScanPage() {
         }))
       )
 
-      const result = await scanReceipt(imagePayloads, prompt)
+      const { result, usage } = await scanReceipt(imagePayloads, prompt)
+      if (usage && user) recordTokenUsage(user.id, 'scan_receipt', usage)
+
       setResultData(result)
       const resultItems = result.items || []
       setItems(resultItems)

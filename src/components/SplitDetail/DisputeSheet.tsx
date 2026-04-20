@@ -48,14 +48,7 @@ export default function DisputeSheet({ bill, currentUserId, onClose, onSubmitted
       const allMemberNames = bill.members.map(m => m.name)
 
       const prompt = buildDisputePrompt(itemsInput, allMemberNames, challengerName, reason.trim())
-      const result = await scanReceipt([], prompt)
-
-      // Parse AI response - it returns content array, we need to extract JSON
-      let txt = ''
-      if (result && typeof result === 'object') {
-        txt = JSON.stringify(result)
-      }
-      // scanReceipt already parses the JSON for us
+      const { result } = await scanReceipt([], prompt)
       const suggestion = result as unknown as DisputeSuggestionResult
 
       if (!suggestion.items || !Array.isArray(suggestion.items)) {

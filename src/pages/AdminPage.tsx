@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { adminListUsers, adminGenerateMagicLink, adminGetEmailStats } from '../lib/api/admin'
-import type { AdminUser, EmailStats } from '../lib/api/admin'
+import { adminListUsers, adminGenerateMagicLink, adminGetEmailStats, adminGetTokenStats } from '../lib/api/admin'
+import type { AdminUser, EmailStats, TokenStat } from '../lib/api/admin'
 
 const ADMIN_EMAIL = 'yiming4144@gmail.com'
 const HOUR_LIMIT = 3
@@ -27,6 +27,7 @@ export default function AdminPage() {
 
   const [users, setUsers] = useState<AdminUser[]>([])
   const [emailStats, setEmailStats] = useState<EmailStats | null>(null)
+  const [tokenStats, setTokenStats] = useState<TokenStat[]>([])
   const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState('')
   const [impersonating, setImpersonating] = useState<string | null>(null)
@@ -44,9 +45,10 @@ export default function AdminPage() {
     setLoadingData(true)
     setError('')
     try {
-      const [u, s] = await Promise.all([adminListUsers(), adminGetEmailStats()])
+      const [u, s, t] = await Promise.all([adminListUsers(), adminGetEmailStats(), adminGetTokenStats()])
       setUsers(u)
       setEmailStats(s)
+      setTokenStats(t)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -126,6 +128,46 @@ export default function AdminPage() {
             )}
             {emailStats && emailStats.recent.length === 0 && (
               <div className="admin-empty">暂无发送记录</div>
+            )}
+          </section>
+
+          {/* Token Usage */}
+          <section className="admin-section">
+            <div className="admin-section-title">AI Token 消耗统计</div>
+            {tokenStats.length === 0 ? (
+              <div className="admin-empty">暂无记录</div>
+            ) : (
+              <div className="admin-token-table">
+                <div className="admin-token-header">
+                  <span>用户</span>
+                  <span>调用次数</span>
+                  <span>输入 tokens</span>
+                  <span>输出 tokens</span>
+                  <span>预估费用</span>
+                </div>
+                {tokenStats.map(s => {
+                  const costUsd = (s.input_tokens / 1_000_000) * 15 + (s.output_tokens / 1_000_000) * 75
+                  return (
+                    <div key={s.user_id} className="admin-token-row">
+                      <span className="admin-token-user">
+                        <span>{s.emoji}</span>
+                        <span className="admin-token-name">{s.name}</span>
+                      </span>
+                      <span className="admin-token-num">{s.calls}</span>
+                      <span className="admin-token-num">{s.input_tokens.toLocaleString()}</span>
+                      <span className="admin-token-num">{s.output_tokens.toLocaleString()}</span>
+                      <span className="admin-token-cost">${costUsd.toFixed(3)}</span>
+                    </div>
+                  )
+                })}
+                <div className="admin-token-total">
+                  <span>合计</span>
+                  <span>{tokenStats.reduce((s, r) => s + r.calls, 0)} 次</span>
+                  <span>{tokenStats.reduce((s, r) => s + r.input_tokens, 0).toLocaleString()}</span>
+                  <span>{tokenStats.reduce((s, r) => s + r.output_tokens, 0).toLocaleString()}</span>
+                  <span>${tokenStats.reduce((sum, r) => sum + r.input_tokens / 1e6 * 15 + r.output_tokens / 1e6 * 75, 0).toFixed(3)}</span>
+                </div>
+              </div>
             )}
           </section>
 

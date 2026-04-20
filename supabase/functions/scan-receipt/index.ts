@@ -85,7 +85,11 @@ serve(async (req) => {
     }
 
     const data = await res.json();
-    return new Response(JSON.stringify(data), {
+    // Include model and usage alongside the Claude response for client-side tracking
+    return new Response(JSON.stringify({
+      ...data,
+      _model: imageList.length > 0 ? "claude-opus-4-20250514" : "claude-haiku-4-5-20251001",
+    }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   } catch (err) {
