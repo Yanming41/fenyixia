@@ -25,7 +25,12 @@ export async function scanReceipt(
 
   const data = await res.json()
   let txt = (data.content || []).map((c: { text?: string }) => c.text || '').join('').trim()
-  txt = txt.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
+  // Robustly extract the outermost JSON object, ignoring any surrounding markdown/text
+  const start = txt.indexOf('{')
+  const end = txt.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) {
+    txt = txt.slice(start, end + 1)
+  }
   return JSON.parse(txt)
 }
 
