@@ -183,6 +183,11 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   const allCollected = nonPayerMembers.length > 0 &&
     nonPayerMembers.every(m => proofUserIds.has(m.id) || manualPaid.has(m.id))
 
+  // Amount still outstanding (exclude already paid members)
+  const pendingTotal = Object.entries(memberShares)
+    .filter(([id]) => id !== bill.payer_id && !proofUserIds.has(id) && !manualPaid.has(id))
+    .reduce((s, [, v]) => s + v, 0)
+
   if (bill.settled) {
     bannerClass = 'paid'
     bannerText = '✓ 已结清'
@@ -202,7 +207,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
   } else if (isPayer) {
     bannerClass = allCollected ? 'paid' : 'collect'
     bannerText = allCollected ? '✅ 已收齐，可标记结清' : '💰 你是垫付人，待收款'
-    bannerAmount = collectTotal
+    bannerAmount = allCollected ? collectTotal : pendingTotal
   } else if (bill._hasMeProof) {
     bannerClass = 'paid'
     bannerText = '✓ 你已上传付款凭证'
