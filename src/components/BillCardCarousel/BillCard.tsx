@@ -40,9 +40,20 @@ export default function BillCard({ bill, currentUserId, style, onClick }: BillCa
   } else if (isPayer) {
     roleTagClass = 'collect'
     roleTagText = '💰 待收款'
-    const otherCount = (bill.members || []).filter(m => m.id !== bill.payer_id).length
-    heroLabel = `向 ${otherCount} 人收`
-    heroAmount = collectTotal
+    const proofIds = bill._proofUserIds || new Set<string>()
+    const manualIds = bill._manualPaidUserIds || new Set<string>()
+    const pendingMembers = (bill.members || []).filter(
+      m => m.id !== bill.payer_id && !proofIds.has(m.id) && !manualIds.has(m.id)
+    )
+    const pendingAmount = (bill.items || []).reduce((sum, item) => {
+      const n = (item.members || []).length || 1
+      const pendingShare = (item.members || []).filter(
+        m => m.id !== bill.payer_id && !proofIds.has(m.id) && !manualIds.has(m.id)
+      ).length
+      return sum + (item.price * (item.qty || 1) / n) * pendingShare
+    }, 0)
+    heroLabel = pendingMembers.length > 0 ? `向 ${pendingMembers.length} 人收` : '已全部收款'
+    heroAmount = pendingAmount
   } else if (bill._hasMeProof) {
     roleTagClass = 'paid'
     roleTagText = '\u2713 已付款'
