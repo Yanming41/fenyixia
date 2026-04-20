@@ -65,7 +65,7 @@ serve(async (req) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: imageList.length > 0 ? "claude-opus-4-20250514" : "claude-haiku-4-5-20251001",
+        model: imageList.length > 0 ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001",
         max_tokens: 2000,
         messages: [
           {
@@ -88,7 +88,7 @@ serve(async (req) => {
     // Include model and usage alongside the Claude response for client-side tracking
     return new Response(JSON.stringify({
       ...data,
-      _model: imageList.length > 0 ? "claude-opus-4-20250514" : "claude-haiku-4-5-20251001",
+      _model: imageList.length > 0 ? "claude-sonnet-4-6" : "claude-haiku-4-5-20251001",
     }), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });

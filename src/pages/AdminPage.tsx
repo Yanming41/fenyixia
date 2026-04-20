@@ -146,7 +146,7 @@ export default function AdminPage() {
                   <span>预估费用</span>
                 </div>
                 {tokenStats.map(s => {
-                  const costUsd = (s.input_tokens / 1_000_000) * 15 + (s.output_tokens / 1_000_000) * 75
+                  const costUsd = (s.input_tokens / 1_000_000) * 3 + (s.output_tokens / 1_000_000) * 15
                   return (
                     <div key={s.user_id} className="admin-token-row">
                       <span className="admin-token-user">
@@ -165,7 +165,7 @@ export default function AdminPage() {
                   <span>{tokenStats.reduce((s, r) => s + r.calls, 0)} 次</span>
                   <span>{tokenStats.reduce((s, r) => s + r.input_tokens, 0).toLocaleString()}</span>
                   <span>{tokenStats.reduce((s, r) => s + r.output_tokens, 0).toLocaleString()}</span>
-                  <span>${tokenStats.reduce((sum, r) => sum + r.input_tokens / 1e6 * 15 + r.output_tokens / 1e6 * 75, 0).toFixed(3)}</span>
+                  <span>${tokenStats.reduce((sum, r) => sum + r.input_tokens / 1e6 * 3 + r.output_tokens / 1e6 * 15, 0).toFixed(3)}</span>
                 </div>
               </div>
             )}
