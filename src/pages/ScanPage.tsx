@@ -221,7 +221,14 @@ export default function ScanPage() {
       )}
 
       {step === 'upload' && (
-        <ImageUploader type={receiptType} onImageLoaded={handleImageLoaded} />
+        <ImageUploader
+          type={receiptType}
+          onImageLoaded={handleImageLoaded}
+          onMultiLoaded={entries => {
+            setImages(prev => [...prev, ...entries])
+            setStep('preview')
+          }}
+        />
       )}
 
       {step === 'crop' && pendingOriginal && (
