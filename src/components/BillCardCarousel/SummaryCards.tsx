@@ -41,7 +41,8 @@ export default function SummaryCards({ bills, currentUserId }: SummaryCardsProps
     } else {
       // I owe someone
       const myShare = b.my_share || b.per_amount
-      if (b.settled || b._hasMeProof) {
+      const iManuallyPaid = (b._manualPaidUserIds || new Set<string>()).has(currentUserId)
+      if (b.settled || b._hasMeProof || iManuallyPaid) {
         paid += myShare
       } else {
         owePending += myShare

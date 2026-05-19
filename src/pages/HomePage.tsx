@@ -62,11 +62,25 @@ export default function HomePage({ onAddClick }: HomePageProps) {
     !config.showSheen && 'no-sheen'
   ].filter(Boolean).join(' ')
 
+  const EMPTY_MESSAGES: Record<string, string> = {
+    mine:    '🎉 暂无待付账单',
+    collect: '✅ 暂无待收回账单',
+    all:     '暂无账单',
+  }
+
   const renderContent = () => {
     if (loading) {
       return (
         <div className="carousel-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ color: 'var(--label3)', fontSize: 15 }}>加载中...</div>
+        </div>
+      )
+    }
+
+    if (displayBills.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--label3)', fontSize: 15 }}>
+          {EMPTY_MESSAGES[dataFilter]}
         </div>
       )
     }
