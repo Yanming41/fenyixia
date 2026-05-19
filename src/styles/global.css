@@ -1249,8 +1249,17 @@ body {
   font-size: 13px;
 }
 
-.proof-upload-area:active {
+.proof-upload-area:active,
+.proof-upload-area:focus {
   background: var(--bg4);
+  outline: none;
+}
+
+.proof-upload-hint {
+  font-size: 11px;
+  color: var(--label4, var(--label3));
+  margin-top: 3px;
+  opacity: 0.7;
 }
 
 .proof-item {

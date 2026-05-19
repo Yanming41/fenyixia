@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Bill, PaymentProof, Member, BillDispute } from '../../lib/types'
 import { fmtMoney, fmtISODate } from '../../lib/utils'
 import { toggleSettled, deleteBill } from '../../lib/api/bills'
@@ -78,6 +78,36 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
       setUploading(false)
     }
   }
+
+  const doUploadBlob = useCallback(async (blob: Blob) => {
+    if (uploading) return
+    setUploading(true)
+    try {
+      await uploadPaymentProof(bill.id, blob)
+      const updated = await getPaymentProofs(bill.id)
+      setProofs(updated)
+      onRefresh()
+      showToast('凭证已上传')
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setUploading(false)
+    }
+  }, [bill.id, uploading, onRefresh, showToast])
+
+  // Global paste listener — Ctrl+V anywhere uploads clipboard image as proof
+  useEffect(() => {
+    if (isPayer || bill.settled) return
+    const onPaste = (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items || [])
+      const imageItem = items.find(item => item.type.startsWith('image/'))
+      if (!imageItem) return
+      const blob = imageItem.getAsFile()
+      if (blob) { e.preventDefault(); doUploadBlob(blob) }
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [isPayer, bill.settled, doUploadBlob])
 
   const handleAnger = () => {
     protestBill(bill.id)
@@ -393,8 +423,17 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                   <div
                     className="proof-upload-area"
                     onClick={() => fileInputRef.current?.click()}
+                    onPaste={e => {
+                      const items = Array.from(e.clipboardData.items)
+                      const imageItem = items.find(i => i.type.startsWith('image/'))
+                      if (imageItem) { e.preventDefault(); const b = imageItem.getAsFile(); if (b) doUploadBlob(b) }
+                    }}
+                    tabIndex={0}
                   >
-                    {uploading ? '上传中...' : '📷 点击上传付款截图'}
+                    {uploading
+                      ? '上传中...'
+                      : <><div>📷 点击选择文件</div><div className="proof-upload-hint">或直接 Ctrl+V 粘贴截图</div></>
+                    }
                   </div>
                   <input
                     ref={fileInputRef}

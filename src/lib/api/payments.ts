@@ -2,11 +2,11 @@ import { supabase } from '../supabase'
 import type { PaymentProof } from '../types'
 import { getCurrentUser } from './auth'
 
-export async function uploadPaymentProof(billId: string, file: File): Promise<string> {
+export async function uploadPaymentProof(billId: string, file: File | Blob): Promise<string> {
   const user = await getCurrentUser()
   if (!user) throw new Error('未登录')
 
-  const ext = file.name?.split('.').pop() || 'jpg'
+  const ext = (file instanceof File ? file.name?.split('.').pop() : null) || (file.type === 'image/png' ? 'png' : 'jpg')
   const path = `${billId}/${user.id}_${Date.now()}.${ext}`
 
   const { error: upErr } = await supabase.storage
