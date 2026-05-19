@@ -24,11 +24,13 @@ export default function HomePage({ onAddClick }: HomePageProps) {
 
   const myBills = useMemo(() => {
     if (!user) return []
-    return bills.filter(b =>
-      !b.settled &&
-      b.payer_id !== user.id &&
-      b.items.some(item => item.members.some(m => m.id === user.id))
-    )
+    return bills.filter(b => {
+      if (b.settled || b.payer_id === user.id) return false
+      if (!b.items.some(item => item.members.some(m => m.id === user.id))) return false
+      if (b._hasMeProof) return false
+      if (b._manualPaidUserIds?.has(user.id)) return false
+      return true
+    })
   }, [bills, user])
 
   const collectBills = useMemo(() => {
