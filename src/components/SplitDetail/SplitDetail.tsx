@@ -97,7 +97,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
 
   // Global paste listener — Ctrl+V anywhere uploads clipboard image as proof
   useEffect(() => {
-    if (isPayer || bill.settled) return
+    if (isPayer || bill.settled || manualPaid.has(currentUserId)) return
     const onPaste = (e: ClipboardEvent) => {
       const items = Array.from(e.clipboardData?.items || [])
       const imageItem = items.find(item => item.type.startsWith('image/'))
@@ -238,9 +238,9 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
     bannerClass = allCollected ? 'paid' : 'collect'
     bannerText = allCollected ? '✅ 已收齐，可标记结清' : '💰 你是垫付人，待收款'
     bannerAmount = allCollected ? collectTotal : pendingTotal
-  } else if (bill._hasMeProof) {
+  } else if (bill._hasMeProof || manualPaid.has(currentUserId)) {
     bannerClass = 'paid'
-    bannerText = '✓ 你已上传付款凭证'
+    bannerText = bill._hasMeProof ? '✓ 你已上传付款凭证' : '✓ 垫付人已标记你为已付款'
     bannerAmount = memberShares[currentUserId] || 0
   } else {
     bannerClass = 'pay'
@@ -486,7 +486,7 @@ export default function SplitDetail({ bill, currentUserId, onClose, onRefresh }:
                     </button>
                   </>
                 )}
-                {!isPayer && !bill.settled && !bill._hasMeProof && (
+                {!isPayer && !bill.settled && !bill._hasMeProof && !manualPaid.has(currentUserId) && (
                   <>
                     <button className="detail-btn-pay" onClick={() => setShowPaySheet(true)}>
                       💳 付款
