@@ -19,7 +19,7 @@ export default function HomePage({ onAddClick }: HomePageProps) {
   const { bills, loading, reload } = useBills()
   const { config } = useDebugConfig()
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
-  const [dataFilter, setDataFilter] = useState<'all' | 'mine'>('all')
+  const [dataFilter, setDataFilter] = useState<'all' | 'mine' | 'collect'>('all')
   const [displayMode, setDisplayMode] = useState<'carousel' | 'list'>('carousel')
 
   const myBills = useMemo(() => {
@@ -31,9 +31,27 @@ export default function HomePage({ onAddClick }: HomePageProps) {
     )
   }, [bills, user])
 
+  const collectBills = useMemo(() => {
+    if (!user) return []
+    return bills.filter(b => {
+      if (b.settled || b.payer_id !== user.id) return false
+      const proofIds = b._proofUserIds || new Set<string>()
+      const manualIds = b._manualPaidUserIds || new Set<string>()
+      return (b.members || []).some(
+        m => m.id !== user.id && !proofIds.has(m.id) && !manualIds.has(m.id)
+      )
+    })
+  }, [bills, user])
+
   if (!user) return null
 
-  const displayBills = dataFilter === 'mine' ? myBills : bills
+  const displayBills =
+    dataFilter === 'mine' ? myBills :
+    dataFilter === 'collect' ? collectBills :
+    bills
+
+  const cycleFilter = () =>
+    setDataFilter(f => f === 'all' ? 'mine' : f === 'mine' ? 'collect' : 'all')
 
   const appClasses = [
     'app',
@@ -74,8 +92,9 @@ export default function HomePage({ onAddClick }: HomePageProps) {
     <div className={appClasses} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 16px) + 70px)' }}>
       <Header
         dataFilter={dataFilter}
+        collectCount={collectBills.length}
         displayMode={displayMode}
-        onToggleFilter={() => setDataFilter(f => f === 'all' ? 'mine' : 'all')}
+        onToggleFilter={cycleFilter}
         onToggleDisplay={() => setDisplayMode(d => d === 'carousel' ? 'list' : 'carousel')}
       />
 
