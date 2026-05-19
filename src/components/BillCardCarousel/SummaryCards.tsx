@@ -18,6 +18,7 @@ export default function SummaryCards({ bills, currentUserId }: SummaryCardsProps
     if (isPayer) {
       // Calculate per-member shares for bills I paid
       const proofUsers = b._proofUserIds || new Set<string>()
+      const manualUsers = b._manualPaidUserIds || new Set<string>()
       const memberShares: Record<string, number> = {}
 
       ;(b.items || []).forEach(item => {
@@ -31,7 +32,7 @@ export default function SummaryCards({ bills, currentUserId }: SummaryCardsProps
       })
 
       Object.entries(memberShares).forEach(([uid, amount]) => {
-        if (b.settled || proofUsers.has(uid)) {
+        if (b.settled || proofUsers.has(uid) || manualUsers.has(uid)) {
           collected += amount
         } else {
           collectPending += amount
